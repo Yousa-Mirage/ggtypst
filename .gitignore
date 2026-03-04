@@ -26,3 +26,5 @@ src/rust/vendor/
 # temp file
 test.R
 test.typ
+dev.R
+dev.typ

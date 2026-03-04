@@ -50,9 +50,9 @@ build_typst_source <- function(
   # Angle
   if (!is.null(angle)) {
     angle <- format_typst_number(angle)
-    text <- sprintf("#rotate(%sdeg)[%s]", angle, text)
+    text <- sprintf("#rotate(%sdeg, reflow: true)[%s]", angle, text)
   }
 
-  page_set <- "#set page(width: auto, height: auto, margin: (x: 0pt, y: 0.2em), fill: none)"
+  page_set <- "#set page(width: auto, height: auto, margin: 0.2em, fill: none)"
   paste(c(page_set, text_args, text), collapse = "\n")
 }
