@@ -39,6 +39,10 @@ impl InMemoryWorld {
         let width_pt = first_page.frame.width().to_pt();
         let height_pt = first_page.frame.height().to_pt();
 
+        if width_pt <= 0.0 || height_pt <= 0.0 {
+            return Err(RenderError::EmptySvg);
+        }
+
         Ok(RenderedSvg {
             svg,
             width_pt,

@@ -39,6 +39,7 @@ impl RenderDiagnostic {
 pub enum RenderError {
     CompilationFailed { diagnostics: Vec<RenderDiagnostic> },
     NoPagesGenerated,
+    EmptySvg,
 }
 
 impl std::error::Error for RenderError {}
@@ -48,6 +49,7 @@ impl RenderError {
         match self {
             RenderError::CompilationFailed { .. } => "CompilationFailed",
             RenderError::NoPagesGenerated => "NoPagesGenerated",
+            RenderError::EmptySvg => "EmptySvg",
         }
     }
 
@@ -57,6 +59,7 @@ impl RenderError {
                 List::from_values(diagnostics.iter().map(RenderDiagnostic::to_r_list))
             }
             RenderError::NoPagesGenerated => List::new(0),
+            RenderError::EmptySvg => List::new(0),
         };
 
         let mut err = list!(
@@ -76,6 +79,7 @@ impl std::fmt::Display for RenderError {
         match self {
             RenderError::CompilationFailed { .. } => write!(f, "Typst compilation failed"),
             RenderError::NoPagesGenerated => write!(f, "Typst compilation produced no pages"),
+            RenderError::EmptySvg => write!(f, "Typst rendered an empty SVG"),
         }
     }
 }

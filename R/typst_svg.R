@@ -22,6 +22,17 @@ escape_cli <- function(x) {
 }
 
 abort_typst_error <- function(err) {
+  kind <- err$kind
+
+  if (kind == "EmptySvg") {
+    cli::cli_abort(
+      "Typst rendered an empty SVG. Check your input.",
+      class = c("ggtypst_typst_error", "typst_error"),
+      typst_error = err,
+      call = rlang::caller_env()
+    )
+  }
+
   diagnostics <- err$diagnostics
   bullets <- escape_cli(err$message)
 
