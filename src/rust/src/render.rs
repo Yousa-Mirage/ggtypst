@@ -1,15 +1,26 @@
-use crate::error::{RenderDiagnostic, RenderError};
-use crate::world::InMemoryWorld;
-
+use extendr_api::prelude::{List, list};
 use typst::compile;
 use typst::diag::Warned;
 use typst::layout::PagedDocument;
+
+use crate::error::{RenderDiagnostic, RenderError};
+use crate::world::InMemoryWorld;
 
 #[derive(Debug)]
 pub struct RenderedSvg {
     pub svg: Vec<u8>,
     pub width_pt: f64,
     pub height_pt: f64,
+}
+
+impl RenderedSvg {
+    pub fn to_r_list(&self) -> List {
+        list!(
+            svg = self.svg.clone(),
+            width_pt = self.width_pt,
+            height_pt = self.height_pt
+        )
+    }
 }
 
 impl InMemoryWorld {

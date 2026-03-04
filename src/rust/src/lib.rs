@@ -5,25 +5,17 @@ mod fonts;
 mod render;
 mod world;
 
-/// Return raw SVG bytes and dimensions for the given Typst input text.
-/// @param text The Typst input text to render.
-/// @export
 #[extendr]
-fn typst_svg(text: &str) -> List {
+fn typst_svg_impl(text: &str) -> List {
     let text = format!("#set page(width: auto, height: auto, margin: 0pt, fill: none)\n{text}");
 
     let fonts = fonts::get_fonts();
-    let world = world::InMemoryWorld::new(text, fonts);
-    let rendered_svg = match world.compile_to_svg() {
-        Ok(rendered_svg) => rendered_svg,
-        Err(err) => throw_r_error(err.to_string()),
-    };
+    let world = world::InMemoryWorld::new(text, fonts.clone());
 
-    list!(
-        svg = rendered_svg.svg,
-        width_pt = rendered_svg.width_pt,
-        height_pt = rendered_svg.height_pt
-    )
+    match world.compile_to_svg() {
+        Ok(rendered_svg) => rendered_svg.to_r_list(),
+        Err(err) => err.to_typst_error(),
+    }
 }
 
 // Macro to generate exports.
@@ -31,5 +23,5 @@ fn typst_svg(text: &str) -> List {
 // See corresponding C code in `entrypoint.c`.
 extendr_module! {
     mod ggtypst;
-    fn typst_svg;
+    fn typst_svg_impl;
 }

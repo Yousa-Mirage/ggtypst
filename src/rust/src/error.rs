@@ -1,3 +1,4 @@
+use extendr_api::prelude::*;
 use typst::diag::{Severity, SourceDiagnostic};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -17,6 +18,23 @@ impl From<&SourceDiagnostic> for RenderDiagnostic {
     }
 }
 
+impl RenderDiagnostic {
+    fn severity_label(&self) -> &'static str {
+        match self.severity {
+            Severity::Error => "Error",
+            Severity::Warning => "Warning",
+        }
+    }
+
+    fn to_r_list(&self) -> List {
+        list!(
+            severity = self.severity_label(),
+            message = self.message.clone(),
+            hints = self.hints.clone()
+        )
+    }
+}
+
 #[derive(Debug)]
 pub enum RenderError {
     CompilationFailed { diagnostics: Vec<RenderDiagnostic> },
@@ -25,33 +43,38 @@ pub enum RenderError {
 
 impl std::error::Error for RenderError {}
 
+impl RenderError {
+    fn kind(&self) -> &'static str {
+        match self {
+            RenderError::CompilationFailed { .. } => "CompilationFailed",
+            RenderError::NoPagesGenerated => "NoPagesGenerated",
+        }
+    }
+
+    pub fn to_typst_error(&self) -> List {
+        let diagnostics = match self {
+            RenderError::CompilationFailed { diagnostics } => {
+                List::from_values(diagnostics.iter().map(RenderDiagnostic::to_r_list))
+            }
+            RenderError::NoPagesGenerated => List::new(0),
+        };
+
+        let mut err = list!(
+            kind = self.kind(),
+            message = self.to_string(),
+            diagnostics = diagnostics
+        );
+
+        #[allow(clippy::unwrap_used)]
+        err.set_class(&["typst_error", "list"]).unwrap();
+        err
+    }
+}
+
 impl std::fmt::Display for RenderError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            RenderError::CompilationFailed { diagnostics } => {
-                let summary = diagnostics
-                    .iter()
-                    .map(|diagnostic| {
-                        let level = match diagnostic.severity {
-                            Severity::Error => "error",
-                            Severity::Warning => "warning",
-                        };
-
-                        if diagnostic.hints.is_empty() {
-                            format!("[{level}] {}", diagnostic.message)
-                        } else {
-                            format!(
-                                "[{level}] {} (hints: {})",
-                                diagnostic.message,
-                                diagnostic.hints.join("; ")
-                            )
-                        }
-                    })
-                    .collect::<Vec<_>>()
-                    .join(" | ");
-
-                write!(f, "Typst compilation failed: {summary}")
-            }
+            RenderError::CompilationFailed { .. } => write!(f, "Typst compilation failed"),
             RenderError::NoPagesGenerated => write!(f, "Typst compilation produced no pages"),
         }
     }

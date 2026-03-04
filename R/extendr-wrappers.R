@@ -10,10 +10,7 @@
 #' @useDynLib ggtypst, .registration = TRUE
 NULL
 
-#' Return raw SVG bytes and dimensions for the given Typst input text.
-#' @param text The Typst input text to render.
-#' @export
-typst_svg <- function(text) .Call(wrap__typst_svg, text)
+typst_svg_impl <- function(text) .Call(wrap__typst_svg_impl, text)
 
 
 # nolint end
