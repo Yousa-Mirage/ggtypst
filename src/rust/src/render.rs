@@ -74,3 +74,91 @@ fn has_visual_content(frame: &typst::layout::Frame) -> bool {
     }
     false
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::fonts;
+    use crate::world::InMemoryWorld;
+    use typst::layout::{Abs, Frame, GroupItem, Point, Size};
+    use typst::syntax::Span;
+    use typst::visualize::{Color, Geometry};
+
+    fn compile_source(source: &str) -> Result<RenderedSvg, RenderError> {
+        let world = InMemoryWorld::new(source.to_string(), fonts::get_fonts());
+        world.compile_to_svg()
+    }
+
+    #[test]
+    fn test_compile_to_svg_success_for_visible_text() {
+        let result = compile_source("Hello, Typst!");
+        assert!(result.is_ok(), "visible text should render successfully");
+
+        let Ok(rendered) = result else {
+            panic!("unexpected render failure: {result:?}");
+        };
+
+        assert!(
+            !rendered.svg.is_empty(),
+            "rendered SVG bytes should not be empty"
+        );
+        assert!(rendered.width_pt > 0.0, "rendered width should be positive");
+        assert!(
+            rendered.height_pt > 0.0,
+            "rendered height should be positive"
+        );
+    }
+
+    #[test]
+    fn test_compile_to_svg_returns_empty_svg_error_for_non_visual_source() {
+        let source = "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n";
+        let result = compile_source(source);
+
+        assert!(
+            matches!(result, Err(RenderError::EmptySvg)),
+            "expected EmptySvg for non-visual source, got: {result:?}"
+        );
+    }
+
+    #[test]
+    fn test_compile_to_svg_returns_compilation_failed_for_invalid_source() {
+        let result = compile_source("#let x =");
+
+        match result {
+            Err(RenderError::CompilationFailed { diagnostics }) => {
+                assert!(
+                    !diagnostics.is_empty(),
+                    "compilation failure should include diagnostics"
+                );
+            }
+            other => panic!("expected compilation failure, got: {other:?}"),
+        }
+    }
+
+    #[test]
+    fn test_has_visual_content_returns_false_for_empty_frame() {
+        let frame = Frame::soft(Size::new(Abs::pt(10.0), Abs::pt(10.0)));
+        assert!(!has_visual_content(&frame));
+    }
+
+    #[test]
+    fn test_has_visual_content_returns_true_for_shape_item() {
+        let mut frame = Frame::soft(Size::new(Abs::pt(10.0), Abs::pt(10.0)));
+        let shape = Geometry::Rect(Size::new(Abs::pt(1.0), Abs::pt(1.0))).filled(Color::BLACK);
+        frame.push(Point::zero(), FrameItem::Shape(shape, Span::detached()));
+
+        assert!(has_visual_content(&frame));
+    }
+
+    #[test]
+    fn test_has_visual_content_checks_nested_groups_recursively() {
+        let mut inner = Frame::soft(Size::new(Abs::pt(10.0), Abs::pt(10.0)));
+        let shape = Geometry::Rect(Size::new(Abs::pt(1.0), Abs::pt(1.0))).filled(Color::BLACK);
+        inner.push(Point::zero(), FrameItem::Shape(shape, Span::detached()));
+
+        let mut outer = Frame::soft(Size::new(Abs::pt(10.0), Abs::pt(10.0)));
+        outer.push(Point::zero(), FrameItem::Group(GroupItem::new(inner)));
+
+        assert!(has_visual_content(&outer));
+    }
+}

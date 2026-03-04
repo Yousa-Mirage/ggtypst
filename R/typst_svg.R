@@ -32,9 +32,9 @@ warn_typst_warnings <- function(warnings) {
   diag_bullets <- unlist(
     lapply(warnings, function(diagnostic) {
       bullet <- if (identical(diagnostic$severity, "Warning")) "!" else "x"
-      msg <- setNames(escape_cli(as.character(diagnostic$message)), bullet)
+      msg <- setNames(escape_cli(diagnostic$message), bullet)
 
-      hints <- as.character(diagnostic$hints)
+      hints <- diagnostic$hints
       if (length(hints) > 0) {
         msg <- c(msg, setNames("{.strong Hint:}", "i"))
         msg <- c(msg, setNames(escape_cli(hints), rep(" ", length(hints))))

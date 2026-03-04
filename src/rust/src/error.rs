@@ -85,3 +85,55 @@ impl std::fmt::Display for RenderError {
 pub fn diagnostics_to_r_list(diagnostics: &[RenderDiagnostic]) -> List {
     List::from_values(diagnostics.iter().map(RenderDiagnostic::to_r_list))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use typst::syntax::Span;
+
+    #[test]
+    fn test_render_diagnostic_from_source_diagnostic_preserves_fields() {
+        let mut source = SourceDiagnostic::warning(Span::detached(), "missing font family");
+        source.hint("install the requested font");
+
+        let rendered = RenderDiagnostic::from(&source);
+
+        assert_eq!(rendered.severity, Severity::Warning);
+        assert_eq!(rendered.message, "missing font family");
+        assert_eq!(rendered.hints, vec!["install the requested font"]);
+    }
+
+    #[test]
+    fn test_render_error_display_messages() {
+        let errors = [
+            (
+                RenderError::CompilationFailed {
+                    diagnostics: vec![],
+                },
+                "Typst compilation failed",
+            ),
+            (
+                RenderError::NoPagesGenerated,
+                "Typst compilation produced no pages",
+            ),
+            (RenderError::EmptySvg, "Typst rendered an empty SVG"),
+        ];
+
+        for (error, expected_message) in errors {
+            assert_eq!(error.to_string(), expected_message);
+        }
+    }
+
+    #[test]
+    fn test_render_error_kind_values() {
+        assert_eq!(
+            RenderError::CompilationFailed {
+                diagnostics: vec![],
+            }
+            .kind(),
+            "CompilationFailed"
+        );
+        assert_eq!(RenderError::NoPagesGenerated.kind(), "NoPagesGenerated");
+        assert_eq!(RenderError::EmptySvg.kind(), "EmptySvg");
+    }
+}
