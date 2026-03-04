@@ -10,7 +10,7 @@ typst_svg(text)
 \item{text}{Typst source code to compile.}
 }
 \value{
-A list with fields \code{svg}, \code{width_pt}, and \code{height_pt}.
+A list with fields \code{svg}, \code{width_pt}, \code{height_pt}, and \code{warnings}.
 }
 \description{
 Compiles Typst code and returns SVG bytes together with rendered dimensions.
