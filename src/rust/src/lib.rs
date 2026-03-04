@@ -23,3 +23,21 @@ extendr_module! {
     mod ggtypst;
     fn typst_svg_impl;
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_system_font_loading() {
+        let fonts = fonts::get_fonts();
+
+        let text = r#"#set text(font: "Arial")
+        Hello World"#;
+
+        let world = world::InMemoryWorld::new(text.to_string(), fonts.clone());
+        let result = world.compile_to_svg();
+
+        assert!(result.is_ok(), "Typst compilation failed with system font");
+    }
+}

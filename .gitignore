@@ -22,3 +22,7 @@ src/rust/vendor/
 # IDE settings
 .vscode/
 .zed/
+
+# temp file
+test.R
+test.typ

@@ -23,3 +23,4 @@ document:
 
 test:
     Rscript -e "devtools::test()"
+    cargo test --manifest-path src/rust/Cargo.toml

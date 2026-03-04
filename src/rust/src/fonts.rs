@@ -4,7 +4,7 @@ use typst_kit::fonts::Fonts;
 static FONTS: LazyLock<Arc<Fonts>> = LazyLock::new(|| {
     let fonts = typst_kit::fonts::FontSearcher::new()
         .include_embedded_fonts(true)
-        .include_system_fonts(false)
+        .include_system_fonts(true)
         .search();
     Arc::new(fonts)
 });

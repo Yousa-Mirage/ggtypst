@@ -8,13 +8,17 @@ annotate_typst <- function(
   dpi = 300,
   size = NULL,
   alpha = NULL,
-  color = NULL
+  color = NULL,
+  family = NULL,
+  angle = NULL
 ) {
   full_source <- build_typst_source(
     typst_code,
     size = size,
     color = color,
-    alpha = alpha
+    alpha = alpha,
+    family = family,
+    angle = angle
   )
   rendered <- typst_svg(full_source)
 

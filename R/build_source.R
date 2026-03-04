@@ -7,18 +7,25 @@
 #' @param color Text color in any format accepted by [grDevices::col2rgb()].
 #' @param alpha Optional alpha multiplier in `[0, 1]`. If provided, it is
 #'   multiplied with the alpha channel embedded in `color`.
+#' @param family Font family name. The font must be available in the Typst rendering
+#'   environment (e.g., system fonts or embedded fonts).
+#' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @return A single UTF-8 Typst source string.
 build_typst_source <- function(
   text,
   size = NULL,
   color = NULL,
-  alpha = NULL
+  alpha = NULL,
+  family = NULL,
+  angle = NULL
 ) {
   text <- check_single_string(text, "text", allow_null = FALSE)
 
   color <- check_single_string(color, "color")
   size <- check_positive_number(size, "size")
   alpha <- check_alpha(alpha)
+  family <- check_single_string(family, "family")
+  angle <- check_number(angle, "angle")
 
   text_args <- c()
 
@@ -33,6 +40,17 @@ build_typst_source <- function(
   if (!is.null(size)) {
     size_str <- format_typst_number(size)
     text_args <- c(text_args, sprintf('#set text(size: %spt)', size_str))
+  }
+
+  # Family
+  if (!is.null(family)) {
+    text_args <- c(text_args, sprintf('#set text(font: "%s")', family))
+  }
+
+  # Angle
+  if (!is.null(angle)) {
+    angle <- format_typst_number(angle)
+    text <- sprintf("#rotate(%sdeg)[%s]", angle, text)
   }
 
   page_set <- "#set page(width: auto, height: auto, margin: (x: 0pt, y: 0.2em), fill: none)"

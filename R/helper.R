@@ -18,6 +18,16 @@ check_positive_number <- function(x, arg, allow_null = TRUE) {
   x
 }
 
+check_number <- function(x, arg, allow_null = TRUE) {
+  if (allow_null && is.null(x)) {
+    return(NULL)
+  }
+  if (!is.numeric(x) || length(x) != 1 || is.na(x) || !is.finite(x)) {
+    cli::cli_abort("{.arg {arg}} must be a single finite number.")
+  }
+  x
+}
+
 check_alpha <- function(alpha) {
   if (is.null(alpha)) {
     return(NULL)
