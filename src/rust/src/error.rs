@@ -55,9 +55,7 @@ impl RenderError {
 
     pub fn to_typst_error(&self) -> List {
         let diagnostics = match self {
-            RenderError::CompilationFailed { diagnostics } => {
-                List::from_values(diagnostics.iter().map(RenderDiagnostic::to_r_list))
-            }
+            RenderError::CompilationFailed { diagnostics } => diagnostics_to_r_list(diagnostics),
             RenderError::NoPagesGenerated => List::new(0),
             RenderError::EmptySvg => List::new(0),
         };
@@ -82,4 +80,8 @@ impl std::fmt::Display for RenderError {
             RenderError::EmptySvg => write!(f, "Typst rendered an empty SVG"),
         }
     }
+}
+
+pub fn diagnostics_to_r_list(diagnostics: &[RenderDiagnostic]) -> List {
+    List::from_values(diagnostics.iter().map(RenderDiagnostic::to_r_list))
 }

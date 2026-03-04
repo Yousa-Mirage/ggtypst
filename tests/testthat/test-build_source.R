@@ -1,4 +1,4 @@
-page_line <- "#set page(width: auto, height: auto, margin: (x: 0pt, y: 0.2em), fill: none)"
+page_line <- "#set page(width: auto, height: auto, margin: 0.2em, fill: none)"
 
 test_that("build_typst_source wraps text with page defaults", {
   src <- build_typst_source(r"(Hello)")
