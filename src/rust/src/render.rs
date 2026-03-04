@@ -1,4 +1,4 @@
-use extendr_api::prelude::{List, list};
+use extendr_api::prelude::{list, List};
 use typst::compile;
 use typst::diag::Warned;
 use typst::layout::PagedDocument;
