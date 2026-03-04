@@ -10,6 +10,7 @@ annotate_typst <- function(
   alpha = NULL,
   color = NULL,
   family = NULL,
+  math_family = NULL,
   angle = NULL
 ) {
   full_source <- build_typst_source(
@@ -18,6 +19,7 @@ annotate_typst <- function(
     color = color,
     alpha = alpha,
     family = family,
+    math_family = math_family,
     angle = angle
   )
   rendered <- typst_svg(full_source)
@@ -28,7 +30,7 @@ annotate_typst <- function(
   img_matrix <- rsvg::rsvg_nativeraster(
     rendered$svg,
     width = ceiling(pixel_width * dpi / 72),
-    height = ceiling(pixel_height * dpi / 72),
+    height = ceiling(pixel_height * dpi / 72)
   )
 
   grob <- grid::rasterGrob(

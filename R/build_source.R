@@ -9,6 +9,7 @@
 #'   multiplied with the alpha channel embedded in `color`.
 #' @param family Font family name. The font must be available in the Typst rendering
 #'   environment (e.g., system fonts or embedded fonts).
+#' @param math_family Optional font family for math mode. Defaults to `New Computer Modern Math`.
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @return A single UTF-8 Typst source string.
 build_typst_source <- function(
@@ -17,6 +18,7 @@ build_typst_source <- function(
   color = NULL,
   alpha = NULL,
   family = NULL,
+  math_family = NULL,
   angle = NULL
 ) {
   text <- check_single_string(text, "text", allow_null = FALSE)
@@ -25,6 +27,7 @@ build_typst_source <- function(
   size <- check_positive_number(size, "size")
   alpha <- check_alpha(alpha)
   family <- check_single_string(family, "family")
+  math_family <- check_single_string(math_family, "math_family")
   angle <- check_number(angle, "angle")
 
   text_args <- c()
@@ -45,6 +48,11 @@ build_typst_source <- function(
   # Family
   if (!is.null(family)) {
     text_args <- c(text_args, sprintf('#set text(font: "%s")', family))
+  }
+
+  # Math Family
+  if (!is.null(math_family)) {
+    text_args <- c(text_args, sprintf('#show math.equation: set text(font: "%s")', math_family))
   }
 
   # Angle
