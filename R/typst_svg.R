@@ -13,7 +13,7 @@ typst_svg <- function(text) {
   if (inherits(result, "typst_error")) {
     abort_typst_error(result)
   }
-  if (!is.list(warnings) || length(warnings) == 0) {
+  if (is.list(result$warnings) && length(result$warnings) > 0) {
     warn_typst_warnings(result$warnings)
   }
 
