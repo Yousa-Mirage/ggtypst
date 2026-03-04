@@ -5,13 +5,18 @@
 #' diagnostics and hints.
 #'
 #' @param text Typst source code to compile.
-#' @return A list with fields `svg`, `width_pt`, and `height_pt`.
+#' @return A list with fields `svg`, `width_pt`, `height_pt`, and `warnings`.
 #' @export
 typst_svg <- function(text) {
   result <- typst_svg_impl(text)
+
   if (inherits(result, "typst_error")) {
     abort_typst_error(result)
   }
+  if (!is.list(warnings) || length(warnings) == 0) {
+    warn_typst_warnings(result$warnings)
+  }
+
   result
 }
 
@@ -19,6 +24,34 @@ escape_cli <- function(x) {
   x <- gsub("{", "{{", x, fixed = TRUE)
   x <- gsub("}", "}}", x, fixed = TRUE)
   x
+}
+
+warn_typst_warnings <- function(warnings) {
+  bullets <- c("Typst emitted warnings during rendering.")
+
+  diag_bullets <- unlist(
+    lapply(warnings, function(diagnostic) {
+      bullet <- if (identical(diagnostic$severity, "Warning")) "!" else "x"
+      msg <- setNames(escape_cli(as.character(diagnostic$message)), bullet)
+
+      hints <- as.character(diagnostic$hints)
+      if (length(hints) > 0) {
+        msg <- c(msg, setNames("{.strong Hint:}", "i"))
+        msg <- c(msg, setNames(escape_cli(hints), rep(" ", length(hints))))
+      }
+
+      msg
+    })
+  )
+
+  bullets <- c(bullets, diag_bullets)
+
+  cli::cli_warn(
+    bullets,
+    class = c("ggtypst_typst_warning", "typst_warning"),
+    typst_warnings = warnings,
+    call = rlang::caller_env()
+  )
 }
 
 abort_typst_error <- function(err) {
@@ -37,7 +70,6 @@ abort_typst_error <- function(err) {
   bullets <- escape_cli(err$message)
 
   if (is.list(diagnostics) && length(diagnostics) > 0) {
-    # 使用 lapply 向量化处理，避免 for 循环中不断扩张向量
     diag_bullets <- unlist(
       lapply(diagnostics, function(diagnostic) {
         bullet <- if (identical(diagnostic$severity, "Warning")) "!" else "x"
