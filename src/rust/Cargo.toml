@@ -1,0 +1,21 @@
+[package]
+name = 'ggtypst'
+publish = false
+version = '0.1.0'
+edition = '2021'
+rust-version = '1.89'
+
+[lib]
+crate-type = [ 'staticlib' ]
+name = 'ggtypst'
+
+[dependencies]
+chrono = "0.4.44"
+extendr-api = '0.8.1'
+typst = "0.14.2"
+typst-kit = { version = "0.14.2", features = [ "embed-fonts"] , default-features = false }
+typst-svg = "0.14.2"
+
+[profile.release]
+lto = true
+codegen-units = 1

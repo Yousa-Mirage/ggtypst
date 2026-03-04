@@ -1,0 +1,10 @@
+src/rust/vendor
+src/Makevars
+src/Makevars.win
+
+**/target/
+**/*.Rcheck/
+
+# IDE
+.vscode/
+.zed/

@@ -1,0 +1,31 @@
+Package: ggtypst
+Title: Render High-Quality Text and Formulas in 'ggplot2' by Typst
+Version: 0.0.0.9000
+Authors@R: 
+    person(given = "Hao",
+           family = "Cheng",
+           role = c("aut", "cre"),
+           email = "Yousa-Mirage@foxmail.com")
+Description: Provides a seamless integration of the 'Typst' typesetting engine 
+    into 'ggplot2'. It allows users to render complex mathematical formulas, 
+    equations, and rich text directly in plot annotations, axis labels, 
+    and titles without requiring a local Typst or LaTeX installation. Under
+    the hood, it leverages Rust FFI to compile Typst code into SVG in-memory.
+URL: https://github.com/Yousa-Mirage/ggtypst
+BugReports: https://github.com/Yousa-Mirage/ggtypst/issues
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+RoxygenNote: 7.3.3
+Config/rextendr/version: 0.4.2
+SystemRequirements: Cargo (Rust's package manager), rustc >= 1.65.0, xz
+Depends: 
+    R (>= 4.2)
+Imports:
+    ggplot2,
+    grid,
+    rsvg
+Suggests: 
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
+Config/testthat/parallel: true

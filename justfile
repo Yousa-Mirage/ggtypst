@@ -1,0 +1,18 @@
+alias fmt := format
+
+default:
+    just --list
+
+format:
+    r-air format .
+    cargo fmt --manifest-path src/rust/Cargo.toml
+
+check:
+    jarl check .
+    cargo clippy --manifest-path src/rust/Cargo.toml
+
+clean:
+    cargo clean --manifest-path src/rust/Cargo.toml
+
+build-check:
+    R CMD check .
