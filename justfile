@@ -20,3 +20,6 @@ build-check:
 
 document:
     Rscript -e "rextendr::document()"
+
+test:
+    Rscript -e "devtools::test()"

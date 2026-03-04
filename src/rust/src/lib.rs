@@ -6,11 +6,9 @@ mod render;
 mod world;
 
 #[extendr]
-fn typst_svg_impl(text: &str) -> List {
-    let text = format!("#set page(width: auto, height: auto, margin: 0pt, fill: none)\n{text}");
-
+fn typst_svg_impl(source_code: &str) -> List {
     let fonts = fonts::get_fonts();
-    let world = world::InMemoryWorld::new(text, fonts.clone());
+    let world = world::InMemoryWorld::new(source_code.to_string(), fonts);
 
     match world.compile_to_svg() {
         Ok(rendered_svg) => rendered_svg.to_r_list(),

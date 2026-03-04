@@ -13,7 +13,13 @@ test_that("typst_svg returns raw svg and size", {
   expect_true(grepl("</svg>\\s*$", svg_txt))
 })
 
-test_that("typst_svg returns renderable SVG for empty-like input", {
-  expect_error(typst_svg(""), "Typst rendered an empty SVG")
-  expect_error(typst_svg(" "), "Typst rendered an empty SVG")
+test_that("build_typst_source empty-like input triggers empty render error", {
+  expect_error(
+    typst_svg(build_typst_source("")),
+    "Typst rendered an empty SVG"
+  )
+  expect_error(
+    typst_svg(build_typst_source(" ")),
+    "Typst rendered an empty SVG"
+  )
 })
