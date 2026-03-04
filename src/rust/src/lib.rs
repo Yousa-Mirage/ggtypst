@@ -1,10 +1,12 @@
 use extendr_api::prelude::*;
 
+mod error;
 mod fonts;
 mod render;
 mod world;
 
-/// Return string `"Hello world!"` to R.
+/// Return raw SVG bytes and dimensions for the given Typst input text.
+/// @param text The Typst input text to render.
 /// @export
 #[extendr]
 fn typst_svg(text: &str) -> List {
@@ -12,7 +14,10 @@ fn typst_svg(text: &str) -> List {
 
     let fonts = fonts::get_fonts();
     let world = world::InMemoryWorld::new(text, fonts);
-    let rendered_svg = world.compile_to_svg();
+    let rendered_svg = match world.compile_to_svg() {
+        Ok(rendered_svg) => rendered_svg,
+        Err(err) => throw_r_error(err.to_string()),
+    };
 
     list!(
         svg = rendered_svg.svg,

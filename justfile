@@ -1,4 +1,5 @@
 alias fmt := format
+alias doc := document
 
 default:
     just --list
@@ -16,3 +17,6 @@ clean:
 
 build-check:
     R CMD check .
+
+document:
+    Rscript -e "rextendr::document()"

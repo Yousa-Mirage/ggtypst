@@ -1,6 +1,6 @@
-use chrono::Datelike;
 use std::sync::Arc;
 
+use chrono::Datelike;
 use typst::diag::{FileError, FileResult};
 use typst::foundations::{Bytes, Datetime};
 use typst::syntax::{FileId, Source, VirtualPath};

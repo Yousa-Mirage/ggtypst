@@ -1,5 +1,5 @@
 use std::sync::{Arc, LazyLock};
-pub use typst_kit::fonts::Fonts;
+use typst_kit::fonts::Fonts;
 
 static FONTS: LazyLock<Arc<Fonts>> = LazyLock::new(|| {
     let fonts = typst_kit::fonts::FontSearcher::new()

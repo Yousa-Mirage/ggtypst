@@ -4,3 +4,5 @@
 ^src/Makevars$
 ^src/Makevars\.win$
 ^LICENSE\.md$
+^\.vscode$
+^\.zed$

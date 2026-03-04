@@ -1,7 +1,7 @@
 Package: ggtypst
 Title: Render High-Quality Text and Formulas in 'ggplot2' by Typst
 Version: 0.0.0.9000
-Authors@R: 
+Authors@R:
     person(given = "Hao",
            family = "Cheng",
            role = c("aut", "cre"),

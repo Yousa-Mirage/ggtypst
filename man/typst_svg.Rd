@@ -2,10 +2,13 @@
 % Please edit documentation in R/extendr-wrappers.R
 \name{typst_svg}
 \alias{typst_svg}
-\title{Return string \code{"Hello world!"} to R.}
+\title{Return raw SVG bytes and dimensions for the given Typst input text.}
 \usage{
 typst_svg(text)
 }
+\arguments{
+\item{text}{The Typst input text to render.}
+}
 \description{
-Return string \code{"Hello world!"} to R.
+Return raw SVG bytes and dimensions for the given Typst input text.
 }

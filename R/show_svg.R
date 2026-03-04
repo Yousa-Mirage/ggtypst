@@ -1,6 +1,3 @@
-library(grid)
-library(rsvg)
-
 render_typst_svg <- function(code) {
   # 2. 调用底层的 Rust 渲染函数
   # 假设 render_formula 是我们用 Rust 编译暴露给 R 的函数
