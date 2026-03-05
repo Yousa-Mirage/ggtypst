@@ -2,7 +2,7 @@
 #'
 #' Wraps user Typst code with page and text settings used by ggtypst.
 #'
-#' @param text A single Typst source string.
+#' @param typst_code A single Typst source string.
 #' @param size Font size in points (pt).
 #' @param color Text color in any format accepted by [grDevices::col2rgb()].
 #' @param alpha Optional alpha multiplier in `[0, 1]`. If provided, it is
@@ -13,7 +13,7 @@
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @return A single UTF-8 Typst source string.
 build_typst_source <- function(
-  text,
+  typst_code,
   size = NULL,
   color = NULL,
   alpha = NULL,
@@ -21,7 +21,7 @@ build_typst_source <- function(
   math_family = NULL,
   angle = NULL
 ) {
-  text <- check_single_string(text, "text", allow_null = FALSE)
+  typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
 
   color <- check_single_string(color, "color")
   size <- check_positive_number(size, "size")
@@ -58,9 +58,9 @@ build_typst_source <- function(
   # Angle
   if (!is.null(angle)) {
     angle <- format_typst_number(angle)
-    text <- sprintf("#rotate(%sdeg, reflow: true)[%s]", angle, text)
+    typst_code <- sprintf("#rotate(%sdeg, reflow: true)[%s]", angle, typst_code)
   }
 
   page_set <- "#set page(width: auto, height: auto, margin: 0.2em, fill: none)"
-  paste(c(page_set, text_args, text), collapse = "\n")
+  paste(c(page_set, text_args, typst_code), collapse = "\n")
 }

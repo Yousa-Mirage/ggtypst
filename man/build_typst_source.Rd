@@ -5,7 +5,7 @@
 \title{Build Typst Source with Rendering Defaults}
 \usage{
 build_typst_source(
-  text,
+  typst_code,
   size = NULL,
   color = NULL,
   alpha = NULL,
@@ -15,7 +15,7 @@ build_typst_source(
 )
 }
 \arguments{
-\item{text}{A single Typst source string.}
+\item{typst_code}{A single Typst source string.}
 
 \item{size}{Font size in points (pt).}
 
