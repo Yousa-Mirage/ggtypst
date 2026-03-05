@@ -1,29 +1,33 @@
-page_line <- "#set page(width: auto, height: auto, margin: 0.2em, fill: none)"
+preamble_set <- c(
+  r"(#set page(width: auto, height: auto, margin: 0.1em, fill: none))",
+  r"(#set text(top-edge: "bounds", bottom-edge: "bounds"))"
+)
 
 test_that("build_typst_source wraps text with page defaults", {
   src <- build_typst_source(r"(Hello)")
   lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
 
-  expect_equal(lines, c(page_line, r"(Hello)"))
+  expect_equal(lines, c(preamble_set, r"(Hello)"))
 })
 
 test_that("build_typst_source adds color, alpha, and size directives", {
   src <- build_typst_source(
-    text = r"(A)",
+    typst_code = r"(A)",
     color = "#33669980",
     alpha = 0.5,
     size = 12.5
   )
   lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
 
-  expect_equal(lines[1], page_line)
-  expect_equal(lines[2], '#set text(fill: rgb("#33669940"))')
-  expect_equal(lines[3], "#set text(size: 12.5pt)")
-  expect_equal(lines[4], r"(A)")
+  expect_equal(lines[1], preamble_set[1])
+  expect_equal(lines[2], preamble_set[2])
+  expect_equal(lines[3], '#set text(fill: rgb("#33669940"))')
+  expect_equal(lines[4], "#set text(size: 12.5pt)")
+  expect_equal(lines[5], r"(A)")
 })
 
 test_that("build_typst_source supports alpha-only style", {
-  src <- build_typst_source(text = r"(A)", alpha = 0.5)
+  src <- build_typst_source(typst_code = r"(A)", alpha = 0.5)
   expect_match(src, '#set text\\(fill: rgb\\("#00000080"\\)\\)')
 })
 
@@ -35,7 +39,7 @@ line2 {x} % y)"
 
   expect_equal(
     lines,
-    c(page_line, "#set text(size: 11pt)", "line1", "line2 {x} % y")
+    c(preamble_set, "#set text(size: 11pt)", "line1", "line2 {x} % y")
   )
 })
 

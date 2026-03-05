@@ -61,6 +61,10 @@ build_typst_source <- function(
     typst_code <- sprintf("#rotate(%sdeg, reflow: true)[%s]", angle, typst_code)
   }
 
-  page_set <- "#set page(width: auto, height: auto, margin: 0.2em, fill: none)"
-  paste(c(page_set, text_args, typst_code), collapse = "\n")
+  preamble_set <- c(
+    r"(#set page(width: auto, height: auto, margin: 0.1em, fill: none))",
+    r"(#set text(top-edge: "bounds", bottom-edge: "bounds"))"
+  )
+
+  paste(c(preamble_set, text_args, typst_code), collapse = "\n")
 }

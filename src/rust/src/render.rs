@@ -110,8 +110,8 @@ mod tests {
     }
 
     #[test]
-    fn test_compile_to_svg_returns_empty_svg_error_for_non_visual_source() {
-        let source = "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n";
+    fn test_compile_to_svg_returns_empty_svg_error_for_default_page_set() {
+        let source = "#set page(width: auto, height: auto, margin: 0.1em, fill: none)\n      #set text(top-edge: \"bounds\", bottom-edge: \"bounds\")";
         let result = compile_source(source);
 
         assert!(
