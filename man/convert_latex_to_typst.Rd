@@ -4,11 +4,14 @@
 \alias{convert_latex_to_typst}
 \title{Convert LaTeX Math to Typst Math Source}
 \usage{
-convert_latex_to_typst(latex_code)
+convert_latex_to_typst(latex_code, inline = FALSE)
 }
 \arguments{
 \item{latex_code}{A single LaTeX math string. Outer \verb{$...$} or \verb{$$...$$}
 delimiters are optional and will be normalized.}
+
+\item{inline}{Whether to render as inline math. Default \code{FALSE} renders as
+display-style math.}
 }
 \value{
 A single Typst source string.

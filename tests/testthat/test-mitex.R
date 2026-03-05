@@ -60,3 +60,19 @@ test_that("convert_latex_to_typst is stable under randomized valid formulas", {
     expect_no_error(typst_svg(build_typst_source(src)))
   }
 })
+
+test_that("convert_latex_to_typst supports inline mode", {
+  src_display <- convert_latex_to_typst(r"(\frac{1}{2})", inline = FALSE)
+  src_inline <- convert_latex_to_typst(r"(\frac{1}{2})", inline = TRUE)
+
+  expect_match(
+    src_display,
+    r"(#eval("$ " + _ggtypst_mitex_expr + " $", scope: mitex-scope))",
+    fixed = TRUE
+  )
+  expect_match(
+    src_inline,
+    r"(#eval("$" + _ggtypst_mitex_expr + "$", scope: mitex-scope))",
+    fixed = TRUE
+  )
+})

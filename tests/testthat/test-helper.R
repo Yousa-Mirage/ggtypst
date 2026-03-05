@@ -19,6 +19,17 @@ test_that("check_positive_number validates numeric scalar", {
   expect_error(check_positive_number(c(1, 2), "size"))
 })
 
+test_that("check_bool validates logical scalar", {
+  expect_null(check_bool(NULL, "inline"))
+  expect_true(check_bool(TRUE, "inline"))
+  expect_false(check_bool(FALSE, "inline"))
+
+  expect_error(check_bool(NULL, "inline", allow_null = FALSE))
+  expect_error(check_bool(1, "inline"))
+  expect_error(check_bool(c(TRUE, FALSE), "inline"))
+  expect_error(check_bool(NA, "inline"))
+})
+
 test_that("check_alpha validates alpha range", {
   expect_null(check_alpha(NULL))
   expect_equal(check_alpha(0), 0)
@@ -70,6 +81,12 @@ test_that("as_typst_math_code always returns single-dollar wrapped math", {
   expect_equal(as_typst_math_code("x^2 + y^2"), expect_math)
   expect_equal(as_typst_math_code("$ x^2 + y^2 $"), expect_math)
   expect_equal(as_typst_math_code("$$ x^2 + y^2 $$"), expect_math)
+})
+
+test_that("as_typst_math_code supports inline mode", {
+  expect_equal(as_typst_math_code("x^2 + y^2", inline = TRUE), "$x^2 + y^2$")
+  expect_equal(as_typst_math_code("$ x^2 + y^2 $", inline = TRUE), "$x^2 + y^2$")
+  expect_error(as_typst_math_code("x^2", inline = NA), "TRUE or FALSE")
 })
 
 test_that("as_typst_math_code process inline $ correctly", {

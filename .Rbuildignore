@@ -12,3 +12,4 @@
 ^test\.typ$
 ^dev\.R$
 ^dev\.typ$
+^justfile$

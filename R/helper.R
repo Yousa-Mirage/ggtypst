@@ -28,6 +28,16 @@ check_number <- function(x, arg, allow_null = TRUE) {
   x
 }
 
+check_bool <- function(x, arg, allow_null = TRUE) {
+  if (allow_null && is.null(x)) {
+    return(NULL)
+  }
+  if (!is.logical(x) || length(x) != 1 || is.na(x)) {
+    cli::cli_abort("{.arg {arg}} must be TRUE or FALSE.")
+  }
+  x
+}
+
 check_alpha <- function(alpha) {
   if (is.null(alpha)) {
     return(NULL)
@@ -98,10 +108,15 @@ as_latex_math_code <- function(latex_code) {
   validate_no_unescaped_dollar(core, arg = "latex_math_code")
 }
 
-as_typst_math_code <- function(typst_code) {
+as_typst_math_code <- function(typst_code, inline = FALSE) {
   typst_code <- check_single_string(typst_code, "typst_math_code", allow_null = FALSE)
+  inline <- check_bool(inline, "inline", allow_null = FALSE)
   core <- unwrap_math_dollar_delimiters(typst_code)
   validate_no_unescaped_dollar(core, arg = "typst_math_code")
 
-  sprintf("$ %s $", core)
+  if (inline) {
+    sprintf("$%s$", core)
+  } else {
+    sprintf("$ %s $", core)
+  }
 }

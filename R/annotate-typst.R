@@ -82,6 +82,8 @@ annotate_typst <- function(
 #' @inheritParams annotate_typst
 #' @param typst_math_code Typst source code representing math content. It will be
 #'   wrapped in `$ ... $` before rendering.
+#' @param inline Whether to render as inline math. Default `FALSE` renders as
+#'   display-style math.
 #' @return A `ggplot2` layer.
 #' @export
 annotate_math_typst <- function(
@@ -96,9 +98,10 @@ annotate_math_typst <- function(
   alpha = NULL,
   color = NULL,
   math_family = NULL,
-  angle = NULL
+  angle = NULL,
+  inline = FALSE
 ) {
-  typst_math_code <- as_typst_math_code(typst_math_code)
+  typst_math_code <- as_typst_math_code(typst_math_code, inline = inline)
 
   annotate_typst(
     typst_math_code,
@@ -124,6 +127,8 @@ annotate_math_typst <- function(
 #' @inheritParams annotate_typst
 #' @param latex_math_code LaTeX math source string. Outer `$...$` or `$$...$$`
 #'   delimiters are optional and are normalized before conversion.
+#' @param inline Whether to render as inline math. Default `FALSE` renders as
+#'   display-style math.
 #' @return A `ggplot2` layer.
 #' @export
 annotate_math_mitex <- function(
@@ -138,9 +143,10 @@ annotate_math_mitex <- function(
   alpha = NULL,
   color = NULL,
   math_family = NULL,
-  angle = NULL
+  angle = NULL,
+  inline = FALSE
 ) {
-  typst_math_code <- convert_latex_to_typst(latex_math_code)
+  typst_math_code <- convert_latex_to_typst(latex_math_code, inline = inline)
 
   annotate_typst(
     typst_math_code,

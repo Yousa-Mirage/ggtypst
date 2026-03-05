@@ -106,3 +106,51 @@ test_that("annotate_math_mitex reports MiTeX conversion errors", {
     "MiTeX conversion failed"
   )
 })
+
+test_that("annotate_math_mitex supports inline rendering mode", {
+  layer_display <- annotate_math_mitex(
+    latex_math_code = r"(\frac{1}{2})",
+    x = 3,
+    y = 25,
+    inline = FALSE,
+    size = 12
+  )
+
+  layer_inline <- annotate_math_mitex(
+    latex_math_code = r"(\frac{1}{2})",
+    x = 3,
+    y = 25,
+    inline = TRUE,
+    size = 12
+  )
+
+  h_display <- as.numeric(layer_display$geom_params$grob$height)
+  h_inline <- as.numeric(layer_inline$geom_params$grob$height)
+  expect_gt(h_display, h_inline)
+})
+
+test_that("annotate_math_mitex visual display vs inline", {
+  skip_if_not_installed("vdiffr")
+
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
+    ggplot2::geom_point(size = 1.1, alpha = 0.35, colour = "grey45") +
+    ggplot2::coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
+    ggplot2::theme_minimal(base_size = 11) +
+    annotate_math_mitex(
+      latex_math_code = r"(\frac{1}{2} + \sqrt{3})",
+      x = 2.2,
+      y = 31,
+      size = 13,
+      color = "#1E66F5"
+    ) +
+    annotate_math_mitex(
+      latex_math_code = r"(\frac{1}{2} + \sqrt{3})",
+      x = 4.9,
+      y = 31,
+      size = 13,
+      color = "#D20F39",
+      inline = TRUE
+    )
+
+  vdiffr::expect_doppelganger("annotate-math-mitex-display-vs-inline", p)
+})

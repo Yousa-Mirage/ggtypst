@@ -16,7 +16,8 @@ annotate_math_typst(
   alpha = NULL,
   color = NULL,
   math_family = NULL,
-  angle = NULL
+  angle = NULL,
+  inline = FALSE
 )
 }
 \arguments{
@@ -40,6 +41,9 @@ wrapped in \verb{$ ... $} before rendering.}
 \item{math_family}{Optional font family for math equations.}
 
 \item{angle}{Optional text angle in degrees.}
+
+\item{inline}{Whether to render as inline math. Default \code{FALSE} renders as
+display-style math.}
 }
 \value{
 A \code{ggplot2} layer.
