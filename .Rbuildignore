@@ -6,3 +6,9 @@
 ^LICENSE\.md$
 ^\.vscode$
 ^\.zed$
+
+# temp files
+^test\.R$
+^test\.typ$
+^dev\.R$
+^dev\.typ$

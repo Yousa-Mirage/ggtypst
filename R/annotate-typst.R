@@ -116,6 +116,16 @@ annotate_math_typst <- function(
   )
 }
 
+#' Annotate a Plot with MiTeX-Converted LaTeX Math
+#'
+#' Converts LaTeX math input to Typst math source with [convert_latex_to_typst()]
+#' and forwards rendering to [annotate_typst()].
+#'
+#' @inheritParams annotate_typst
+#' @param latex_math_code LaTeX math source string. Outer `$...$` or `$$...$$`
+#'   delimiters are optional and are normalized before conversion.
+#' @return A `ggplot2` layer.
+#' @export
 annotate_math_mitex <- function(
   latex_math_code,
   x,
