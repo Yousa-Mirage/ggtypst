@@ -92,15 +92,6 @@ validate_no_unescaped_dollar <- function(core, arg = "math_code") {
   core
 }
 
-escape_typst_string <- function(x) {
-  x <- gsub("\\", "\\\\", x, fixed = TRUE)
-  x <- gsub("\"", "\\\"", x, fixed = TRUE)
-  x <- gsub("\n", "\\n", x, fixed = TRUE)
-  x <- gsub("\r", "\\r", x, fixed = TRUE)
-  x <- gsub("\t", "\\t", x, fixed = TRUE)
-  x
-}
-
 as_latex_math_code <- function(latex_code) {
   latex_code <- check_single_string(latex_code, "latex_math_code", allow_null = FALSE)
   core <- unwrap_math_dollar_delimiters(latex_code)

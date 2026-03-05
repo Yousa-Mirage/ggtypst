@@ -97,8 +97,3 @@ test_that("as_latex_math_code rejects inline unescaped dollars", {
   )
   expect_equal(as_latex_math_code(r"(\\$100 + x)"), r"(\\$100 + x)")
 })
-
-test_that("escape_typst_string escapes typst string literal characters", {
-  x <- "a\\b\"c\n\t"
-  expect_equal(escape_typst_string(x), "a\\\\b\\\"c\\n\\t")
-})

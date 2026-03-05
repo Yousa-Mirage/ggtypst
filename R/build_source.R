@@ -86,7 +86,6 @@ convert_latex_to_typst <- function(latex_code) {
   }
 
   converted <- check_single_string(converted$typst_code, "converted", allow_null = FALSE)
-  converted <- escape_typst_string(converted)
 
   paste(
     c(
