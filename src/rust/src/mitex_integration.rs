@@ -6,12 +6,7 @@ use mitex_spec_gen::DEFAULT_SPEC;
 
 use crate::error::RenderError;
 
-const TYPST_DEFAULT_PREAMBLE: &str = concat!(
-    "#set page(width: auto, height: auto, margin: 0.1em, fill: none)\n",
-    "#set text(top-edge: \"bounds\", bottom-edge: \"bounds\")"
-);
-
-static MITEX_ALIAS_PRELUDE: LazyLock<String> = LazyLock::new(build_mitex_alias_prelude);
+pub static MITEX_ALIAS_PRELUDE: LazyLock<String> = LazyLock::new(build_mitex_alias_prelude);
 
 // Build preludes
 // This part of code is from `mitex-rs/mitex/crates/mitex-cli/main.rs`.
@@ -49,16 +44,9 @@ fn build_mitex_alias_prelude() -> String {
         .join("\n")
 }
 
-pub fn convert_latex_to_typst_source(latex_code: &str) -> Result<String, RenderError> {
-    let converted = mitex::convert_math(latex_code, None)
-        .map_err(|message| RenderError::MitexConversionFailed { message })?;
-
-    Ok(format!(
-        "{preamble}\n#import \"/specs/mod.typ\": mitex-scope\n{alias_prelude}\n$ {converted} $",
-        preamble = TYPST_DEFAULT_PREAMBLE,
-        alias_prelude = MITEX_ALIAS_PRELUDE.as_str(),
-        converted = converted
-    ))
+pub fn convert_latex_to_typst(latex_code: &str) -> Result<String, RenderError> {
+    mitex::convert_math(latex_code, None)
+        .map_err(|message| RenderError::MitexConversionFailed { message })
 }
 
 #[cfg(test)]
@@ -80,15 +68,14 @@ mod tests {
     }
 
     #[test]
-    fn test_convert_latex_to_typst_source_wraps_with_mitex_scope() {
-        let result = convert_latex_to_typst_source(r#"\frac{1}{2}"#);
+    fn test_convert_latex_to_typst_fragment_returns_raw_fragment() {
+        let fragment = convert_latex_to_typst(r#"\frac{1}{2}"#)
+            .expect("valid latex should convert successfully");
 
-        let Ok(source) = result else {
-            panic!("valid latex should convert successfully: {result:?}");
-        };
-
-        assert!(source.contains(r#"#import "/specs/mod.typ": mitex-scope"#));
-        assert!(source.contains(r#"#let mitexsqrt = mitex-scope.at("mitexsqrt", default: none)"#));
-        assert!(source.contains("$ frac(1 ,2 ) $"));
+        assert_eq!(fragment, "frac(1 ,2 )");
+        assert!(
+            !fragment.contains("#import"),
+            "fragment conversion should not include import prelude"
+        );
     }
 }

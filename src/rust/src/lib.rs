@@ -7,18 +7,9 @@ mod render;
 mod world;
 
 #[extendr]
-fn typst_svg_impl(source_code: &str, is_latex: bool) -> List {
-    let source_code = if is_latex {
-        match mitex_integration::convert_latex_to_typst_source(source_code) {
-            Ok(source) => source,
-            Err(err) => return err.to_typst_error(),
-        }
-    } else {
-        source_code.to_string()
-    };
-
+fn rs_typst_svg(typst_code: &str) -> List {
     let fonts = fonts::get_fonts();
-    let world = world::InMemoryWorld::new(source_code, fonts);
+    let world = world::InMemoryWorld::new(typst_code.to_string(), fonts);
 
     match world.compile_to_svg() {
         Ok(rendered_svg) => rendered_svg.to_r_list(),
@@ -26,10 +17,25 @@ fn typst_svg_impl(source_code: &str, is_latex: bool) -> List {
     }
 }
 
+#[extendr]
+fn rs_convert_latex_to_typst(latex_code: &str) -> List {
+    match mitex_integration::convert_latex_to_typst(latex_code) {
+        Ok(typst_code) => list!(typst_code = typst_code),
+        Err(err) => err.to_typst_error(),
+    }
+}
+
+#[extendr]
+fn rs_mitex_alias_prelude() -> String {
+    mitex_integration::MITEX_ALIAS_PRELUDE.clone()
+}
+
 // Macro to generate exports.
 // This ensures exported functions are registered with R.
 // See corresponding C code in `entrypoint.c`.
 extendr_module! {
     mod ggtypst;
-    fn typst_svg_impl;
+    fn rs_typst_svg;
+    fn rs_convert_latex_to_typst;
+    fn rs_mitex_alias_prelude;
 }

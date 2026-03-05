@@ -91,10 +91,10 @@ impl World for InMemoryWorld {
 }
 
 impl InMemoryWorld {
-    pub fn new(typst_src: String, fonts: Arc<Fonts>) -> Self {
+    pub fn new(typst_code: String, fonts: Arc<Fonts>) -> Self {
         let main = FileId::new_fake(VirtualPath::new("<ggtypst>"));
-        let source = Source::new(main, typst_src.clone());
-        let bytes = Bytes::from_string(typst_src);
+        let source = Source::new(main, typst_code.clone());
+        let bytes = Bytes::from_string(typst_code);
         let library = LazyHash::new(Library::builder().build());
         let book = LazyHash::new(fonts.book.clone());
 
