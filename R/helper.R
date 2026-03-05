@@ -80,15 +80,26 @@ unwrap_math_dollar_delimiters <- function(typst_code) {
   trimmed
 }
 
-as_typst_math_code <- function(typst_code) {
-  core <- unwrap_math_dollar_delimiters(typst_code)
-
+validate_no_unescaped_dollar <- function(core, arg = "math_code") {
   if (grepl("(?<!\\\\)\\$", core, perl = TRUE)) {
     cli::cli_abort(c(
       "Invalid math input: Unexpected unescaped `$` found inside the code.",
+      "x" = "Offending argument: {.arg {arg}}.",
       "i" = "If you want to use a literal dollar sign, escape it as `\\$`."
     ))
   }
+
+  core
+}
+
+as_latex_math_code <- function(latex_code) {
+  core <- unwrap_math_dollar_delimiters(latex_code)
+  validate_no_unescaped_dollar(core, arg = "latex_code")
+}
+
+as_typst_math_code <- function(typst_code) {
+  core <- unwrap_math_dollar_delimiters(typst_code)
+  validate_no_unescaped_dollar(core, arg = "typst_code")
 
   sprintf("$ %s $", core)
 }
