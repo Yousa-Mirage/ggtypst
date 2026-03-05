@@ -4,12 +4,10 @@
 \alias{typst_svg}
 \title{Render Typst Source to SVG Bytes}
 \usage{
-typst_svg(text, is_latex = FALSE)
+typst_svg(text)
 }
 \arguments{
 \item{text}{Typst source code to compile.}
-
-\item{is_latex}{Whether the input text is LaTeX code that should be translated by Mitex.}
 }
 \value{
 A list with fields \code{svg}, \code{width_pt}, \code{height_pt}, and \code{warnings}.
