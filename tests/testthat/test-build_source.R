@@ -70,10 +70,14 @@ test_that("convert_latex_to_typst returns mitex-ready typst code", {
   expect_match(src, r"(#import "/specs/mod.typ": mitex-scope)", fixed = TRUE)
   expect_match(
     src,
-    r"(#let mitexsqrt = mitex-scope.at("mitexsqrt", default: none))",
+    r"(#let _ggtypst_mitex_expr = ")",
     fixed = TRUE
   )
-  expect_true(grepl("\\$ .*frac\\(", src))
+  expect_match(
+    src,
+    r"(#eval("$ " + _ggtypst_mitex_expr + " $", scope: mitex-scope))",
+    fixed = TRUE
+  )
 })
 
 test_that("convert_latex_to_typst normalizes outer dollar wrappers", {
@@ -90,4 +94,12 @@ test_that("convert_latex_to_typst reports mitex conversion errors", {
     convert_latex_to_typst(r"(\end{})"),
     "MiTeX conversion failed"
   )
+})
+
+test_that("convert_latex_to_typst supports matrix environments without alias", {
+  src <- convert_latex_to_typst(
+    r"(\begin{pmatrix}1 & 2 \\ 3 & 4\end{pmatrix})"
+  )
+
+  expect_no_error(typst_svg(build_typst_source(src)))
 })

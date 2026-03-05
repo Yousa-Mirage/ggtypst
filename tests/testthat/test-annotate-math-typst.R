@@ -1,7 +1,7 @@
 test_that("annotate_math_typst visual stability and delimiter normalization", {
   skip_if_not_installed("vdiffr")
 
-  huge_math_code <- r"(
+  huge_typst_math_code <- r"(
     cal(F)(s) = integral_(-oo)^(+oo) ( sum_(n=1)^oo ((-1)^(n-1) x^(2n)) / ((2n)!) ) / ( root(3, lim_(k->oo) product_(j=1)^k (1 - 1/p_j^2) + (alpha^2)/(beta^3) ) ) e^(-2 pi i s x) dif x + mat(
       sum_(i=1)^n i^3 = ( (n(n+1)) / 2 )^2,
       underbrace(a_1 + a_2 + dots.c + a_k, text("Total: ") k text(" terms"));
@@ -18,13 +18,13 @@ test_that("annotate_math_typst visual stability and delimiter normalization", {
     ggplot2::coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
     ggplot2::theme_minimal(base_size = 11) +
     annotate_math_typst(
-      typst_math_code = "sum_(i=1)^n i = (n(n+1))/2",
+      typst_math_code = r"(sum_(i=1)^n i = (n(n+1))/2)",
       x = 2.0,
       y = 33,
       size = 13
     ) +
     annotate_math_typst(
-      typst_math_code = "$$ a^2 + b^2 = c^2 $$",
+      typst_math_code = r"($$ a^2 + b^2 = c^2 $$)",
       x = 5,
       y = 32,
       size = 13,
@@ -33,7 +33,7 @@ test_that("annotate_math_typst visual stability and delimiter normalization", {
       color = "#D20F39"
     ) +
     annotate_math_typst(
-      typst_math_code = "$ e^(i pi) + 1 = 0 $",
+      typst_math_code = r"($ e^(i pi) + 1 = 0 $)",
       x = 5.3,
       y = 12.4,
       hjust = 1,
@@ -43,7 +43,7 @@ test_that("annotate_math_typst visual stability and delimiter normalization", {
       alpha = 0.2
     ) +
     annotate_math_typst(
-      typst_math_code = huge_math_code,
+      typst_math_code = huge_typst_math_code,
       x = 3.6,
       y = 20,
       size = 15
@@ -53,7 +53,7 @@ test_that("annotate_math_typst visual stability and delimiter normalization", {
 })
 
 test_that("annotate_math_typst normalization yields equivalent layer parameters", {
-  base_code <- "a^2 + b^2 = c^2"
+  base_code <- r"(a^2 + b^2 = c^2)"
 
   layer_plain <- annotate_math_typst(
     base_code,
@@ -68,7 +68,7 @@ test_that("annotate_math_typst normalization yields equivalent layer parameters"
   )
 
   layer_wrapped <- annotate_math_typst(
-    "$$ a^2 + b^2 = c^2 $$",
+    r"($$ a^2 + b^2 = c^2 $$)",
     x = 3.0,
     y = 28.0,
     hjust = 1,
@@ -80,7 +80,7 @@ test_that("annotate_math_typst normalization yields equivalent layer parameters"
   )
 
   layer_typst <- annotate_typst(
-    "$ a^2 + b^2 = c^2 $",
+    r"($ a^2 + b^2 = c^2 $)",
     x = 3.0,
     y = 28.0,
     hjust = 1,
