@@ -135,7 +135,7 @@ test_that("annotate_math_typst visual stability and delimiter normalization", {
     ) +
     annotate_math_typst(
       typst_math_code = huge_math_code,
-      x = 3.5,
+      x = 3.6,
       y = 20,
       size = 15
     )
