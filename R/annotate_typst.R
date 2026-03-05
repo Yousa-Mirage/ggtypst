@@ -14,7 +14,7 @@
 #' @param family Optional text font family.
 #' @param math_family Optional font family for math equations.
 #' @param angle Optional text angle in degrees.
-#' @return A `ggplot2` layer created by [ggplot2::annotation_custom()].
+#' @return A `ggplot2` layer.
 #' @export
 annotate_typst <- function(
   typst_code,
@@ -31,6 +31,7 @@ annotate_typst <- function(
   math_family = NULL,
   angle = NULL
 ) {
+  typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
   x <- check_number(x, "x", allow_null = FALSE)
   y <- check_number(y, "y", allow_null = FALSE)
   hjust <- check_number(hjust, "hjust", allow_null = FALSE)
@@ -70,4 +71,48 @@ annotate_typst <- function(
   )
 
   ggplot2::annotation_custom(grob, xmin = x, xmax = x, ymin = y, ymax = y)
+}
+
+#' Annotate a Plot with Typst Math
+#'
+#' Wraps `typst_code` in math delimiters and forwards to [annotate_typst()].
+#' If `typst_code` is already wrapped with outer `$...$` or `$$...$$`, the outer
+#' delimiters are removed before wrapping again.
+#'
+#' @inheritParams annotate_typst
+#' @param typst_math_code Typst source code representing math content. It will be
+#'   wrapped in `$ ... $` before rendering.
+#' @return A `ggplot2` layer.
+#' @export
+annotate_math_typst <- function(
+  typst_math_code,
+  x,
+  y,
+  hjust = 0.5,
+  vjust = 0.5,
+  scale = 1,
+  dpi = 300,
+  size = NULL,
+  alpha = NULL,
+  color = NULL,
+  math_family = NULL,
+  angle = NULL
+) {
+  typst_math_code <- check_single_string(typst_math_code, "typst_math_code", allow_null = FALSE)
+  typst_math_code <- as_typst_math_code(typst_math_code)
+
+  annotate_typst(
+    typst_math_code,
+    x = x,
+    y = y,
+    hjust = hjust,
+    vjust = vjust,
+    scale = scale,
+    dpi = dpi,
+    size = size,
+    alpha = alpha,
+    color = color,
+    math_family = math_family,
+    angle = angle
+  )
 }

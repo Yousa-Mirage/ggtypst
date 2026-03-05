@@ -54,3 +54,28 @@ test_that("format_typst_number returns compact, stable numeric strings", {
   expect_equal(format_typst_number(0.000001), "0.000001")
   expect_equal(format_typst_number(1000000), "1000000")
 })
+
+test_that("unwrap_math_dollar_delimiters unwraps only outer math delimiters", {
+  expect_equal(unwrap_math_dollar_delimiters("x^2 + y^2"), "x^2 + y^2")
+  expect_equal(unwrap_math_dollar_delimiters("$ x^2 + y^2 $"), "x^2 + y^2")
+  expect_equal(unwrap_math_dollar_delimiters("$$ x^2 + y^2 $$"), "x^2 + y^2")
+  expect_equal(
+    unwrap_math_dollar_delimiters("\n  $$ x^2 + y^2 $$  \n"),
+    "x^2 + y^2"
+  )
+})
+
+test_that("as_typst_math_code always returns single-dollar wrapped math", {
+  expect_math <- "$ x^2 + y^2 $"
+  expect_equal(as_typst_math_code("x^2 + y^2"), expect_math)
+  expect_equal(as_typst_math_code("$ x^2 + y^2 $"), expect_math)
+  expect_equal(as_typst_math_code("$$ x^2 + y^2 $$"), expect_math)
+})
+
+test_that("as_typst_math_code process inline $ correctly", {
+  expect_error(as_typst_math_code("$x$ + $y$"), "Invalid math input")
+  expect_error(as_typst_math_code("$"), "Invalid math input")
+  expect_error(as_typst_math_code(" $$ x $ y $$ "), "Invalid math input")
+
+  expect_equal(as_typst_math_code(r"(x + \$y\$)"), "$ x + \\$y\\$ $")
+})

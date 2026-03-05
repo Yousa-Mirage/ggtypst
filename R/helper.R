@@ -62,3 +62,33 @@ format_typst_number <- function(x) {
   out <- sub("\\.?0+$", "", out)
   out
 }
+
+unwrap_math_dollar_delimiters <- function(typst_code) {
+  trimmed <- trimws(typst_code)
+  n <- nchar(trimmed)
+
+  if (n < 2L) {
+    return(trimmed)
+  }
+  if (n >= 4L && startsWith(trimmed, "$$") && endsWith(trimmed, "$$")) {
+    return(trimws(substr(trimmed, 3L, n - 2L)))
+  }
+  if (startsWith(trimmed, "$") && endsWith(trimmed, "$")) {
+    return(trimws(substr(trimmed, 2L, n - 1L)))
+  }
+
+  trimmed
+}
+
+as_typst_math_code <- function(typst_code) {
+  core <- unwrap_math_dollar_delimiters(typst_code)
+
+  if (grepl("(?<!\\\\)\\$", core, perl = TRUE)) {
+    cli::cli_abort(c(
+      "Invalid math input: Unexpected unescaped `$` found inside the code.",
+      "i" = "If you want to use a literal dollar sign, escape it as `\\$`."
+    ))
+  }
+
+  sprintf("$ %s $", core)
+}
