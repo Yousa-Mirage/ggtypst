@@ -23,5 +23,5 @@ document:
     Rscript -e "devtools::document()"
 
 test:
-    TESTTHAT_CPUS=4 Rscript -e "devtools::test()"
-    cargo test --manifest-path src/rust/Cargo.toml
+    TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"
+    cargo test --quiet --manifest-path src/rust/Cargo.toml

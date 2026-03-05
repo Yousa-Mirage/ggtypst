@@ -119,6 +119,8 @@ test_that("annotate_math_typst visual stability and delimiter normalization", {
       x = 5,
       y = 32,
       size = 13,
+      scale = 1.5,
+      angle = -30,
       color = "#D20F39"
     ) +
     annotate_math_typst(
