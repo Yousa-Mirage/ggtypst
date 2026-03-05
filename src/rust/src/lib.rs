@@ -18,10 +18,10 @@ fn rs_typst_svg(typst_code: &str) -> List {
 }
 
 #[extendr]
-fn rs_convert_latex_to_typst(latex_code: &str) -> List {
+fn rs_convert_latex_to_typst(latex_code: &str) -> Robj {
     match mitex::convert_latex_to_typst(latex_code) {
-        Ok(typst_code) => list!(typst_code = typst_code),
-        Err(err) => err.to_typst_error(),
+        Ok(typst_code) => r!(typst_code),
+        Err(err) => err.to_typst_error().into_robj(),
     }
 }
 

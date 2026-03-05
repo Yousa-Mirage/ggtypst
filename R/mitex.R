@@ -14,7 +14,7 @@ convert_latex_to_typst <- function(latex_code) {
     abort_typst_error(converted)
   }
 
-  converted <- check_single_string(converted$typst_code, "converted", allow_null = FALSE)
+  converted <- check_single_string(converted, "converted", allow_null = FALSE)
 
   paste(
     c(

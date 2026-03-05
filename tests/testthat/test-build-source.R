@@ -63,6 +63,8 @@ test_that("build_typst_source validates arguments", {
 })
 
 test_that("convert_latex_to_typst returns mitex-ready typst code", {
+  expect_type(rs_convert_latex_to_typst(r"(\frac{1}{2})"), "character")
+
   src <- convert_latex_to_typst(r"(\frac{1}{2} + \sqrt{3})")
 
   expect_type(src, "character")
