@@ -79,7 +79,7 @@ fn has_visual_content(frame: &typst::layout::Frame) -> bool {
 mod tests {
     use super::*;
     use crate::fonts;
-    use crate::mitex_integration;
+    use crate::mitex;
     use crate::world::InMemoryWorld;
     use typst::layout::{Abs, Frame, GroupItem, Point, Size};
     use typst::syntax::Span;
@@ -91,7 +91,7 @@ mod tests {
     }
 
     fn compile_latex(latex_source: &str) -> Result<RenderedSvg, RenderError> {
-        let fragment = mitex_integration::convert_latex_to_typst(latex_source)?;
+        let fragment = mitex::convert_latex_to_typst(latex_source)?;
         let typst_source = format!(
             "{import}\n{let_expr}\n{eval_expr}",
             import = r#"#import "/specs/mod.typ": mitex-scope"#,

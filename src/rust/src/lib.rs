@@ -2,7 +2,7 @@ use extendr_api::prelude::*;
 
 mod error;
 mod fonts;
-mod mitex_integration;
+mod mitex;
 mod render;
 mod world;
 
@@ -19,7 +19,7 @@ fn rs_typst_svg(typst_code: &str) -> List {
 
 #[extendr]
 fn rs_convert_latex_to_typst(latex_code: &str) -> List {
-    match mitex_integration::convert_latex_to_typst(latex_code) {
+    match mitex::convert_latex_to_typst(latex_code) {
         Ok(typst_code) => list!(typst_code = typst_code),
         Err(err) => err.to_typst_error(),
     }
