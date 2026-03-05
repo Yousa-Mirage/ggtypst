@@ -40,6 +40,7 @@ pub enum RenderError {
     CompilationFailed { diagnostics: Vec<RenderDiagnostic> },
     NoPagesGenerated,
     EmptySvg,
+    MitexConversionFailed { message: String },
 }
 
 impl std::error::Error for RenderError {}
@@ -50,6 +51,7 @@ impl RenderError {
             RenderError::CompilationFailed { .. } => "CompilationFailed",
             RenderError::NoPagesGenerated => "NoPagesGenerated",
             RenderError::EmptySvg => "EmptySvg",
+            RenderError::MitexConversionFailed { .. } => "MitexConversionFailed",
         }
     }
 
@@ -58,6 +60,7 @@ impl RenderError {
             RenderError::CompilationFailed { diagnostics } => diagnostics_to_r_list(diagnostics),
             RenderError::NoPagesGenerated => List::new(0),
             RenderError::EmptySvg => List::new(0),
+            RenderError::MitexConversionFailed { .. } => List::new(0),
         };
 
         let mut err = list!(
@@ -78,6 +81,9 @@ impl std::fmt::Display for RenderError {
             RenderError::CompilationFailed { .. } => write!(f, "Typst compilation failed"),
             RenderError::NoPagesGenerated => write!(f, "Typst compilation produced no pages"),
             RenderError::EmptySvg => write!(f, "Typst rendered an empty SVG"),
+            RenderError::MitexConversionFailed { message } => {
+                write!(f, "MiTeX conversion failed: {message}")
+            }
         }
     }
 }
@@ -117,6 +123,12 @@ mod tests {
                 "Typst compilation produced no pages",
             ),
             (RenderError::EmptySvg, "Typst rendered an empty SVG"),
+            (
+                RenderError::MitexConversionFailed {
+                    message: "unknown command".to_string(),
+                },
+                "MiTeX conversion failed: unknown command",
+            ),
         ];
 
         for (error, expected_message) in errors {
@@ -135,5 +147,12 @@ mod tests {
         );
         assert_eq!(RenderError::NoPagesGenerated.kind(), "NoPagesGenerated");
         assert_eq!(RenderError::EmptySvg.kind(), "EmptySvg");
+        assert_eq!(
+            RenderError::MitexConversionFailed {
+                message: "x".to_string(),
+            }
+            .kind(),
+            "MitexConversionFailed"
+        );
     }
 }

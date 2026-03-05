@@ -79,6 +79,7 @@ fn has_visual_content(frame: &typst::layout::Frame) -> bool {
 mod tests {
     use super::*;
     use crate::fonts;
+    use crate::mitex_integration;
     use crate::world::InMemoryWorld;
     use typst::layout::{Abs, Frame, GroupItem, Point, Size};
     use typst::syntax::Span;
@@ -87,6 +88,11 @@ mod tests {
     fn compile_source(source: &str) -> Result<RenderedSvg, RenderError> {
         let world = InMemoryWorld::new(source.to_string(), fonts::get_fonts());
         world.compile_to_svg()
+    }
+
+    fn compile_latex(latex_source: &str) -> Result<RenderedSvg, RenderError> {
+        let typst_source = mitex_integration::convert_latex_to_typst_source(latex_source)?;
+        compile_source(&typst_source)
     }
 
     #[test]
@@ -136,6 +142,29 @@ mod tests {
             }
             other => panic!("expected compilation failure, got: {other:?}"),
         }
+    }
+
+    #[test]
+    fn test_compile_to_svg_supports_latex_formula_via_mitex() {
+        let result = compile_latex(r#"\frac{1}{2} + \sqrt{3}"#);
+
+        let Ok(rendered) = result else {
+            panic!("latex formula should render successfully: {result:?}");
+        };
+
+        assert!(!rendered.svg.is_empty(), "rendered svg should not be empty");
+        assert!(rendered.width_pt > 0.0, "width should be positive");
+        assert!(rendered.height_pt > 0.0, "height should be positive");
+    }
+
+    #[test]
+    fn test_compile_to_svg_returns_mitex_error_for_invalid_latex() {
+        let result = compile_latex(r#"\end{}"#);
+
+        assert!(
+            matches!(result, Err(RenderError::MitexConversionFailed { .. })),
+            "expected MiTeX conversion failure, got: {result:?}"
+        );
     }
 
     #[test]

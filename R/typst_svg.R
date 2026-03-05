@@ -5,10 +5,11 @@
 #' diagnostics and hints.
 #'
 #' @param text Typst source code to compile.
+#' @param is_latex Whether the input text is LaTeX code that should be translated by Mitex.
 #' @return A list with fields `svg`, `width_pt`, `height_pt`, and `warnings`.
 #' @export
-typst_svg <- function(text) {
-  result <- typst_svg_impl(text)
+typst_svg <- function(text, is_latex = FALSE) {
+  result <- typst_svg_impl(text, is_latex)
 
   if (inherits(result, "typst_error")) {
     abort_typst_error(result)

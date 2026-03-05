@@ -10,7 +10,7 @@
 #' @useDynLib ggtypst, .registration = TRUE
 NULL
 
-typst_svg_impl <- function(source_code) .Call(wrap__typst_svg_impl, source_code)
+typst_svg_impl <- function(source_code, is_latex) .Call(wrap__typst_svg_impl, source_code, is_latex)
 
 
 # nolint end
