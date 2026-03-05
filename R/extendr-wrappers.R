@@ -14,7 +14,5 @@ rs_typst_svg <- function(typst_code) .Call(wrap__rs_typst_svg, typst_code)
 
 rs_convert_latex_to_typst <- function(latex_code) .Call(wrap__rs_convert_latex_to_typst, latex_code)
 
-rs_mitex_alias_prelude <- function() .Call(wrap__rs_mitex_alias_prelude)
-
 
 # nolint end

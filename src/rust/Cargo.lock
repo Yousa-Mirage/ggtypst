@@ -715,7 +715,6 @@ dependencies = [
  "chrono",
  "extendr-api",
  "mitex",
- "mitex-spec-gen",
  "typst",
  "typst-kit",
  "typst-svg",

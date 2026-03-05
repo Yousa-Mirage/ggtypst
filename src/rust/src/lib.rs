@@ -25,11 +25,6 @@ fn rs_convert_latex_to_typst(latex_code: &str) -> List {
     }
 }
 
-#[extendr]
-fn rs_mitex_alias_prelude() -> String {
-    mitex_integration::MITEX_ALIAS_PRELUDE.clone()
-}
-
 // Macro to generate exports.
 // This ensures exported functions are registered with R.
 // See corresponding C code in `entrypoint.c`.
@@ -37,5 +32,4 @@ extendr_module! {
     mod ggtypst;
     fn rs_typst_svg;
     fn rs_convert_latex_to_typst;
-    fn rs_mitex_alias_prelude;
 }

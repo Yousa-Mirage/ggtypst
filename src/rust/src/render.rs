@@ -93,9 +93,10 @@ mod tests {
     fn compile_latex(latex_source: &str) -> Result<RenderedSvg, RenderError> {
         let fragment = mitex_integration::convert_latex_to_typst(latex_source)?;
         let typst_source = format!(
-            "#import \"/specs/mod.typ\": mitex-scope\n{}\n$ {} $",
-            mitex_integration::MITEX_ALIAS_PRELUDE.as_str(),
-            fragment
+            "{import}\n{let_expr}\n{eval_expr}",
+            import = r#"#import "/specs/mod.typ": mitex-scope"#,
+            let_expr = format!(r#"#let _ggtypst_mitex_expr = "{}""#, fragment),
+            eval_expr = r#"#eval("$ " + _ggtypst_mitex_expr + " $", scope: mitex-scope)"#
         );
         compile_source(&typst_source)
     }
