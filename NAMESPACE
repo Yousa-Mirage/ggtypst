@@ -3,5 +3,4 @@
 export(annotate_math_mitex)
 export(annotate_math_typst)
 export(annotate_typst)
-export(typst_svg)
 useDynLib(ggtypst, .registration = TRUE)

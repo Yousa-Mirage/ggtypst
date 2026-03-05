@@ -6,7 +6,6 @@
 #'
 #' @param text Typst source code to compile.
 #' @return A list with fields `svg`, `width_pt`, `height_pt`, and `warnings`.
-#' @export
 typst_svg <- function(text) {
   result <- rs_typst_svg(text)
 
