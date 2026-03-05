@@ -98,8 +98,49 @@ annotate_math_typst <- function(
   math_family = NULL,
   angle = NULL
 ) {
-  typst_math_code <- check_single_string(typst_math_code, "typst_math_code", allow_null = FALSE)
   typst_math_code <- as_typst_math_code(typst_math_code)
+
+  annotate_typst(
+    typst_math_code,
+    x = x,
+    y = y,
+    hjust = hjust,
+    vjust = vjust,
+    scale = scale,
+    dpi = dpi,
+    size = size,
+    alpha = alpha,
+    color = color,
+    math_family = math_family,
+    angle = angle
+  )
+}
+
+#' Annotate a Plot with MiTeX-Converted LaTeX Math
+#'
+#' Converts LaTeX math input to Typst math source with [convert_latex_to_typst()]
+#' and forwards rendering to [annotate_typst()].
+#'
+#' @inheritParams annotate_typst
+#' @param latex_math_code LaTeX math source string. Outer `$...$` or `$$...$$`
+#'   delimiters are optional and are normalized before conversion.
+#' @return A `ggplot2` layer.
+#' @export
+annotate_math_mitex <- function(
+  latex_math_code,
+  x,
+  y,
+  hjust = 0.5,
+  vjust = 0.5,
+  scale = 1,
+  dpi = 300,
+  size = NULL,
+  alpha = NULL,
+  color = NULL,
+  math_family = NULL,
+  angle = NULL
+) {
+  typst_math_code <- convert_latex_to_typst(latex_math_code)
 
   annotate_typst(
     typst_math_code,

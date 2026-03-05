@@ -61,3 +61,47 @@ test_that("build_typst_source validates arguments", {
     "invalid color"
   )
 })
+
+test_that("convert_latex_to_typst returns mitex-ready typst code", {
+  expect_type(rs_convert_latex_to_typst(r"(\frac{1}{2})"), "character")
+
+  src <- convert_latex_to_typst(r"(\frac{1}{2} + \sqrt{3})")
+
+  expect_type(src, "character")
+  expect_length(src, 1)
+  expect_match(src, r"(#import "/specs/mod.typ": mitex-scope)", fixed = TRUE)
+  expect_match(
+    src,
+    r"(#let _ggtypst_mitex_expr = ")",
+    fixed = TRUE
+  )
+  expect_match(
+    src,
+    r"(#eval("$ " + _ggtypst_mitex_expr + " $", scope: mitex-scope))",
+    fixed = TRUE
+  )
+})
+
+test_that("convert_latex_to_typst normalizes outer dollar wrappers", {
+  bare <- convert_latex_to_typst(r"(\frac{1}{2})")
+  single <- convert_latex_to_typst(r"($ \frac{1}{2} $)")
+  double <- convert_latex_to_typst(r"($$ \frac{1}{2} $$)")
+
+  expect_equal(single, bare)
+  expect_equal(double, bare)
+})
+
+test_that("convert_latex_to_typst reports mitex conversion errors", {
+  expect_error(
+    convert_latex_to_typst(r"(\end{})"),
+    "MiTeX conversion failed"
+  )
+})
+
+test_that("convert_latex_to_typst supports matrix environments without alias", {
+  src <- convert_latex_to_typst(
+    r"(\begin{pmatrix}1 & 2 \\ 3 & 4\end{pmatrix})"
+  )
+
+  expect_no_error(typst_svg(build_typst_source(src)))
+})

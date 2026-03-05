@@ -79,3 +79,21 @@ test_that("as_typst_math_code process inline $ correctly", {
 
   expect_equal(as_typst_math_code(r"(x + \$y\$)"), "$ x + \\$y\\$ $")
 })
+
+test_that("as_latex_math_code normalizes outer delimiters", {
+  expect_equal(as_latex_math_code("\\frac{1}{2}"), "\\frac{1}{2}")
+  expect_equal(as_latex_math_code("$ \\frac{1}{2} $"), "\\frac{1}{2}")
+  expect_equal(as_latex_math_code("$$ \\frac{1}{2} $$"), "\\frac{1}{2}")
+  expect_equal(
+    as_latex_math_code("\n $$ \\sqrt{3} $$ \n"),
+    "\\sqrt{3}"
+  )
+})
+
+test_that("as_latex_math_code rejects inline unescaped dollars", {
+  expect_error(
+    as_latex_math_code("\\$100 + $x$"),
+    "Invalid math input"
+  )
+  expect_equal(as_latex_math_code(r"(\\$100 + x)"), r"(\\$100 + x)")
+})
