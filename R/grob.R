@@ -1,18 +1,44 @@
-#' Build a grid grob from rendered Typst output
-#'
-#' Wraps the imported vector picture in a lightweight gTree with explicit width
-#' and height methods so ggplot can place it consistently.
+#' Build a measured Typst grob for plot annotations
 #'
 #' @param rendered A rendered Typst result containing SVG bytes and dimensions.
 #' @param scale Scaling factor applied to rendered dimensions.
 #' @param hjust,vjust Horizontal and vertical justification values.
-#' @return A grid grob with class `"typst_grob"`.
+#' @return A grid grob with class `"typst_annotation_grob"`.
 #' @noRd
-typst_grob <- function(
+annotation_typst_grob <- function(
   rendered,
   scale = 1,
   hjust = 0.5,
   vjust = 0.5
+) {
+  positioned_typst_grob(
+    rendered,
+    scale = scale,
+    hjust = hjust,
+    vjust = vjust,
+    class = "typst_annotation_grob"
+  )
+}
+
+#' Build a positioned Typst grob from rendered output
+#'
+#' @param rendered A rendered Typst result containing SVG bytes and dimensions.
+#' @param x,y Position passed to [grImport2::pictureGrob()].
+#' @param default.units Grid units for numeric `x` and `y`.
+#' @param scale Scaling factor applied to rendered dimensions.
+#' @param hjust,vjust Horizontal and vertical justification values.
+#' @param class Optional extra class name prepended before `"typst_grob"`.
+#' @return A positioned measured Typst grob.
+#' @noRd
+positioned_typst_grob <- function(
+  rendered,
+  x = 0.5,
+  y = 0.5,
+  default.units = "npc",
+  scale = 1,
+  hjust = 0.5,
+  vjust = 0.5,
+  class = NULL
 ) {
   width_pt <- rendered$width_pt * scale
   height_pt <- rendered$height_pt * scale
@@ -20,6 +46,9 @@ typst_grob <- function(
   grob <- tryCatch(
     vector_typst_grob(
       svg = rendered$svg,
+      x = x,
+      y = y,
+      default.units = default.units,
       width_pt = width_pt,
       height_pt = height_pt,
       hjust = hjust,
@@ -33,12 +62,14 @@ typst_grob <- function(
     }
   )
 
-  grid::gTree(
+  out <- grid::gTree(
     children = grid::gList(grob),
     typst_width = grid::unit(width_pt, "pt"),
-    typst_height = grid::unit(height_pt, "pt"),
-    cl = "typst_grob"
+    typst_height = grid::unit(height_pt, "pt")
   )
+
+  class(out) <- unique(c(class, "typst_grob", class(out)))
+  out
 }
 
 #' Import Typst SVG output as a vector grob
@@ -47,11 +78,22 @@ typst_grob <- function(
 #' `pictureGrob` sized in points.
 #'
 #' @param svg Raw SVG bytes.
+#' @param x,y Position passed to [grImport2::pictureGrob()].
+#' @param default.units Grid units for numeric `x` and `y`.
 #' @param width_pt,height_pt Output dimensions in points.
 #' @param hjust,vjust Horizontal and vertical justification values.
 #' @return A `grImport2` picture grob.
 #' @noRd
-vector_typst_grob <- function(svg, width_pt, height_pt, hjust, vjust) {
+vector_typst_grob <- function(
+  svg,
+  x = 0.5,
+  y = 0.5,
+  default.units = "npc",
+  width_pt,
+  height_pt,
+  hjust,
+  vjust
+) {
   canonical_svg <- rsvg::rsvg_svg(svg)
 
   # TODO: Replace tempfile-based SVG import with an in-memory pipeline.
@@ -63,8 +105,11 @@ vector_typst_grob <- function(svg, width_pt, height_pt, hjust, vjust) {
 
   grImport2::pictureGrob(
     picture,
+    x = x,
+    y = y,
     width = grid::unit(width_pt, "pt"),
     height = grid::unit(height_pt, "pt"),
+    default.units = default.units,
     hjust = hjust,
     vjust = vjust,
     ext = "clipbbox"

@@ -66,6 +66,25 @@ check_bool <- function(x, arg, allow_null = TRUE) {
   x
 }
 
+#' Validate a supported size unit
+#'
+#' @param size.unit Size unit name.
+#' @param arg Argument name used in error messages.
+#' @return The validated size unit.
+#' @noRd
+check_size_unit <- function(size.unit, arg = "size.unit") {
+  if (
+    !is.character(size.unit) ||
+      length(size.unit) != 1 ||
+      is.na(size.unit) ||
+      !(size.unit %in% c("pt", "mm"))
+  ) {
+    cli::cli_abort("{.arg {arg}} must be one of \"pt\" or \"mm\".")
+  }
+
+  size.unit
+}
+
 #' Validate an alpha multiplier
 #'
 #' @param alpha Optional numeric alpha value in `[0, 1]`.
@@ -114,6 +133,96 @@ color_to_hex <- function(color, alpha = NULL) {
 format_typst_number <- function(x) {
   out <- sprintf("%.6f", x)
   out <- sub("\\.?0+$", "", out)
+  out
+}
+
+#' Convert text size to Typst points
+#'
+#' @param size Size value to convert.
+#' @param size.unit Unit of `size`, either `"pt"` or `"mm"`.
+#' @param arg Argument name used in error messages.
+#' @return A size in Typst points or `NULL`.
+#' @noRd
+convert_size_to_pt <- function(size, size.unit = "pt", arg = "size") {
+  size.unit <- check_size_unit(size.unit, arg = "size.unit")
+  size <- check_positive_number(size, arg = arg)
+
+  if (is.null(size)) {
+    NULL
+  } else if (size.unit == "mm") {
+    size * ggplot2::.pt
+  } else {
+    size
+  }
+}
+
+#' Normalize an optional scalar number
+#'
+#' @param x Value to normalize.
+#' @return A scalar number or `NULL`.
+#' @noRd
+normalize_optional_number <- function(x) {
+  if (is.null(x) || length(x) == 0 || is.na(x)) {
+    return(NULL)
+  }
+
+  as.numeric(x)
+}
+
+#' Normalize an optional scalar string
+#'
+#' @param x Value to normalize.
+#' @param empty_is_null Whether `""` should be treated as `NULL`.
+#' @return A scalar string or `NULL`.
+#' @noRd
+normalize_optional_string <- function(x, empty_is_null = FALSE) {
+  if (is.null(x) || length(x) == 0 || is.na(x)) {
+    return(NULL)
+  }
+
+  x <- as.character(x)
+  if (empty_is_null && identical(x, "")) {
+    return(NULL)
+  }
+
+  x
+}
+
+#' Resolve character justifications against panel coordinates
+#'
+#' @param just Character justifications.
+#' @param axis Numeric coordinates after transformation.
+#' @return Numeric justification values.
+#' @noRd
+compute_just <- function(just, axis) {
+  inward <- just == "inward"
+  just[inward] <- c("left", "middle", "right")[just_dir(axis[inward])]
+
+  outward <- just == "outward"
+  just[outward] <- c("right", "middle", "left")[just_dir(axis[outward])]
+
+  just_values <- c(
+    left = 0,
+    center = 0.5,
+    right = 1,
+    bottom = 0,
+    middle = 0.5,
+    top = 1
+  )[just]
+
+  unname(just_values)
+}
+
+#' Classify justification direction from panel coordinates
+#'
+#' @param axis Numeric coordinates after transformation.
+#' @param tol Tolerance around the panel center.
+#' @return Integer direction codes.
+#' @noRd
+just_dir <- function(axis, tol = 0.001) {
+  out <- rep(2L, length(axis))
+  out[axis < 0.5 - tol] <- 1L
+  out[axis > 0.5 + tol] <- 3L
   out
 }
 

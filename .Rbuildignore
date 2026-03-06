@@ -18,3 +18,4 @@
 ^air\.toml$
 ^\\.\\.Rcheck$
 ^[^/]+\\.xml$
+^Rplots\.pdf$
