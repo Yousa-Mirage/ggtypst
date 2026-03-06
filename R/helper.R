@@ -156,6 +156,76 @@ convert_size_to_pt <- function(size, size.unit = "pt", arg = "size") {
   }
 }
 
+#' Normalize an optional scalar number
+#'
+#' @param x Value to normalize.
+#' @return A scalar number or `NULL`.
+#' @noRd
+normalize_optional_number <- function(x) {
+  if (is.null(x) || length(x) == 0 || is.na(x)) {
+    return(NULL)
+  }
+
+  as.numeric(x)
+}
+
+#' Normalize an optional scalar string
+#'
+#' @param x Value to normalize.
+#' @param empty_is_null Whether `""` should be treated as `NULL`.
+#' @return A scalar string or `NULL`.
+#' @noRd
+normalize_optional_string <- function(x, empty_is_null = FALSE) {
+  if (is.null(x) || length(x) == 0 || is.na(x)) {
+    return(NULL)
+  }
+
+  x <- as.character(x)
+  if (empty_is_null && identical(x, "")) {
+    return(NULL)
+  }
+
+  x
+}
+
+#' Resolve character justifications against panel coordinates
+#'
+#' @param just Character justifications.
+#' @param axis Numeric coordinates after transformation.
+#' @return Numeric justification values.
+#' @noRd
+compute_just <- function(just, axis) {
+  inward <- just == "inward"
+  just[inward] <- c("left", "middle", "right")[just_dir(axis[inward])]
+
+  outward <- just == "outward"
+  just[outward] <- c("right", "middle", "left")[just_dir(axis[outward])]
+
+  just_values <- c(
+    left = 0,
+    center = 0.5,
+    right = 1,
+    bottom = 0,
+    middle = 0.5,
+    top = 1
+  )[just]
+
+  unname(just_values)
+}
+
+#' Classify justification direction from panel coordinates
+#'
+#' @param axis Numeric coordinates after transformation.
+#' @param tol Tolerance around the panel center.
+#' @return Integer direction codes.
+#' @noRd
+just_dir <- function(axis, tol = 0.001) {
+  out <- rep(2L, length(axis))
+  out[axis < 0.5 - tol] <- 1L
+  out[axis > 0.5 + tol] <- 3L
+  out
+}
+
 #' Remove outer math dollar delimiters
 #'
 #' @param typst_code A single math code string.

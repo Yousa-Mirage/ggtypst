@@ -92,10 +92,10 @@ GeomTypst <- ggplot2::ggproto(
 
     # Resolve justifications
     if (is.character(data$vjust)) {
-      data$vjust <- compute_typst_just(data$vjust, data$y)
+      data$vjust <- compute_just(data$vjust, data$y)
     }
     if (is.character(data$hjust)) {
-      data$hjust <- compute_typst_just(data$hjust, data$x)
+      data$hjust <- compute_just(data$hjust, data$x)
     }
 
     data$label <- as.character(data$label)
@@ -119,12 +119,12 @@ GeomTypst <- ggplot2::ggproto(
       x = data$x,
       y = data$y,
       size = data$size,
+      size.unit = size.unit,
       alpha = data$alpha,
       colour = data$colour,
       family = data$family,
       math_family = data$math_family,
       angle = data$angle,
-      size.unit = size.unit,
       hjust = data$hjust,
       vjust = data$vjust
     )
@@ -141,13 +141,13 @@ GeomTypst <- ggplot2::ggproto(
 #'
 #' @param label Raw Typst source code.
 #' @param x,y Position in transformed panel coordinates.
-#' @param size A ggplot2 text size in millimeters.
+#' @param size Text size interpreted according to `size.unit`.
+#' @param size.unit Unit used to interpret `size`.
 #' @param alpha Optional alpha multiplier.
 #' @param colour Optional text colour.
 #' @param family Optional text font family.
 #' @param math_family Optional math font family.
 #' @param angle Optional rotation angle in degrees.
-#' @param size.unit Unit used to interpret `size`.
 #' @param hjust,vjust Horizontal and vertical justification values.
 #' @return A positioned grob for the rendered label.
 #' @noRd
@@ -156,26 +156,26 @@ geom_typst_row_grob <- function(
   x,
   y,
   size,
+  size.unit,
   alpha,
   colour,
   family,
   math_family,
   angle,
-  size.unit,
   hjust,
   vjust
 ) {
   source <- build_typst_source(
     typst_code = label,
     size = convert_size_to_pt(
-      geom_typst_optional_number(size),
+      normalize_optional_number(size),
       size.unit = size.unit
     ),
-    alpha = geom_typst_optional_number(alpha),
-    color = geom_typst_optional_string(colour),
-    family = geom_typst_optional_string(family, empty_is_null = TRUE),
-    math_family = geom_typst_optional_string(math_family, empty_is_null = TRUE),
-    angle = geom_typst_optional_number(angle)
+    alpha = normalize_optional_number(alpha),
+    color = normalize_optional_string(colour),
+    family = normalize_optional_string(family, empty_is_null = TRUE),
+    math_family = normalize_optional_string(math_family, empty_is_null = TRUE),
+    angle = normalize_optional_number(angle)
   )
 
   rendered <- typst_svg(source)
@@ -189,72 +189,4 @@ geom_typst_row_grob <- function(
     vjust = vjust,
     class = "typst_label_grob"
   )
-}
-
-#' Normalize optional scalar numbers for geom_typst
-#'
-#' @param x Value to normalize.
-#' @return A scalar number or `NULL`.
-#' @noRd
-geom_typst_optional_number <- function(x) {
-  if (is.null(x) || length(x) == 0 || is.na(x)) {
-    return(NULL)
-  }
-  as.numeric(x)
-}
-
-#' Normalize optional scalar strings for geom_typst
-#'
-#' @param x Value to normalize.
-#' @param empty_is_null Whether `""` should be treated as `NULL`.
-#' @return A scalar string or `NULL`.
-#' @noRd
-geom_typst_optional_string <- function(x, empty_is_null = FALSE) {
-  if (is.null(x) || length(x) == 0 || is.na(x)) {
-    return(NULL)
-  }
-
-  x <- as.character(x)
-  if (empty_is_null && identical(x, "")) {
-    return(NULL)
-  }
-
-  x
-}
-
-#' Resolve text justification strings for geom_typst
-#'
-#' @param just Character justifications.
-#' @param axis Numeric coordinates after transformation.
-#' @return Numeric justification values.
-#' @noRd
-compute_typst_just <- function(just, axis) {
-  inward <- just == "inward"
-  just[inward] <- c("left", "middle", "right")[typst_just_dir(axis[inward])]
-
-  outward <- just == "outward"
-  just[outward] <- c("right", "middle", "left")[typst_just_dir(axis[outward])]
-
-  just_values <- c(
-    left = 0,
-    center = 0.5,
-    right = 1,
-    bottom = 0,
-    middle = 0.5,
-    top = 1
-  )[just]
-  unname(just_values)
-}
-
-#' Classify justification direction from panel coordinates
-#'
-#' @param axis Numeric coordinates after transformation.
-#' @param tol Tolerance around the panel center.
-#' @return Integer direction codes.
-#' @noRd
-typst_just_dir <- function(axis, tol = 0.001) {
-  out <- rep(2L, length(axis))
-  out[axis < 0.5 - tol] <- 1L
-  out[axis > 0.5 + tol] <- 3L
-  out
 }
