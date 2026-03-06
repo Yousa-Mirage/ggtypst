@@ -96,10 +96,7 @@ test_that("annotate_math_mitex normalization yields equivalent layer parameters"
 })
 
 test_that("annotate_math_mitex reports MiTeX conversion errors", {
-  expect_error(
-    annotate_math_mitex("\\end{}", x = 2, y = 20),
-    "MiTeX conversion failed"
-  )
+  expect_snapshot(annotate_math_mitex("\\end{}", x = 2, y = 20), error = TRUE)
 })
 
 test_that("annotate_math_mitex supports inline rendering mode", {

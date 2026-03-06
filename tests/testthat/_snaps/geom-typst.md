@@ -1,3 +1,11 @@
+# geom_typst converts mapped size according to size.unit
+
+    Code
+      geom_typst(label = "scale", size.unit = "px")
+    Condition
+      Error in `check_size_unit()`:
+      ! `size.unit` must be one of "pt" or "mm".
+
 # geom_typst reports row and label context for render failures
 
     Code

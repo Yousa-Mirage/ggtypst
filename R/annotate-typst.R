@@ -135,7 +135,23 @@ annotate_math_mitex <- function(
   angle = NULL,
   inline = FALSE
 ) {
-  typst_math_code <- convert_latex_to_typst(latex_math_code, inline = inline)
+  typst_math_code <- tryCatch(
+    convert_latex_to_typst(latex_math_code, inline = inline),
+    error = function(cnd) {
+      preview <- trimws(latex_math_code)
+      if (nchar(preview) > 80) {
+        preview <- paste0(substr(preview, 1, 77), "...")
+      }
+
+      cli::cli_abort(
+        c(
+          "Failed to convert LaTeX math in {.fn annotate_math_mitex}.",
+          "i" = "Input: {.val {preview}}"
+        ),
+        parent = cnd
+      )
+    }
+  )
 
   annotate_typst(
     typst_math_code,

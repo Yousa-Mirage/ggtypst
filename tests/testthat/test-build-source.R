@@ -44,22 +44,10 @@ line2 {x} % y)"
 })
 
 test_that("build_typst_source validates arguments", {
-  expect_error(
-    build_typst_source(NULL),
-    "single non-missing string"
-  )
-  expect_error(
-    build_typst_source("A", size = 0),
-    "positive finite number"
-  )
-  expect_error(
-    build_typst_source("A", alpha = 1.1),
-    "\\[0, 1\\]"
-  )
-  expect_error(
-    build_typst_source("A", color = "not-a-color"),
-    "invalid color"
-  )
+  expect_snapshot(build_typst_source(NULL), error = TRUE)
+  expect_snapshot(build_typst_source("A", size = 0), error = TRUE)
+  expect_snapshot(build_typst_source("A", alpha = 1.1), error = TRUE)
+  expect_snapshot(build_typst_source("A", color = "not-a-color"), error = TRUE)
 })
 
 test_that("convert_latex_to_typst returns mitex-ready typst code", {
@@ -92,10 +80,7 @@ test_that("convert_latex_to_typst normalizes outer dollar wrappers", {
 })
 
 test_that("convert_latex_to_typst reports mitex conversion errors", {
-  expect_error(
-    convert_latex_to_typst(r"(\end{})"),
-    "MiTeX conversion failed"
-  )
+  expect_snapshot(convert_latex_to_typst(r"(\end{})"), error = TRUE)
 })
 
 test_that("convert_latex_to_typst supports matrix environments without alias", {

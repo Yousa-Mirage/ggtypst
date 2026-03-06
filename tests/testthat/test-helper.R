@@ -52,10 +52,10 @@ test_that("color_to_hex converts colors and combines alpha", {
   expect_equal(color_to_hex("#8839ef", alpha = 0.5), "#8839EF80")
   expect_equal(color_to_hex(1), "#000000FF")
 
-  expect_error(color_to_hex("not-a-color"), "invalid color name")
-  expect_error(color_to_hex("eff1f5"), "invalid color name")
-  expect_error(color_to_hex("#12345"), "invalid RGB")
-  expect_error(color_to_hex(0), "numerical color")
+  expect_snapshot(color_to_hex("not-a-color"), error = TRUE)
+  expect_snapshot(color_to_hex("eff1f5"), error = TRUE)
+  expect_snapshot(color_to_hex("#12345"), error = TRUE)
+  expect_snapshot(color_to_hex(0), error = TRUE)
 })
 
 test_that("format_typst_number returns compact, stable numeric strings", {
@@ -71,8 +71,8 @@ test_that("convert_size_to_pt supports pt and mm units", {
   expect_equal(convert_size_to_pt(12, "pt"), 12)
   expect_equal(convert_size_to_pt(3.88, "mm"), 3.88 * ggplot2::.pt)
 
-  expect_error(convert_size_to_pt(12, "px"), "size.unit")
-  expect_error(convert_size_to_pt(0, "pt"), "positive finite number")
+  expect_snapshot(convert_size_to_pt(12, "px"), error = TRUE)
+  expect_snapshot(convert_size_to_pt(0, "pt"), error = TRUE)
 })
 
 test_that("unwrap_math_dollar_delimiters unwraps only outer math delimiters", {
@@ -95,13 +95,13 @@ test_that("as_typst_math_code always returns single-dollar wrapped math", {
 test_that("as_typst_math_code supports inline mode", {
   expect_equal(as_typst_math_code("x^2 + y^2", inline = TRUE), "$x^2 + y^2$")
   expect_equal(as_typst_math_code("$ x^2 + y^2 $", inline = TRUE), "$x^2 + y^2$")
-  expect_error(as_typst_math_code("x^2", inline = NA), "TRUE or FALSE")
+  expect_snapshot(as_typst_math_code("x^2", inline = NA), error = TRUE)
 })
 
 test_that("as_typst_math_code process inline $ correctly", {
-  expect_error(as_typst_math_code("$x$ + $y$"), "Invalid math input")
-  expect_error(as_typst_math_code("$"), "Invalid math input")
-  expect_error(as_typst_math_code(" $$ x $ y $$ "), "Invalid math input")
+  expect_snapshot(as_typst_math_code("$x$ + $y$"), error = TRUE)
+  expect_snapshot(as_typst_math_code("$"), error = TRUE)
+  expect_snapshot(as_typst_math_code(" $$ x $ y $$ "), error = TRUE)
 
   expect_equal(as_typst_math_code(r"(x + \$y\$)"), "$ x + \\$y\\$ $")
 })
@@ -117,9 +117,6 @@ test_that("as_latex_math_code normalizes outer delimiters", {
 })
 
 test_that("as_latex_math_code rejects inline unescaped dollars", {
-  expect_error(
-    as_latex_math_code("\\$100 + $x$"),
-    "Invalid math input"
-  )
+  expect_snapshot(as_latex_math_code("\\$100 + $x$"), error = TRUE)
   expect_equal(as_latex_math_code(r"(\\$100 + x)"), r"(\\$100 + x)")
 })

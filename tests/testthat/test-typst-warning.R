@@ -1,11 +1,7 @@
 test_that("typst_svg returns structured warnings for missing font family", {
   src <- build_typst_source("Hello", family = "ggtypst_missing_font")
 
-  expect_warning(
-    typst_svg(src),
-    regexp = "Typst emitted warnings during rendering.",
-    class = "ggtypst_typst_warning"
-  )
+  expect_snapshot_warning(typst_svg(src))
 
   res <- suppressWarnings(typst_svg(src))
 

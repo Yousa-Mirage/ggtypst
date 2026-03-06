@@ -107,20 +107,9 @@ test_that("annotate_typst uses vector backend by default in SVG output", {
 })
 
 test_that("annotate_typst validates placement arguments before rendering", {
-  expect_error(
-    annotate_typst("[", x = 3, y = 25, scale = 0),
-    "scale"
-  )
-
-  expect_error(
-    annotate_typst("[", x = 3, y = 25, hjust = Inf),
-    "hjust"
-  )
-
-  expect_error(
-    annotate_typst("[", x = 3, y = 25, vjust = Inf),
-    "vjust"
-  )
+  expect_snapshot(annotate_typst("[", x = 3, y = 25, scale = 0), error = TRUE)
+  expect_snapshot(annotate_typst("[", x = 3, y = 25, hjust = Inf), error = TRUE)
+  expect_snapshot(annotate_typst("[", x = 3, y = 25, vjust = Inf), error = TRUE)
 })
 
 test_that("annotate_typst converts size according to size.unit", {

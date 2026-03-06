@@ -64,10 +64,7 @@ test_that("geom_typst converts mapped size according to size.unit", {
 
   expect_equal(width_mm, width_pt, tolerance = 1e-6)
 
-  expect_error(
-    geom_typst(label = "scale", size.unit = "px"),
-    "size.unit"
-  )
+  expect_snapshot(geom_typst(label = "scale", size.unit = "px"), error = TRUE)
 })
 
 test_that("geom_typst reports row and label context for render failures", {
