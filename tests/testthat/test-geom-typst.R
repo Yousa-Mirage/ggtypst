@@ -70,6 +70,19 @@ test_that("geom_typst converts mapped size according to size.unit", {
   )
 })
 
+test_that("geom_typst reports row and label context for render failures", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = c("ok", "BROKEN_LABEL_123 [")
+  )
+
+  p <- ggplot(df, aes(x, y, label = label)) +
+    geom_typst()
+
+  expect_snapshot(ggplotGrob(p), error = TRUE)
+})
+
 test_that("geom_typst visual stability with mapped style coverage", {
   skip_if_not_installed("vdiffr")
 

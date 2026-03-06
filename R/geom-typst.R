@@ -5,6 +5,10 @@
 #' By default, `size` is interpreted in points (`"pt"`), not millimeters.
 #' Set `size.unit = "mm"` to match ggplot2 text size conventions.
 #'
+#' `label` can be mapped in [ggplot2::aes()] or supplied as a constant value,
+#' for example `geom_typst(label = "Hello")`, to render the same Typst label
+#' for every row in the layer.
+#'
 #' @section Aesthetics:
 #' `geom_typst()` understands the following aesthetics (required aesthetics are
 #' in bold):
@@ -129,6 +133,7 @@ GeomTypst <- ggplot2::ggproto(
     }
 
     data$label <- as.character(data$label)
+    data$.ggtypst_row <- seq_len(nrow(data))
 
     # Remove rows with missing required aesthetics
     data <- ggplot2::remove_missing(
@@ -145,6 +150,7 @@ GeomTypst <- ggplot2::ggproto(
     # Render labels for each row and combine into a gTree
     grobs <- Map(
       f = geom_typst_row_grob,
+      index = data$.ggtypst_row,
       label = data$label,
       x = data$x,
       y = data$y,
@@ -169,6 +175,7 @@ GeomTypst <- ggplot2::ggproto(
 
 #' Build one positioned Typst label grob
 #'
+#' @param index Row index of the label inside the layer data.
 #' @param label Raw Typst source code.
 #' @param x,y Position in transformed panel coordinates.
 #' @param size Text size interpreted according to `size.unit`.
@@ -182,6 +189,7 @@ GeomTypst <- ggplot2::ggproto(
 #' @return A positioned grob for the rendered label.
 #' @noRd
 geom_typst_row_grob <- function(
+  index,
   label,
   x,
   y,
@@ -195,28 +203,58 @@ geom_typst_row_grob <- function(
   hjust,
   vjust
 ) {
-  source <- build_typst_source(
-    typst_code = label,
-    size = convert_size_to_pt(
-      normalize_optional_number(size),
-      size.unit = size.unit
-    ),
-    alpha = normalize_optional_number(alpha),
-    color = normalize_optional_string(colour),
-    family = normalize_optional_string(family, empty_is_null = TRUE),
-    math_family = normalize_optional_string(math_family, empty_is_null = TRUE),
-    angle = normalize_optional_number(angle)
-  )
+  tryCatch(
+    {
+      source <- build_typst_source(
+        typst_code = label,
+        size = convert_size_to_pt(
+          normalize_optional_number(size),
+          size.unit = size.unit
+        ),
+        alpha = normalize_optional_number(alpha),
+        color = normalize_optional_string(colour),
+        family = normalize_optional_string(family, empty_is_null = TRUE),
+        math_family = normalize_optional_string(math_family, empty_is_null = TRUE),
+        angle = normalize_optional_number(angle)
+      )
 
-  rendered <- typst_svg(source)
+      rendered <- typst_svg(source)
 
-  positioned_typst_grob(
-    rendered,
-    x = x,
-    y = y,
-    default.units = "native",
-    hjust = hjust,
-    vjust = vjust,
-    class = "typst_label_grob"
+      positioned_typst_grob(
+        rendered,
+        x = x,
+        y = y,
+        default.units = "native",
+        hjust = hjust,
+        vjust = vjust,
+        class = "typst_label_grob"
+      )
+    },
+    error = function(cnd) {
+      label_preview <- geom_typst_error_preview(label)
+
+      cli::cli_abort(
+        c(
+          "Failed to render a Typst label in {.fn geom_typst}.",
+          "x" = "Problem in row {index}.",
+          "i" = "Label: {.val {label_preview}}"
+        ),
+        parent = cnd
+      )
+    }
   )
+}
+
+#' Create a compact label preview for geom_typst errors
+#'
+#' @param label Raw Typst source code.
+#' @param max_chars Maximum preview length before truncation.
+#' @return An escaped, quoted preview string.
+#' @noRd
+geom_typst_error_preview <- function(label, max_chars = 80) {
+  preview <- trimws(label)
+  if (nchar(preview) > max_chars) {
+    preview <- paste0(substr(preview, 1, max_chars - 3), "...")
+  }
+  preview
 }

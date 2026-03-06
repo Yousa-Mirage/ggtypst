@@ -123,6 +123,11 @@ Each label is compiled independently with Typst and rendered as a vector grob.
 By default, \code{size} is interpreted in points (\code{"pt"}), not millimeters.
 Set \code{size.unit = "mm"} to match ggplot2 text size conventions.
 }
+\details{
+\code{label} can be mapped in \code{\link[ggplot2:aes]{ggplot2::aes()}} or supplied as a constant value,
+for example \code{geom_typst(label = "Hello")}, to render the same Typst label
+for every row in the layer.
+}
 \section{Aesthetics}{
 
 \code{geom_typst()} understands the following aesthetics (required aesthetics are
