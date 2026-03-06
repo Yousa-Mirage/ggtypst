@@ -168,14 +168,14 @@ geom_typst_row_grob <- function(
 
   rendered <- typst_svg(source)
 
-  typst_grob(
+  positioned_typst_grob(
     rendered,
     x = x,
     y = y,
     default.units = "native",
-    class = "typst_label_grob",
     hjust = hjust,
-    vjust = vjust
+    vjust = vjust,
+    class = "typst_label_grob"
   )
 }
 
