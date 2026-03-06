@@ -20,8 +20,8 @@ annotate_math_mitex(
 )
 }
 \arguments{
-\item{latex_math_code}{LaTeX math source string. Outer \verb{$...$} or \verb{$$...$$}
-delimiters are optional and are normalized before conversion.}
+\item{latex_math_code}{A single LaTeX math string. Outer \verb{$...$} or \verb{$$...$$}
+delimiters are optional and will be normalized.}
 
 \item{x, y}{Position where the annotation is placed.}
 
@@ -47,5 +47,5 @@ A \code{ggplot2} layer.
 }
 \description{
 Converts LaTeX math input to Typst math source with MiTeX, wraps it in math delimiters,
-and forwards rendering to \code{\link[=annotate_typst]{annotate_typst()}}.
+and forwards rendering to \code{\link[=annotate_typst]{annotate_typst()}}. Details see \code{\link[=convert_latex_to_typst]{convert_latex_to_typst()}}.
 }
