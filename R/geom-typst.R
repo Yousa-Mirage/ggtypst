@@ -65,6 +65,34 @@ geom_typst <- function(
   )
 }
 
+#' Draw a compact legend key for Typst labels
+#'
+#' Uses a neutral point glyph instead of ggplot2's default text legend key,
+#' which would otherwise display a large placeholder letter.
+#'
+#' @param data,params,size Standard ggplot2 legend key inputs.
+#' @return A grid grob for the legend key.
+#' @noRd
+draw_key_typst <- function(data, params, size) {
+  key_size <- normalize_optional_number(data$size)
+  size_unit <- params$size.unit
+  if (is.null(size_unit)) {
+    size_unit <- "pt"
+  }
+
+  if (is.null(key_size)) {
+    key_size <- 3
+  } else if (size_unit == "pt") {
+    key_size <- key_size / ggplot2::.pt
+  }
+
+  data$shape <- 16
+  data$stroke <- 0
+  data$size <- min(max(key_size, 1.5), 4.5)
+
+  ggplot2::draw_key_point(data, params, size)
+}
+
 #' @rdname geom_typst
 #' @format NULL
 #' @usage NULL
@@ -136,34 +164,6 @@ GeomTypst <- ggplot2::ggproto(
   },
   draw_key = draw_key_typst
 )
-
-#' Draw a compact legend key for Typst labels
-#'
-#' Uses a neutral point glyph instead of ggplot2's default text legend key,
-#' which would otherwise display a large placeholder letter.
-#'
-#' @param data,params,size Standard ggplot2 legend key inputs.
-#' @return A grid grob for the legend key.
-#' @noRd
-draw_key_typst <- function(data, params, size) {
-  key_size <- normalize_optional_number(data$size)
-  size_unit <- params$size.unit
-  if (is.null(size_unit)) {
-    size_unit <- "pt"
-  }
-
-  if (is.null(key_size)) {
-    key_size <- 3
-  } else if (size_unit == "pt") {
-    key_size <- key_size / ggplot2::.pt
-  }
-
-  data$shape <- 16
-  data$stroke <- 0
-  data$size <- min(max(key_size, 1.5), 4.5)
-
-  ggplot2::draw_key_point(data, params, size)
-}
 
 #' Build one positioned Typst label grob
 #'
