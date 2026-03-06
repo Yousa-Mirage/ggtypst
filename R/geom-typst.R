@@ -39,6 +39,8 @@ geom_typst <- function(
   show.legend = NA,
   inherit.aes = TRUE
 ) {
+  size.unit <- check_size_unit(size.unit, "size.unit")
+
   if (!missing(nudge_x) || !missing(nudge_y)) {
     if (!missing(position)) {
       cli::cli_abort(

@@ -63,6 +63,11 @@ test_that("geom_typst converts mapped size according to size.unit", {
   )
 
   expect_equal(width_mm, width_pt, tolerance = 1e-6)
+
+  expect_error(
+    geom_typst(label = "scale", size.unit = "px"),
+    "size.unit"
+  )
 })
 
 test_that("geom_typst visual stability with mapped style coverage", {
