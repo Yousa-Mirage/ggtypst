@@ -47,7 +47,7 @@ annotate_typst <- function(
   )
   rendered <- typst_svg(full_source)
 
-  grob <- typst_grob(
+  grob <- annotation_typst_grob(
     rendered,
     scale = scale,
     hjust = hjust,
