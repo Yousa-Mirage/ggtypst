@@ -46,7 +46,7 @@ test_that("annotate_math_typst visual stability and delimiter normalization", {
       typst_math_code = huge_typst_math_code,
       x = 3.6,
       y = 20,
-      size = 15
+      size = 16
     )
 
   vdiffr::expect_doppelganger("annotate-math-typst-delimiter-normalization", p)

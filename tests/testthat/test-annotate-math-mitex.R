@@ -35,7 +35,7 @@ test_that("annotate_math_mitex visual stability and delimiter normalization", {
       latex_math_code = huge_latex_math_code,
       x = 3.6,
       y = 20,
-      size = 15
+      size = 16
     )
 
   vdiffr::expect_doppelganger("annotate-math-mitex-delimiter-normalization", p)
