@@ -1,9 +1,25 @@
+#' Escape cli inline markup in plain text
+#'
+#' Doubles curly braces so arbitrary diagnostic text can be passed through
+#' `cli` bullet formatting without being interpreted as markup.
+#'
+#' @param x A character vector.
+#' @return A character vector with escaped braces.
+#' @noRd
 escape_cli <- function(x) {
   x <- gsub("{", "{{", x, fixed = TRUE)
   x <- gsub("}", "}}", x, fixed = TRUE)
   x
 }
 
+#' Signal Typst warnings with cli formatting
+#'
+#' Formats structured Typst warnings into a single `cli` warning condition while
+#' preserving the original diagnostics on the condition object.
+#'
+#' @param warnings A list of Typst diagnostic objects.
+#' @return Called for its side effect of signaling a warning.
+#' @noRd
 warn_typst_warnings <- function(warnings) {
   bullets <- c("Typst emitted warnings during rendering.")
 
@@ -32,7 +48,15 @@ warn_typst_warnings <- function(warnings) {
   )
 }
 
-abort_typst_error <- function(err) {
+#' Abort with a structured Typst error
+#'
+#' Converts a structured Typst error object into a user-facing `cli` error with
+#' formatted diagnostics and hints.
+#'
+#' @param err A Typst error object returned from the Rust backend.
+#' @return Called for its side effect of signaling an error.
+#' @noRd
+abort_typst_errors <- function(err) {
   kind <- err$kind
 
   if (kind == "EmptySvg") {

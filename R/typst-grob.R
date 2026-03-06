@@ -1,3 +1,13 @@
+#' Build a grid grob from rendered Typst output
+#'
+#' Wraps the imported vector picture in a lightweight gTree with explicit width
+#' and height methods so ggplot can place it consistently.
+#'
+#' @param rendered A rendered Typst result containing SVG bytes and dimensions.
+#' @param scale Scaling factor applied to rendered dimensions.
+#' @param hjust,vjust Horizontal and vertical justification values.
+#' @return A grid grob with class `"typst_grob"`.
+#' @noRd
 typst_grob <- function(
   rendered,
   scale = 1,
@@ -31,6 +41,16 @@ typst_grob <- function(
   )
 }
 
+#' Import Typst SVG output as a vector grob
+#'
+#' Canonicalizes the SVG, imports it through `grImport2`, and returns a
+#' `pictureGrob` sized in points.
+#'
+#' @param svg Raw SVG bytes.
+#' @param width_pt,height_pt Output dimensions in points.
+#' @param hjust,vjust Horizontal and vertical justification values.
+#' @return A `grImport2` picture grob.
+#' @noRd
 vector_typst_grob <- function(svg, width_pt, height_pt, hjust, vjust) {
   canonical_svg <- rsvg::rsvg_svg(svg)
 

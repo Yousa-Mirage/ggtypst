@@ -28,7 +28,7 @@ annotate_typst(
 
 \item{scale}{Scaling factor applied to rendered Typst dimensions.}
 
-\item{size}{Optional text size in points passed to \code{\link[=build_typst_source]{build_typst_source()}}.}
+\item{size}{Optional text size in points.}
 
 \item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
 

@@ -7,7 +7,7 @@
 #' @param x,y Position where the annotation is placed.
 #' @param hjust,vjust Horizontal and vertical justification for the annotation grob.
 #' @param scale Scaling factor applied to rendered Typst dimensions.
-#' @param size Optional text size in points passed to [build_typst_source()].
+#' @param size Optional text size in points.
 #' @param alpha Optional alpha multiplier in `[0, 1]`.
 #' @param color Optional text color accepted by [grDevices::col2rgb()].
 #' @param family Optional text font family.
@@ -103,7 +103,7 @@ annotate_math_typst <- function(
 
 #' Annotate a Plot with MiTeX-Converted LaTeX Math
 #'
-#' Converts LaTeX math input to Typst math source with [convert_latex_to_typst()]
+#' Converts LaTeX math input to Typst math source with MiTeX, wraps it in math delimiters,
 #' and forwards rendering to [annotate_typst()].
 #'
 #' @inheritParams annotate_typst

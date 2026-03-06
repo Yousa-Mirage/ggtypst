@@ -29,7 +29,7 @@ delimiters are optional and are normalized before conversion.}
 
 \item{scale}{Scaling factor applied to rendered Typst dimensions.}
 
-\item{size}{Optional text size in points passed to \code{\link[=build_typst_source]{build_typst_source()}}.}
+\item{size}{Optional text size in points.}
 
 \item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
 
@@ -46,6 +46,6 @@ display-style math.}
 A \code{ggplot2} layer.
 }
 \description{
-Converts LaTeX math input to Typst math source with \code{\link[=convert_latex_to_typst]{convert_latex_to_typst()}}
+Converts LaTeX math input to Typst math source with MiTeX, wraps it in math delimiters,
 and forwards rendering to \code{\link[=annotate_typst]{annotate_typst()}}.
 }
