@@ -37,7 +37,6 @@ test_that("annotate_typst visual stability with default Typst fonts", {
       hjust = 1,
       vjust = 0,
       scale = 1.2,
-      dpi = 240,
       size = 12
     ) +
     annotate_typst(
@@ -87,4 +86,22 @@ test_that("annotate_typst system fonts visual check (local only)", {
     )
 
   vdiffr::expect_doppelganger("annotate-typst-system-fonts-local", p)
+})
+
+test_that("annotate_typst uses vector backend by default in SVG output", {
+  skip_if_not_installed("svglite")
+
+  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
+    ggplot2::geom_point() +
+    annotate_typst(
+      typst_code = "$sum_(i=1)^n i$",
+      x = 3,
+      y = 25
+    ) +
+    ggplot2::theme_void()
+  svg_str <- svglite::stringSVG(print(p), width = 5, height = 4)
+
+  expect_false(grepl("<text\\b", svg_str))
+  expect_false(grepl("<image\\b", svg_str))
+  expect_true(grepl("<path\\b", svg_str))
 })

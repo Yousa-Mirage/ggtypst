@@ -24,11 +24,13 @@ Depends:
 Imports:
     cli,
     ggplot2,
+    grImport2,
     grDevices,
     grid,
     rlang,
     rsvg
 Suggests: 
+    svglite,
     testthat (>= 3.0.0),
     vdiffr
 Config/testthat/edition: 3

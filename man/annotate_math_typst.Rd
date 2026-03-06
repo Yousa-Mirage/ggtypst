@@ -11,7 +11,6 @@ annotate_math_typst(
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
-  dpi = 300,
   size = NULL,
   alpha = NULL,
   color = NULL,
@@ -26,11 +25,9 @@ wrapped in \verb{$ ... $} before rendering.}
 
 \item{x, y}{Position where the annotation is placed.}
 
-\item{hjust, vjust}{Horizontal and vertical justification for the raster grob.}
+\item{hjust, vjust}{Horizontal and vertical justification for the annotation grob.}
 
 \item{scale}{Scaling factor applied to rendered Typst dimensions.}
-
-\item{dpi}{Rasterization resolution used for SVG to raster conversion.}
 
 \item{size}{Optional text size in points passed to \code{\link[=build_typst_source]{build_typst_source()}}.}
 
