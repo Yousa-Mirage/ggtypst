@@ -1,10 +1,10 @@
 test_that("annotate_typst visual stability with default Typst fonts", {
   skip_if_not_installed("vdiffr")
 
-  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
-    ggplot2::geom_point(size = 1.2, alpha = 0.45, colour = "grey40") +
-    ggplot2::coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
-    ggplot2::theme_minimal(base_size = 11) +
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(size = 1.2, alpha = 0.45, colour = "grey40") +
+    coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
+    theme_minimal(base_size = 11) +
     annotate_typst(
       typst_code = "Default",
       x = 1.9,
@@ -64,10 +64,10 @@ test_that("annotate_typst system fonts visual check (local only)", {
     skip("Required system fonts are not available: Arial/Courier New")
   }
 
-  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
-    ggplot2::geom_point(size = 1.1, alpha = 0.35, colour = "grey45") +
-    ggplot2::theme_minimal(base_size = 11) +
-    ggplot2::coord_cartesian(xlim = c(1.5, 5.6), ylim = c(10, 35)) +
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(size = 1.1, alpha = 0.35, colour = "grey45") +
+    theme_minimal(base_size = 11) +
+    coord_cartesian(xlim = c(1.5, 5.6), ylim = c(10, 35)) +
     annotate_typst(
       typst_code = "Arial sample",
       x = 1.8,
@@ -91,14 +91,14 @@ test_that("annotate_typst system fonts visual check (local only)", {
 test_that("annotate_typst uses vector backend by default in SVG output", {
   skip_if_not_installed("svglite")
 
-  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
-    ggplot2::geom_point() +
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point() +
     annotate_typst(
       typst_code = "$sum_(i=1)^n i$",
       x = 3,
       y = 25
     ) +
-    ggplot2::theme_void()
+    theme_void()
   svg_str <- svglite::stringSVG(print(p), width = 5, height = 4)
 
   expect_false(grepl("<text\\b", svg_str))

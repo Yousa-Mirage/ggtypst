@@ -5,10 +5,10 @@ test_that("annotate_math_mitex visual stability and delimiter normalization", {
     \mathcal{F}(s) = \int_{-\infty}^{+\infty} \frac{\sum_{n=1}^{\infty} \frac{(-1)^{n-1} x^{2n}}{(2n)!}}{\sqrt[3]{\lim_{k \to \infty} \prod_{j=1}^{k} \left(1 - \frac{1}{p_j^2}\right) + \frac{\alpha^2}{\beta^3}}} e^{-2 \pi i s x} \,\mathrm{d}x + \begin{pmatrix} \sum_{i=1}^{n} i^3 = \left( \frac{n(n+1)}{2} \right)^2 & \underbrace{a_1 + a_2 + \cdots + a_k}_{\text{Total: } k \text{ terms}} \\ \begin{cases} \frac{\int_{0}^{x} e^{-t^2} \,\mathrm{d}t}{\sqrt{\pi} + \sum_{m=1}^{M} \frac{1}{m}} & \text{if } x > 0 \\ \begin{pmatrix} \alpha \\ \frac{\beta + \gamma}{\delta} \\ \zeta \end{pmatrix} & \text{otherwise} \end{cases} & \overbrace{\prod_{p \text{ prime}} (1 - p^{-s})^{-1}}^{\zeta(s)} \end{pmatrix}
   )"
 
-  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
-    ggplot2::geom_point(size = 1.2, alpha = 0.4, colour = "grey40") +
-    ggplot2::coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
-    ggplot2::theme_minimal(base_size = 11) +
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(size = 1.2, alpha = 0.4, colour = "grey40") +
+    coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
+    theme_minimal(base_size = 11) +
     annotate_math_mitex(
       latex_math_code = r"(\frac{1}{2} + \sqrt{3})",
       x = 2.0,
@@ -135,10 +135,10 @@ test_that("annotate_math_mitex supports inline rendering mode", {
 test_that("annotate_math_mitex visual display vs inline", {
   skip_if_not_installed("vdiffr")
 
-  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
-    ggplot2::geom_point(size = 1.1, alpha = 0.35, colour = "grey45") +
-    ggplot2::coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
-    ggplot2::theme_minimal(base_size = 11) +
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(size = 1.1, alpha = 0.35, colour = "grey45") +
+    coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
+    theme_minimal(base_size = 11) +
     annotate_math_mitex(
       latex_math_code = r"(\frac{1}{2} + \sqrt{3})",
       x = 2.2,

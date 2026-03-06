@@ -13,10 +13,10 @@ test_that("annotate_math_typst visual stability and delimiter normalization", {
     )
   )"
 
-  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
-    ggplot2::geom_point(size = 1.2, alpha = 0.4, colour = "grey40") +
-    ggplot2::coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
-    ggplot2::theme_minimal(base_size = 11) +
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(size = 1.2, alpha = 0.4, colour = "grey40") +
+    coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
+    theme_minimal(base_size = 11) +
     annotate_math_typst(
       typst_math_code = r"(sum_(i=1)^n i = (n(n+1))/2)",
       x = 2.0,
@@ -139,10 +139,10 @@ test_that("annotate_math_typst supports inline rendering mode", {
 test_that("annotate_math_typst visual display vs inline", {
   skip_if_not_installed("vdiffr")
 
-  p <- ggplot2::ggplot(mtcars, ggplot2::aes(wt, mpg)) +
-    ggplot2::geom_point(size = 1.1, alpha = 0.35, colour = "grey45") +
-    ggplot2::coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
-    ggplot2::theme_minimal(base_size = 11) +
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(size = 1.1, alpha = 0.35, colour = "grey45") +
+    coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
+    theme_minimal(base_size = 11) +
     annotate_math_typst(
       typst_math_code = r"(frac(1, 2) + sqrt(3))",
       x = 2.2,
