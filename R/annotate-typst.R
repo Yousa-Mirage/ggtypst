@@ -32,6 +32,9 @@ annotate_typst <- function(
   typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
   x <- check_number(x, "x", allow_null = FALSE)
   y <- check_number(y, "y", allow_null = FALSE)
+  hjust <- check_number(hjust, "hjust", allow_null = FALSE)
+  vjust <- check_number(vjust, "vjust", allow_null = FALSE)
+  scale <- check_positive_number(scale, "scale", allow_null = FALSE)
 
   full_source <- build_typst_source(
     typst_code,

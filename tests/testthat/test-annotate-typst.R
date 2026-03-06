@@ -105,3 +105,20 @@ test_that("annotate_typst uses vector backend by default in SVG output", {
   expect_false(grepl("<image\\b", svg_str))
   expect_true(grepl("<path\\b", svg_str))
 })
+
+test_that("annotate_typst validates placement arguments before rendering", {
+  expect_error(
+    annotate_typst("[", x = 3, y = 25, scale = 0),
+    "scale"
+  )
+
+  expect_error(
+    annotate_typst("[", x = 3, y = 25, hjust = Inf),
+    "hjust"
+  )
+
+  expect_error(
+    annotate_typst("[", x = 3, y = 25, vjust = Inf),
+    "vjust"
+  )
+})

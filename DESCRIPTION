@@ -10,7 +10,7 @@ Description: Provides a seamless integration of the 'Typst' typesetting engine
     into 'ggplot2'. It allows users to render complex mathematical formulas, 
     equations, and rich text directly in plot annotations, axis labels, 
     and titles without requiring a local Typst or LaTeX installation. Under
-    the hood, it leverages Rust FFI to compile Typst code into SVG in-memory.
+    the hood, it leverages Rust FFI to compile Typst code into SVG.
 URL: https://github.com/Yousa-Mirage/ggtypst
 BugReports: https://github.com/Yousa-Mirage/ggtypst/issues
 License: MIT + file LICENSE

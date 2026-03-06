@@ -4,10 +4,6 @@ typst_grob <- function(
   hjust = 0.5,
   vjust = 0.5
 ) {
-  scale <- check_positive_number(scale, "scale", allow_null = FALSE)
-  hjust <- check_number(hjust, "hjust", allow_null = FALSE)
-  vjust <- check_number(vjust, "vjust", allow_null = FALSE)
-
   width_pt <- rendered$width_pt * scale
   height_pt <- rendered$height_pt * scale
 
