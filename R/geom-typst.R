@@ -2,6 +2,8 @@
 #'
 #' Draw raw Typst labels at data positions, similar to [ggplot2::geom_text()].
 #' Each label is compiled independently with Typst and rendered as a vector grob.
+#' By default, `size` is interpreted in points (`"pt"`), not millimeters.
+#' Set `size.unit = "mm"` to match ggplot2 text size conventions.
 #'
 #' @section Aesthetics:
 #' `geom_typst()` understands the following aesthetics (required aesthetics are
@@ -20,6 +22,8 @@
 #' - `vjust`
 #'
 #' @inheritParams ggplot2::geom_text
+#' @param size.unit Unit used to interpret the `size` aesthetic. Defaults to
+#'   points (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
 #' @return A ggplot2 layer that can be added to a plot.
 #' @export
 geom_typst <- function(
@@ -30,6 +34,7 @@ geom_typst <- function(
   ...,
   nudge_x = 0,
   nudge_y = 0,
+  size.unit = "pt",
   na.rm = FALSE,
   show.legend = NA,
   inherit.aes = TRUE
@@ -53,6 +58,7 @@ geom_typst <- function(
     show.legend = show.legend,
     inherit.aes = inherit.aes,
     params = list(
+      size.unit = size.unit,
       na.rm = na.rm,
       ...
     )
@@ -68,7 +74,7 @@ GeomTypst <- ggplot2::ggproto(
   required_aes = c("x", "y", "label"),
   default_aes = ggplot2::aes(
     colour = "black",
-    size = 3.88,
+    size = 11,
     angle = 0,
     hjust = 0.5,
     vjust = 0.5,
@@ -76,7 +82,7 @@ GeomTypst <- ggplot2::ggproto(
     family = "",
     math_family = NA
   ),
-  draw_panel = function(data, panel_params, coord, na.rm = FALSE) {
+  draw_panel = function(data, panel_params, coord, na.rm = FALSE, size.unit = "pt") {
     if (nrow(data) == 0) {
       return(ggplot2::zeroGrob())
     }
@@ -118,6 +124,7 @@ GeomTypst <- ggplot2::ggproto(
       family = data$family,
       math_family = data$math_family,
       angle = data$angle,
+      size.unit = size.unit,
       hjust = data$hjust,
       vjust = data$vjust
     )
@@ -140,6 +147,7 @@ GeomTypst <- ggplot2::ggproto(
 #' @param family Optional text font family.
 #' @param math_family Optional math font family.
 #' @param angle Optional rotation angle in degrees.
+#' @param size.unit Unit used to interpret `size`.
 #' @param hjust,vjust Horizontal and vertical justification values.
 #' @return A positioned grob for the rendered label.
 #' @noRd
@@ -153,12 +161,16 @@ geom_typst_row_grob <- function(
   family,
   math_family,
   angle,
+  size.unit,
   hjust,
   vjust
 ) {
   source <- build_typst_source(
     typst_code = label,
-    size = geom_typst_size_to_pt(size),
+    size = convert_size_to_pt(
+      geom_typst_optional_number(size),
+      size.unit = size.unit
+    ),
     alpha = geom_typst_optional_number(alpha),
     color = geom_typst_optional_string(colour),
     family = geom_typst_optional_string(family, empty_is_null = TRUE),
@@ -177,19 +189,6 @@ geom_typst_row_grob <- function(
     vjust = vjust,
     class = "typst_label_grob"
   )
-}
-
-#' Convert ggplot2 text size to Typst points
-#'
-#' @param size A ggplot2 text size in millimeters.
-#' @return A font size in points or `NULL`.
-#' @noRd
-geom_typst_size_to_pt <- function(size) {
-  size <- geom_typst_optional_number(size)
-  if (is.null(size)) {
-    return(NULL)
-  }
-  size * ggplot2::.pt
 }
 
 #' Normalize optional scalar numbers for geom_typst

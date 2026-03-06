@@ -122,3 +122,34 @@ test_that("annotate_typst validates placement arguments before rendering", {
     "vjust"
   )
 })
+
+test_that("annotate_typst converts size according to size.unit", {
+  layer_pt <- annotate_typst(
+    "scale",
+    x = 3,
+    y = 25,
+    size = 11,
+    size.unit = "pt"
+  )
+
+  layer_mm <- annotate_typst(
+    "scale",
+    x = 3,
+    y = 25,
+    size = 11 / ggplot2::.pt,
+    size.unit = "mm"
+  )
+
+  width_pt <- grid::convertWidth(
+    grid::grobWidth(layer_pt$geom_params$grob),
+    "pt",
+    valueOnly = TRUE
+  )
+  width_mm <- grid::convertWidth(
+    grid::grobWidth(layer_mm$geom_params$grob),
+    "pt",
+    valueOnly = TRUE
+  )
+
+  expect_equal(width_mm, width_pt, tolerance = 1e-6)
+})

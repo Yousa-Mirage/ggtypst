@@ -66,6 +66,15 @@ test_that("format_typst_number returns compact, stable numeric strings", {
   expect_equal(format_typst_number(1000000), "1000000")
 })
 
+test_that("convert_size_to_pt supports pt and mm units", {
+  expect_null(convert_size_to_pt(NULL, "pt"))
+  expect_equal(convert_size_to_pt(12, "pt"), 12)
+  expect_equal(convert_size_to_pt(3.88, "mm"), 3.88 * ggplot2::.pt)
+
+  expect_error(convert_size_to_pt(12, "px"), "size.unit")
+  expect_error(convert_size_to_pt(0, "pt"), "positive finite number")
+})
+
 test_that("unwrap_math_dollar_delimiters unwraps only outer math delimiters", {
   expect_equal(unwrap_math_dollar_delimiters("x^2 + y^2"), "x^2 + y^2")
   expect_equal(unwrap_math_dollar_delimiters("$ x^2 + y^2 $"), "x^2 + y^2")

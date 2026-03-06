@@ -7,7 +7,9 @@
 #' @param x,y Position where the annotation is placed.
 #' @param hjust,vjust Horizontal and vertical justification for the annotation grob.
 #' @param scale Scaling factor applied to rendered Typst dimensions.
-#' @param size Optional text size in points.
+#' @param size Optional text size.
+#' @param size.unit Unit used to interpret `size`. Defaults to points (`"pt"`).
+#'   Use `"mm"` for ggplot2-style text sizes.
 #' @param alpha Optional alpha multiplier in `[0, 1]`.
 #' @param color Optional text color accepted by [grDevices::col2rgb()].
 #' @param family Optional text font family.
@@ -23,6 +25,7 @@ annotate_typst <- function(
   vjust = 0.5,
   scale = 1,
   size = NULL,
+  size.unit = "pt",
   alpha = NULL,
   color = NULL,
   family = NULL,
@@ -35,6 +38,8 @@ annotate_typst <- function(
   hjust <- check_number(hjust, "hjust", allow_null = FALSE)
   vjust <- check_number(vjust, "vjust", allow_null = FALSE)
   scale <- check_positive_number(scale, "scale", allow_null = FALSE)
+
+  size <- convert_size_to_pt(size, size.unit = size.unit)
 
   full_source <- build_typst_source(
     typst_code,
@@ -78,6 +83,7 @@ annotate_math_typst <- function(
   vjust = 0.5,
   scale = 1,
   size = NULL,
+  size.unit = "pt",
   alpha = NULL,
   color = NULL,
   math_family = NULL,
@@ -94,6 +100,7 @@ annotate_math_typst <- function(
     vjust = vjust,
     scale = scale,
     size = size,
+    size.unit = size.unit,
     alpha = alpha,
     color = color,
     math_family = math_family,
@@ -121,6 +128,7 @@ annotate_math_mitex <- function(
   vjust = 0.5,
   scale = 1,
   size = NULL,
+  size.unit = "pt",
   alpha = NULL,
   color = NULL,
   math_family = NULL,
@@ -137,6 +145,7 @@ annotate_math_mitex <- function(
     vjust = vjust,
     scale = scale,
     size = size,
+    size.unit = size.unit,
     alpha = alpha,
     color = color,
     math_family = math_family,

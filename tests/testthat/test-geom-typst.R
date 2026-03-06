@@ -38,3 +38,29 @@ test_that("geom_typst maps size aesthetics to rendered grob dimensions", {
   expect_gt(widths[[2]], widths[[1]])
   expect_equal(widths[[2]] / widths[[1]], 3, tolerance = 1e-6)
 })
+
+test_that("geom_typst converts mapped size according to size.unit", {
+  df_pt <- data.frame(x = 1, y = 1, size = 11)
+  df_mm <- data.frame(x = 1, y = 1, size = 11 / ggplot2::.pt)
+
+  p_pt <- ggplot(df_pt, aes(x, y, size = size)) +
+    geom_typst(label = "scale", show.legend = FALSE, size.unit = "pt") +
+    scale_size_identity()
+
+  p_mm <- ggplot(df_mm, aes(x, y, size = size)) +
+    geom_typst(label = "scale", show.legend = FALSE, size.unit = "mm") +
+    scale_size_identity()
+
+  width_pt <- grid::convertWidth(
+    grid::grobWidth(layer_grob(p_pt)[[1]]$children[[1]]),
+    "pt",
+    valueOnly = TRUE
+  )
+  width_mm <- grid::convertWidth(
+    grid::grobWidth(layer_grob(p_mm)[[1]]$children[[1]]),
+    "pt",
+    valueOnly = TRUE
+  )
+
+  expect_equal(width_mm, width_pt, tolerance = 1e-6)
+})

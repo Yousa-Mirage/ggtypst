@@ -14,6 +14,7 @@ geom_typst(
   ...,
   nudge_x = 0,
   nudge_y = 0,
+  size.unit = "pt",
   na.rm = FALSE,
   show.legend = NA,
   inherit.aes = TRUE
@@ -94,6 +95,9 @@ lists which parameters it can accept.
 \link[ggplot2:draw_key]{key glyphs}, to change the display of the layer in the legend.
 }}
 
+\item{size.unit}{Unit used to interpret the \code{size} aesthetic. Defaults to
+points (\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
+
 \item{na.rm}{If \code{FALSE}, the default, missing values are removed with
 a warning. If \code{TRUE}, missing values are silently removed.}
 
@@ -116,6 +120,8 @@ A ggplot2 layer that can be added to a plot.
 \description{
 Draw raw Typst labels at data positions, similar to \code{\link[ggplot2:geom_text]{ggplot2::geom_text()}}.
 Each label is compiled independently with Typst and rendered as a vector grob.
+By default, \code{size} is interpreted in points (\code{"pt"}), not millimeters.
+Set \code{size.unit = "mm"} to match ggplot2 text size conventions.
 }
 \section{Aesthetics}{
 

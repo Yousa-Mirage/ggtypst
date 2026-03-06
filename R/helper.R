@@ -66,6 +66,25 @@ check_bool <- function(x, arg, allow_null = TRUE) {
   x
 }
 
+#' Validate a supported size unit
+#'
+#' @param size.unit Size unit name.
+#' @param arg Argument name used in error messages.
+#' @return The validated size unit.
+#' @noRd
+check_size_unit <- function(size.unit, arg = "size.unit") {
+  if (
+    !is.character(size.unit) ||
+      length(size.unit) != 1 ||
+      is.na(size.unit) ||
+      !(size.unit %in% c("pt", "mm"))
+  ) {
+    cli::cli_abort("{.arg {arg}} must be one of \"pt\" or \"mm\".")
+  }
+
+  size.unit
+}
+
 #' Validate an alpha multiplier
 #'
 #' @param alpha Optional numeric alpha value in `[0, 1]`.
@@ -115,6 +134,26 @@ format_typst_number <- function(x) {
   out <- sprintf("%.6f", x)
   out <- sub("\\.?0+$", "", out)
   out
+}
+
+#' Convert text size to Typst points
+#'
+#' @param size Size value to convert.
+#' @param size.unit Unit of `size`, either `"pt"` or `"mm"`.
+#' @param arg Argument name used in error messages.
+#' @return A size in Typst points or `NULL`.
+#' @noRd
+convert_size_to_pt <- function(size, size.unit = "pt", arg = "size") {
+  size.unit <- check_size_unit(size.unit, arg = "size.unit")
+  size <- check_positive_number(size, arg = arg)
+
+  if (is.null(size)) {
+    NULL
+  } else if (size.unit == "mm") {
+    size * ggplot2::.pt
+  } else {
+    size
+  }
 }
 
 #' Remove outer math dollar delimiters

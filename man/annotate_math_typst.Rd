@@ -12,6 +12,7 @@ annotate_math_typst(
   vjust = 0.5,
   scale = 1,
   size = NULL,
+  size.unit = "pt",
   alpha = NULL,
   color = NULL,
   math_family = NULL,
@@ -29,7 +30,10 @@ wrapped in \verb{$ ... $} before rendering.}
 
 \item{scale}{Scaling factor applied to rendered Typst dimensions.}
 
-\item{size}{Optional text size in points.}
+\item{size}{Optional text size.}
+
+\item{size.unit}{Unit used to interpret \code{size}. Defaults to points (\code{"pt"}).
+Use \code{"mm"} for ggplot2-style text sizes.}
 
 \item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
 
