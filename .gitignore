@@ -28,3 +28,7 @@ test.R
 test.typ
 dev.R
 dev.typ
+/*.xml
+
+# Agent
+AGENTS.md

@@ -13,3 +13,8 @@
 ^dev\.R$
 ^dev\.typ$
 ^justfile$
+
+^AGENTS\.md$
+^air\.toml$
+^\\.\\.Rcheck$
+^[^/]+\\.xml$
