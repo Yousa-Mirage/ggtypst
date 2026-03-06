@@ -12,6 +12,7 @@
 #' @param math_family Optional font family for math mode. Defaults to `New Computer Modern Math`.
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @return A single UTF-8 Typst source string.
+#' @noRd
 build_typst_source <- function(
   typst_code,
   size = NULL,

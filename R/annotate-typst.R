@@ -1,14 +1,13 @@
 #' Annotate a Plot with Typst-Rendered Text
 #'
-#' Compiles Typst source code into SVG, rasterizes it, and adds it to a ggplot
-#' as a custom annotation layer.
+#' Compiles Typst source code into SVG, converts it to a grid grob, and adds it
+#' to a ggplot as a custom annotation layer.
 #'
 #' @param typst_code Typst source code to render.
 #' @param x,y Position where the annotation is placed.
-#' @param hjust,vjust Horizontal and vertical justification for the raster grob.
+#' @param hjust,vjust Horizontal and vertical justification for the annotation grob.
 #' @param scale Scaling factor applied to rendered Typst dimensions.
-#' @param dpi Rasterization resolution used for SVG to raster conversion.
-#' @param size Optional text size in points passed to [build_typst_source()].
+#' @param size Optional text size in points.
 #' @param alpha Optional alpha multiplier in `[0, 1]`.
 #' @param color Optional text color accepted by [grDevices::col2rgb()].
 #' @param family Optional text font family.
@@ -23,7 +22,6 @@ annotate_typst <- function(
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
-  dpi = 300,
   size = NULL,
   alpha = NULL,
   color = NULL,
@@ -37,7 +35,6 @@ annotate_typst <- function(
   hjust <- check_number(hjust, "hjust", allow_null = FALSE)
   vjust <- check_number(vjust, "vjust", allow_null = FALSE)
   scale <- check_positive_number(scale, "scale", allow_null = FALSE)
-  dpi <- check_positive_number(dpi, "dpi", allow_null = FALSE)
 
   full_source <- build_typst_source(
     typst_code,
@@ -50,24 +47,11 @@ annotate_typst <- function(
   )
   rendered <- typst_svg(full_source)
 
-  pixel_width <- rendered$width_pt * scale
-  pixel_height <- rendered$height_pt * scale
-  raster_width <- max(1, ceiling(pixel_width * dpi / 72))
-  raster_height <- max(1, ceiling(pixel_height * dpi / 72))
-
-  img_matrix <- rsvg::rsvg_nativeraster(
-    rendered$svg,
-    width = raster_width,
-    height = raster_height
-  )
-
-  grob <- grid::rasterGrob(
-    img_matrix,
-    width = grid::unit(pixel_width, "pt"),
-    height = grid::unit(pixel_height, "pt"),
+  grob <- typst_grob(
+    rendered,
+    scale = scale,
     hjust = hjust,
-    vjust = vjust,
-    interpolate = TRUE
+    vjust = vjust
   )
 
   ggplot2::annotation_custom(grob, xmin = x, xmax = x, ymin = y, ymax = y)
@@ -93,7 +77,6 @@ annotate_math_typst <- function(
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
-  dpi = 300,
   size = NULL,
   alpha = NULL,
   color = NULL,
@@ -110,7 +93,6 @@ annotate_math_typst <- function(
     hjust = hjust,
     vjust = vjust,
     scale = scale,
-    dpi = dpi,
     size = size,
     alpha = alpha,
     color = color,
@@ -121,7 +103,7 @@ annotate_math_typst <- function(
 
 #' Annotate a Plot with MiTeX-Converted LaTeX Math
 #'
-#' Converts LaTeX math input to Typst math source with [convert_latex_to_typst()]
+#' Converts LaTeX math input to Typst math source with MiTeX, wraps it in math delimiters,
 #' and forwards rendering to [annotate_typst()].
 #'
 #' @inheritParams annotate_typst
@@ -138,7 +120,6 @@ annotate_math_mitex <- function(
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
-  dpi = 300,
   size = NULL,
   alpha = NULL,
   color = NULL,
@@ -155,7 +136,6 @@ annotate_math_mitex <- function(
     hjust = hjust,
     vjust = vjust,
     scale = scale,
-    dpi = dpi,
     size = size,
     alpha = alpha,
     color = color,

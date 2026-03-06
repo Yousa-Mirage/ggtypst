@@ -11,7 +11,6 @@ annotate_typst(
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
-  dpi = 300,
   size = NULL,
   alpha = NULL,
   color = NULL,
@@ -25,13 +24,11 @@ annotate_typst(
 
 \item{x, y}{Position where the annotation is placed.}
 
-\item{hjust, vjust}{Horizontal and vertical justification for the raster grob.}
+\item{hjust, vjust}{Horizontal and vertical justification for the annotation grob.}
 
 \item{scale}{Scaling factor applied to rendered Typst dimensions.}
 
-\item{dpi}{Rasterization resolution used for SVG to raster conversion.}
-
-\item{size}{Optional text size in points passed to \code{\link[=build_typst_source]{build_typst_source()}}.}
+\item{size}{Optional text size in points.}
 
 \item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
 
@@ -47,6 +44,6 @@ annotate_typst(
 A \code{ggplot2} layer.
 }
 \description{
-Compiles Typst source code into SVG, rasterizes it, and adds it to a ggplot
-as a custom annotation layer.
+Compiles Typst source code into SVG, converts it to a grid grob, and adds it
+to a ggplot as a custom annotation layer.
 }

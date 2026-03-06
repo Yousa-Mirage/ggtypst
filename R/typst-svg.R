@@ -6,11 +6,12 @@
 #'
 #' @param text Typst source code to compile.
 #' @return A list with fields `svg`, `width_pt`, `height_pt`, and `warnings`.
+#' @noRd
 typst_svg <- function(text) {
   result <- rs_typst_svg(text)
 
   if (inherits(result, "typst_error")) {
-    abort_typst_error(result)
+    abort_typst_errors(result)
   }
   if (is.list(result$warnings) && length(result$warnings) > 0) {
     warn_typst_warnings(result$warnings)

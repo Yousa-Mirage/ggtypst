@@ -35,7 +35,7 @@ test_that("annotate_math_mitex visual stability and delimiter normalization", {
       latex_math_code = huge_latex_math_code,
       x = 3.6,
       y = 20,
-      size = 15
+      size = 16
     )
 
   vdiffr::expect_doppelganger("annotate-math-mitex-delimiter-normalization", p)
@@ -52,8 +52,7 @@ test_that("annotate_math_mitex normalization yields equivalent layer parameters"
     vjust = 0,
     size = 13,
     color = "#1E66F5",
-    scale = 1.2,
-    dpi = 240
+    scale = 1.2
   )
 
   layer_wrapped <- annotate_math_mitex(
@@ -64,8 +63,7 @@ test_that("annotate_math_mitex normalization yields equivalent layer parameters"
     vjust = 0,
     size = 13,
     color = "#1E66F5",
-    scale = 1.2,
-    dpi = 240
+    scale = 1.2
   )
 
   layer_typst <- annotate_typst(
@@ -76,22 +74,19 @@ test_that("annotate_math_mitex normalization yields equivalent layer parameters"
     vjust = 0,
     size = 13,
     color = "#1E66F5",
-    scale = 1.2,
-    dpi = 240
+    scale = 1.2
   )
 
   layer_signature <- function(layer) {
     gp <- layer$geom_params
+    grob <- gp$grob
 
     list(
       x = c(gp$xmin, gp$xmax),
       y = c(gp$ymin, gp$ymax),
-      hjust = gp$grob$hjust,
-      vjust = gp$grob$vjust,
-      width = gp$grob$width,
-      height = gp$grob$height,
-      raster_dim = dim(gp$grob$raster),
-      raster_type = typeof(gp$grob$raster)
+      grob_class = class(grob),
+      width_pt = grid::convertWidth(grid::grobWidth(grob), "pt", valueOnly = TRUE),
+      height_pt = grid::convertHeight(grid::grobHeight(grob), "pt", valueOnly = TRUE)
     )
   }
 
@@ -124,8 +119,16 @@ test_that("annotate_math_mitex supports inline rendering mode", {
     size = 12
   )
 
-  h_display <- as.numeric(layer_display$geom_params$grob$height)
-  h_inline <- as.numeric(layer_inline$geom_params$grob$height)
+  h_display <- grid::convertHeight(
+    grid::grobHeight(layer_display$geom_params$grob),
+    "pt",
+    valueOnly = TRUE
+  )
+  h_inline <- grid::convertHeight(
+    grid::grobHeight(layer_inline$geom_params$grob),
+    "pt",
+    valueOnly = TRUE
+  )
   expect_gt(h_display, h_inline)
 })
 

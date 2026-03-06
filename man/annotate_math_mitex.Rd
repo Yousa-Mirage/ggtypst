@@ -11,7 +11,6 @@ annotate_math_mitex(
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
-  dpi = 300,
   size = NULL,
   alpha = NULL,
   color = NULL,
@@ -26,13 +25,11 @@ delimiters are optional and are normalized before conversion.}
 
 \item{x, y}{Position where the annotation is placed.}
 
-\item{hjust, vjust}{Horizontal and vertical justification for the raster grob.}
+\item{hjust, vjust}{Horizontal and vertical justification for the annotation grob.}
 
 \item{scale}{Scaling factor applied to rendered Typst dimensions.}
 
-\item{dpi}{Rasterization resolution used for SVG to raster conversion.}
-
-\item{size}{Optional text size in points passed to \code{\link[=build_typst_source]{build_typst_source()}}.}
+\item{size}{Optional text size in points.}
 
 \item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
 
@@ -49,6 +46,6 @@ display-style math.}
 A \code{ggplot2} layer.
 }
 \description{
-Converts LaTeX math input to Typst math source with \code{\link[=convert_latex_to_typst]{convert_latex_to_typst()}}
+Converts LaTeX math input to Typst math source with MiTeX, wraps it in math delimiters,
 and forwards rendering to \code{\link[=annotate_typst]{annotate_typst()}}.
 }
