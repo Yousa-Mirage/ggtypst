@@ -45,6 +45,11 @@ geom_typst <- function(
   inherit.aes = TRUE
 ) {
   size.unit <- check_size_unit(size.unit, "size.unit")
+  params <- list(...)
+
+  if ("face" %in% names(params)) {
+    params$face <- normalize_face(params$face, "face")
+  }
 
   if (!missing(nudge_x) || !missing(nudge_y)) {
     if (!missing(position)) {
@@ -64,11 +69,10 @@ geom_typst <- function(
     position = position,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
-    params = list(
+    params = c(list(
       size.unit = size.unit,
-      na.rm = na.rm,
-      ...
-    )
+      na.rm = na.rm
+    ), params)
   )
 }
 
@@ -141,12 +145,40 @@ GeomTypst <- ggplot2::ggproto(
     data <- ggplot2::remove_missing(
       data,
       na.rm = na.rm,
-      vars = c("x", "y", "label", "hjust", "vjust", "colour"),
+      vars = c("x", "y", "label", "hjust", "vjust", "colour", "face", "family"),
       name = "geom_typst"
     )
 
     if (nrow(data) == 0) {
       return(ggplot2::zeroGrob())
+    }
+
+    if (!is.null(data$face)) {
+      u_faces <- unique(data$face)
+      clean_u_faces <- vapply(
+        seq_along(u_faces),
+        function(i) {
+          face_value <- u_faces[[i]]
+
+          tryCatch(
+            normalize_face(face_value, "face", allow_null = FALSE),
+            error = function(cnd) {
+              bad_idx <- which(as.character(data$face) == as.character(face_value))[1]
+              original_row <- data$.ggtypst_row[[bad_idx]]
+              cli::cli_abort(
+                c(
+                  "Invalid {.arg face} aesthetic in {.fn geom_typst}.",
+                  "x" = "Problem in row {original_row} with value {.val {as.character(face_value)}}.",
+                  "i" = "Supported values are \"plain\", \"bold\", \"italic\", or \"bold.italic\" (or numeric codes 1-4)."
+                ),
+                call = NULL
+              )
+            }
+          )
+        },
+        FUN.VALUE = character(1),
+        USE.NAMES = FALSE
+      )
     }
 
     # Render labels for each row and combine into a gTree

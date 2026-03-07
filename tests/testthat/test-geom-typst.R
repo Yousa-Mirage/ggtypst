@@ -68,9 +68,19 @@ test_that("geom_typst converts mapped size according to size.unit", {
 })
 
 test_that("geom_typst validates face", {
-  p <- data.frame(x = 1, y = 1, label = "scale") |>
-    ggplot(aes(x, y, label = label)) +
-    geom_typst(face = "oblique")
+  expect_snapshot(geom_typst(label = "scale", face = "oblique"), error = TRUE)
+})
+
+test_that("geom_typst validates mapped face vectors before row rendering", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = c("ok", "still ok"),
+    face = c("plain", "oblique")
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, face = face)) +
+    geom_typst()
 
   expect_snapshot(ggplotGrob(p), error = TRUE)
 })
