@@ -80,6 +80,8 @@ test_that("element_typst() defaults are NULL / FALSE", {
 })
 
 test_that("element_typst inherit.blank is resolved by ggplot2 theme merging", {
+  calc_element <- utils::getFromNamespace("calc_element", "ggplot2")
+
   th_blank <- theme(
     axis.title = element_blank(),
     axis.title.x = element_typst(inherit.blank = TRUE)
@@ -89,11 +91,17 @@ test_that("element_typst inherit.blank is resolved by ggplot2 theme merging", {
     axis.title.x = element_typst(inherit.blank = FALSE)
   )
 
-  el_blank <- ggplot2:::calc_element("axis.title.x", th_blank)
-  el_keep <- ggplot2:::calc_element("axis.title.x", th_keep)
+  el_blank <- calc_element("axis.title.x", th_blank)
+  el_keep <- calc_element("axis.title.x", th_keep)
 
   expect_true(inherits(el_blank, "ggplot2::element_blank"))
   expect_true(inherits(el_keep, "ggtypst::element_typst"))
+})
+
+test_that("element_typst merge keeps concrete element over same-slot blank", {
+  merged <- ggplot2::merge_element(element_typst(), element_blank())
+
+  expect_true(inherits(merged, "ggtypst::element_typst"))
 })
 
 
