@@ -30,3 +30,21 @@
       Error in `normalize_face()`:
       ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
 
+# annotate_typst rejects duplicate alias arguments
+
+    Code
+      annotate_typst("A", x = 3, y = 25, color = "red", colour = "blue")
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `color` and `colour`.
+      i Use `color`; `colour` is an alias.
+
+---
+
+    Code
+      annotate_typst("A", x = 3, y = 25, face = "plain", fontface = "bold")
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `face` and `fontface`.
+      i Use `face`; `fontface` is an alias.
+

@@ -46,6 +46,15 @@
       Error in `check_positive_number()`:
       ! `size` must be a single positive finite number.
 
+# resolve_arg_alias resolves aliases and rejects duplicates
+
+    Code
+      resolve_arg_alias("red", "blue", "color", "colour")
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `color` and `colour`.
+      i Use `color`; `colour` is an alias.
+
 # normalize_face normalizes supported face values
 
     Code

@@ -71,6 +71,19 @@ test_that("geom_typst validates face", {
   expect_snapshot(geom_typst(label = "scale", face = "oblique"), error = TRUE)
 })
 
+test_that("geom_typst supports fontface alias", {
+  layer <- geom_typst(label = "scale", fontface = "bold")
+
+  expect_equal(layer$aes_params$face, "bold")
+})
+
+test_that("geom_typst rejects duplicate face aliases", {
+  expect_snapshot(
+    geom_typst(label = "scale", face = "plain", fontface = "bold"),
+    error = TRUE
+  )
+})
+
 test_that("geom_typst validates mapped face vectors before row rendering", {
   df <- data.frame(
     x = c(1, 2),

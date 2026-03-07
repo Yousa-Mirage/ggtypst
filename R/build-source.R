@@ -5,12 +5,14 @@
 #' @param typst_code A single Typst source string.
 #' @param size Font size in points (pt).
 #' @param color Text color in any format accepted by [grDevices::col2rgb()].
+#' @param colour Alias of `color`.
 #' @param alpha Optional alpha multiplier in `[0, 1]`. If provided, it is
 #'   multiplied with the alpha channel embedded in `color`.
 #' @param family Font family name. The font must be available in the Typst rendering
 #'   environment (e.g., system fonts or embedded fonts).
 #' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
+#' @param fontface Alias of `face`.
 #' @param math_family Optional font family for math mode. Defaults to `New Computer Modern Math`.
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @return A single UTF-8 Typst source string.
@@ -19,13 +21,18 @@ build_typst_source <- function(
   typst_code,
   size = NULL,
   color = NULL,
+  colour = NULL,
   alpha = NULL,
   family = NULL,
   face = NULL,
+  fontface = NULL,
   math_family = NULL,
   angle = NULL
 ) {
   typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
+
+  color <- resolve_arg_alias(color, colour, "color", "colour")
+  face <- resolve_arg_alias(face, fontface, "face", "fontface")
 
   color <- check_single_string(color, "color")
   size <- check_positive_number(size, "size")

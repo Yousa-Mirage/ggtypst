@@ -14,6 +14,15 @@
       Error in `normalize_face()`:
       ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
 
+# geom_typst rejects duplicate face aliases
+
+    Code
+      geom_typst(label = "scale", face = "plain", fontface = "bold")
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `face` and `fontface`.
+      i Use `face`; `fontface` is an alias.
+
 # geom_typst validates mapped face vectors before row rendering
 
     Code

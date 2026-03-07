@@ -33,10 +33,28 @@
 ---
 
     Code
+      build_typst_source("A", color = "red", colour = "blue")
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `color` and `colour`.
+      i Use `color`; `colour` is an alias.
+
+---
+
+    Code
       build_typst_source("A", face = "oblique")
     Condition
       Error in `normalize_face()`:
       ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
+
+---
+
+    Code
+      build_typst_source("A", face = "plain", fontface = "bold")
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `face` and `fontface`.
+      i Use `face`; `fontface` is an alias.
 
 # convert_latex_to_typst reports mitex conversion errors
 

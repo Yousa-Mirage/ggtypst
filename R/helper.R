@@ -85,6 +85,29 @@ check_size_unit <- function(size.unit, arg = "size.unit") {
   size.unit
 }
 
+#' Resolve an argument alias
+#'
+#' @param value Canonical argument value.
+#' @param alias_value Alias argument value.
+#' @param arg Canonical argument name.
+#' @param alias Alias argument name.
+#' @return The resolved value.
+#' @noRd
+resolve_arg_alias <- function(value, alias_value, arg, alias_arg) {
+  if (!is.null(value) && !is.null(alias_value)) {
+    cli::cli_abort(c(
+      "Can't supply both {.arg {arg}} and {.arg {alias_arg}}.",
+      "i" = "Use {.arg {arg}}; {.arg {alias_arg}} is an alias."
+    ))
+  }
+
+  if (is.null(value)) {
+    alias_value
+  } else {
+    value
+  }
+}
+
 #' Validate a supported text face
 #'
 #' @param face Face name or ggplot-style numeric code.

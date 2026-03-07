@@ -15,7 +15,9 @@ annotate_math_typst(
   size.unit = "pt",
   alpha = NULL,
   color = NULL,
+  colour = NULL,
   face = NULL,
+  fontface = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -40,7 +42,12 @@ Use \code{"mm"} for ggplot2-style text sizes.}
 
 \item{color}{Optional text color accepted by \code{\link[grDevices:col2rgb]{grDevices::col2rgb()}}.}
 
+\item{colour}{Alias of \code{color}.}
+
 \item{face}{Optional math face. Only \code{"plain"} and \code{"bold"} are supported
+for math annotations.}
+
+\item{fontface}{Alias of \code{face}. Only \code{"plain"} and \code{"bold"} are supported
 for math annotations.}
 
 \item{math_family}{Optional font family for math equations.}

@@ -9,6 +9,8 @@
 #' for example `geom_typst(label = "Hello")`, to render the same Typst label
 #' for every row in the layer.
 #'
+#' Static layer parameters also accept `fontface` as an alias of `face`.
+#'
 #' @section Aesthetics:
 #' `geom_typst()` understands the following aesthetics (required aesthetics are
 #' in bold):
@@ -46,6 +48,9 @@ geom_typst <- function(
 ) {
   size.unit <- check_size_unit(size.unit, "size.unit")
   params <- list(...)
+
+  params$face <- resolve_arg_alias(params$face, params$fontface, "face", "fontface")
+  params$fontface <- NULL
 
   if ("face" %in% names(params)) {
     params$face <- normalize_face(params$face, "face")

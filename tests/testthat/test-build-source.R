@@ -55,6 +55,17 @@ test_that("build_typst_source maps face to Typst text styles", {
   expect_equal(lines[6], "A")
 })
 
+test_that("build_typst_source supports colour and fontface aliases", {
+  src <- build_typst_source("A", colour = "#33669980", fontface = "bold.italic")
+  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
+
+  expect_equal(lines[3], '#set text(fill: rgb("#33669980"))')
+  expect_equal(lines[4], '#set text(weight: "bold")')
+  expect_equal(lines[5], '#set text(style: "italic")')
+  expect_equal(lines[6], '#show math.equation: set text(weight: "bold")')
+  expect_equal(lines[7], "A")
+})
+
 test_that("build_typst_source does not force italic styling onto math", {
   src <- build_typst_source("$ x $", face = "italic")
   lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
@@ -71,7 +82,9 @@ test_that("build_typst_source validates arguments", {
   expect_snapshot(build_typst_source("A", size = 0), error = TRUE)
   expect_snapshot(build_typst_source("A", alpha = 1.1), error = TRUE)
   expect_snapshot(build_typst_source("A", color = "not-a-color"), error = TRUE)
+  expect_snapshot(build_typst_source("A", color = "red", colour = "blue"), error = TRUE)
   expect_snapshot(build_typst_source("A", face = "oblique"), error = TRUE)
+  expect_snapshot(build_typst_source("A", face = "plain", fontface = "bold"), error = TRUE)
 })
 
 test_that("convert_latex_to_typst returns mitex-ready typst code", {

@@ -149,3 +149,20 @@ test_that("annotate_typst converts size according to size.unit", {
 test_that("annotate_typst validates face", {
   expect_snapshot(annotate_typst("A", x = 3, y = 25, face = "oblique"), error = TRUE)
 })
+
+test_that("annotate_typst supports colour and fontface aliases", {
+  expect_no_error(
+    annotate_typst("A", x = 3, y = 25, colour = "#D20F39", fontface = "bold")
+  )
+})
+
+test_that("annotate_typst rejects duplicate alias arguments", {
+  expect_snapshot(
+    annotate_typst("A", x = 3, y = 25, color = "red", colour = "blue"),
+    error = TRUE
+  )
+  expect_snapshot(
+    annotate_typst("A", x = 3, y = 25, face = "plain", fontface = "bold"),
+    error = TRUE
+  )
+})

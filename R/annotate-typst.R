@@ -12,9 +12,11 @@
 #'   Use `"mm"` for ggplot2-style text sizes.
 #' @param alpha Optional alpha multiplier in `[0, 1]`.
 #' @param color Optional text color accepted by [grDevices::col2rgb()].
+#' @param colour Alias of `color`.
 #' @param family Optional text font family.
 #' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
+#' @param fontface Alias of `face`.
 #' @param math_family Optional font family for math equations.
 #' @param angle Optional text angle in degrees.
 #' @return A `ggplot2` layer.
@@ -30,8 +32,10 @@ annotate_typst <- function(
   size.unit = "pt",
   alpha = NULL,
   color = NULL,
+  colour = NULL,
   family = NULL,
   face = NULL,
+  fontface = NULL,
   math_family = NULL,
   angle = NULL
 ) {
@@ -41,6 +45,9 @@ annotate_typst <- function(
   hjust <- check_number(hjust, "hjust", allow_null = FALSE)
   vjust <- check_number(vjust, "vjust", allow_null = FALSE)
   scale <- check_positive_number(scale, "scale", allow_null = FALSE)
+
+  color <- resolve_arg_alias(color, colour, "color", "colour")
+  face <- resolve_arg_alias(face, fontface, "face", "fontface")
 
   size <- convert_size_to_pt(size, size.unit = size.unit)
 
@@ -77,6 +84,8 @@ annotate_typst <- function(
 #'   wrapped in `$ ... $` before rendering.
 #' @param face Optional math face. Only `"plain"` and `"bold"` are supported
 #'   for math annotations.
+#' @param fontface Alias of `face`. Only `"plain"` and `"bold"` are supported
+#'   for math annotations.
 #' @param inline Whether to render as inline math. Default `FALSE` renders as
 #'   display-style math.
 #' @return A `ggplot2` layer.
@@ -92,7 +101,9 @@ annotate_math_typst <- function(
   size.unit = "pt",
   alpha = NULL,
   color = NULL,
+  colour = NULL,
   face = NULL,
+  fontface = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -110,7 +121,9 @@ annotate_math_typst <- function(
     size.unit = size.unit,
     alpha = alpha,
     color = color,
+    colour = colour,
     face = face,
+    fontface = fontface,
     math_family = math_family,
     angle = angle
   )
@@ -125,6 +138,8 @@ annotate_math_typst <- function(
 #' @param latex_math_code A single LaTeX math string. Outer `$...$` or `$$...$$`
 #'   delimiters are optional and will be normalized.
 #' @param face Optional math face. Only `"plain"` and `"bold"` are supported
+#'   for math annotations.
+#' @param fontface Alias of `face`. Only `"plain"` and `"bold"` are supported
 #'   for math annotations.
 #' @param inline Whether to render as inline math. Default `FALSE` renders as
 #'   display-style math.
@@ -141,7 +156,9 @@ annotate_math_mitex <- function(
   size.unit = "pt",
   alpha = NULL,
   color = NULL,
+  colour = NULL,
   face = NULL,
+  fontface = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -175,7 +192,9 @@ annotate_math_mitex <- function(
     size.unit = size.unit,
     alpha = alpha,
     color = color,
+    colour = colour,
     face = face,
+    fontface = fontface,
     math_family = math_family,
     angle = angle
   )

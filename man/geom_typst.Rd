@@ -127,6 +127,8 @@ Set \code{size.unit = "mm"} to match ggplot2 text size conventions.
 \code{label} can be mapped in \code{\link[ggplot2:aes]{ggplot2::aes()}} or supplied as a constant value,
 for example \code{geom_typst(label = "Hello")}, to render the same Typst label
 for every row in the layer.
+
+Static layer parameters also accept \code{fontface} as an alias of \code{face}.
 }
 \section{Aesthetics}{
 

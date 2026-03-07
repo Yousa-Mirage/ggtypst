@@ -75,6 +75,17 @@ test_that("convert_size_to_pt supports pt and mm units", {
   expect_snapshot(convert_size_to_pt(0, "pt"), error = TRUE)
 })
 
+test_that("resolve_arg_alias resolves aliases and rejects duplicates", {
+  expect_null(resolve_arg_alias(NULL, NULL, "color", "colour"))
+  expect_equal(resolve_arg_alias("red", NULL, "color", "colour"), "red")
+  expect_equal(resolve_arg_alias(NULL, "red", "color", "colour"), "red")
+
+  expect_snapshot(
+    resolve_arg_alias("red", "blue", "color", "colour"),
+    error = TRUE
+  )
+})
+
 test_that("normalize_face normalizes supported face values", {
   expect_null(normalize_face(NULL, "face"))
   expect_equal(normalize_face("plain", "face"), "plain")
