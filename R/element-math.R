@@ -141,7 +141,6 @@ element_grob_math_impl <- function(
   )
 }
 
-#' @exportS3Method ggplot2::element_grob
 element_grob.element_math_typst <- function(
   element,
   label = "",
@@ -249,7 +248,6 @@ element_math_mitex <- function(
   )
 }
 
-#' @exportS3Method ggplot2::element_grob
 element_grob.element_math_mitex <- function(
   element,
   label = "",

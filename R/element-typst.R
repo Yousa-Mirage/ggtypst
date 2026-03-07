@@ -137,7 +137,6 @@ element_typst <- function(
 
 # element_grob dispatching ----------------------------------------------------
 
-#' @exportS3Method ggplot2::element_grob
 element_grob.element_typst <- function(
   element,
   label = "",
