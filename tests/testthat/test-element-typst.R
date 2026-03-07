@@ -221,3 +221,80 @@ test_that("element_typst visual: facet strip", {
 
   vdiffr::expect_doppelganger("element-typst-facet-strip", p)
 })
+
+test_that("element_typst visual: subtitle caption debug size-unit", {
+  skip_if_not_installed("vdiffr")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(colour = "grey35", alpha = 0.8, size = 1.6) +
+    labs(
+      title = r"( $"Amazing Matrix Title:" mat(delim: #none, 1, 2; alpha, beta) times vec(Delta, 3) = vec(2 + Delta, alpha + 3) $)",
+      subtitle = "Subtitle in 8 mm",
+      caption = "Caption in Typst"
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(
+      plot.title = element_typst(size = 14),
+      plot.subtitle = element_typst(size = 8, size.unit = "mm", debug = TRUE),
+      plot.caption = element_typst(size = 10, face = "italic", colour = "#1E66F5")
+    )
+
+  vdiffr::expect_doppelganger("element-typst-subtitle-caption-debug-size-unit", p)
+})
+
+test_that("element_typst visual: axis title y and legend text", {
+  skip_if_not_installed("vdiffr")
+
+  p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
+    geom_point(size = 2) +
+    labs(
+      x = "$ text(\"Weight\") + omega dot 10^3 $",
+      y = "$alpha$ + $beta$ + $Gamma$ + 中文 + § + ± + Ω + ℃",
+      colour = "Legend *Title*"
+    ) +
+    scale_colour_brewer(
+      palette = "Dark2",
+      labels = c("4 cylinders", "$6$ cylinders", "8 cylinders")
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(
+      axis.title.x = element_typst(size = 14, colour = "#7287FD"),
+      axis.title.y = element_typst(size = 14, face = "bold"),
+      legend.title = element_typst(size = 11, colour = "#D20F39"),
+      legend.text = element_typst(size = 10)
+    )
+
+  vdiffr::expect_doppelganger("element-typst-axis-title-y-legend", p)
+})
+
+test_that("element_typst visual: inherit blank on x title", {
+  skip_if_not_installed("vdiffr")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(colour = "grey35", alpha = 0.8, size = 1.6) +
+    labs(x = "Hidden X title", y = "Visible Y title") +
+    theme_minimal(base_size = 11) +
+    theme(
+      axis.title = element_blank(),
+      axis.title.x = element_typst(size = 12, debug = TRUE, inherit.blank = TRUE),
+      axis.title.y = element_typst(size = 12, colour = "#40A02B")
+    )
+
+  vdiffr::expect_doppelganger("element-typst-inherit-blank-axis-title-x", p)
+})
+
+test_that("element_typst visual: facet strip x and y", {
+  skip_if_not_installed("vdiffr")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(colour = "grey35", alpha = 0.75, size = 1.4) +
+    facet_grid(vs ~ gear, labeller = label_both) +
+    theme_minimal(base_size = 14) +
+    theme(
+      strip.text = element_blank(),
+      strip.text.x = element_typst(size = 14, face = "bold", colour = "#1E66F5"),
+      strip.text.y = element_typst(size = 14, face = "italic", colour = "#D20F39")
+    )
+
+  vdiffr::expect_doppelganger("element-typst-facet-strip-x-y", p)
+})
