@@ -3,21 +3,6 @@ NULL
 
 # element_math_typst ----------------------------------------------------------
 
-# Element math constructors and grob methods only need scalar math-face
-# validation, so keep this helper local instead of sharing it with geom code.
-normalize_math_face <- function(face, fn) {
-  face <- normalize_face(face, "face")
-
-  if (!is.null(face) && !(face %in% c("plain", "bold"))) {
-    cli::cli_abort(
-      "{.arg face} for {.fn {fn}} must be either \"plain\" or \"bold\".",
-      call = rlang::call2(fn)
-    )
-  }
-
-  face
-}
-
 # Math-only Typst theme elements reuse the element_typst property set and add
 # an inline flag controlling how outer math delimiters are normalized.
 element_math_typst_class <- S7::new_class(
@@ -63,7 +48,11 @@ element_math_typst <- function(
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
   colour <- resolve_arg_alias(colour, color, "colour", "color")
 
-  face <- normalize_math_face(face, "element_math_typst")
+  face <- normalize_face_values(
+    face,
+    fn = "element_math_typst",
+    supported = c("plain", "bold")
+  )
   size.unit <- check_size_unit(size.unit)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
   inline <- check_bool(inline, "inline", allow_null = FALSE)
@@ -82,6 +71,73 @@ element_math_typst <- function(
     debug = debug,
     inherit.blank = inherit.blank,
     inline = inline
+  )
+}
+
+# Shared implementation for math element grobs.
+# Both element_math_typst and element_math_mitex delegates to this.
+element_grob_math_impl <- function(
+  element,
+  label,
+  kind,
+  fn,
+  x = NULL,
+  y = NULL,
+  family = NULL,
+  face = NULL,
+  colour = NULL,
+  size = NULL,
+  hjust = NULL,
+  vjust = NULL,
+  angle = NULL,
+  lineheight = NULL,
+  margin = NULL,
+  margin_x = FALSE,
+  margin_y = FALSE,
+  ...
+) {
+  if (is.null(label)) {
+    return(ggplot2::zeroGrob())
+  }
+
+  verb <- if (kind == "typst") "normalize" else "convert"
+  noun <- if (kind == "typst") "Typst" else "LaTeX"
+  error_msg <- sprintf("Failed to %s a %s math label in {.fn {fn}}.", verb, noun)
+
+  face <- face %||% element$face
+  face <- normalize_face_values(
+    face,
+    fn = fn,
+    supported = c("plain", "bold")
+  )
+  label <- normalize_math_label_values(
+    label = label,
+    inline = isTRUE(element$inline),
+    fn = fn,
+    kind = kind,
+    static_error = error_msg,
+    mapped_error = error_msg,
+    static_call = rlang::call2(fn),
+    preserve_blank = TRUE
+  )
+
+  element_grob.element_typst(
+    element = element,
+    label = label,
+    x = x,
+    y = y,
+    family = family,
+    face = face,
+    colour = colour,
+    size = size,
+    hjust = hjust,
+    vjust = vjust,
+    angle = angle,
+    lineheight = lineheight,
+    margin = margin,
+    margin_x = margin_x,
+    margin_y = margin_y,
+    ...
   )
 }
 
@@ -104,26 +160,11 @@ element_grob.element_math_typst <- function(
   margin_y = FALSE,
   ...
 ) {
-  if (is.null(label)) {
-    return(ggplot2::zeroGrob())
-  }
-
-  face <- face %||% element$face
-  face <- normalize_math_face(face, "element_math_typst")
-  label <- normalize_math_label_values(
-    label = label,
-    inline = isTRUE(element$inline),
-    fn = "element_math_typst",
-    kind = "typst",
-    static_error = "Failed to normalize a Typst math label in {.fn {fn}}.",
-    mapped_error = "Failed to normalize a Typst math label in {.fn {fn}}.",
-    static_call = rlang::call2("element_math_typst"),
-    preserve_blank = TRUE
-  )
-
-  element_grob.element_typst(
+  element_grob_math_impl(
     element = element,
     label = label,
+    kind = "typst",
+    fn = "element_math_typst",
     x = x,
     y = y,
     family = family,
@@ -182,7 +223,11 @@ element_math_mitex <- function(
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
   colour <- resolve_arg_alias(colour, color, "colour", "color")
 
-  face <- normalize_math_face(face, "element_math_mitex")
+  face <- normalize_face_values(
+    face,
+    fn = "element_math_mitex",
+    supported = c("plain", "bold")
+  )
   size.unit <- check_size_unit(size.unit)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
   inline <- check_bool(inline, "inline", allow_null = FALSE)
@@ -223,26 +268,11 @@ element_grob.element_math_mitex <- function(
   margin_y = FALSE,
   ...
 ) {
-  if (is.null(label)) {
-    return(ggplot2::zeroGrob())
-  }
-
-  face <- face %||% element$face
-  face <- normalize_math_face(face, "element_math_mitex")
-  label <- normalize_math_label_values(
-    label = label,
-    inline = isTRUE(element$inline),
-    fn = "element_math_mitex",
-    kind = "mitex",
-    static_error = "Failed to convert a LaTeX math label in {.fn {fn}}.",
-    mapped_error = "Failed to convert a LaTeX math label in {.fn {fn}}.",
-    static_call = rlang::call2("element_math_mitex"),
-    preserve_blank = TRUE
-  )
-
-  element_grob.element_typst(
+  element_grob_math_impl(
     element = element,
     label = label,
+    kind = "mitex",
+    fn = "element_math_mitex",
     x = x,
     y = y,
     family = family,

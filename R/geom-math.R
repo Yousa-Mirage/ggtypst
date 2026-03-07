@@ -38,10 +38,13 @@ geom_math_typst <- function(
     fn = "geom_math_typst",
     supported = c("plain", "bold")
   )
-  params$label <- normalize_math_labels(
-    params$label,
+  params$label <- normalize_math_label_values(
+    label = params$label,
     inline = inline,
-    fn = "geom_math_typst"
+    fn = "geom_math_typst",
+    kind = "typst",
+    static_error = "Failed to normalize the static {.arg label} parameter in {.fn {fn}}.",
+    mapped_error = "Failed to normalize a Typst math label in {.fn {fn}}."
   )
   position <- resolve_typst_position(
     position,
@@ -71,6 +74,55 @@ geom_math_typst <- function(
   )
 }
 
+# Shared setup_data logic for math geoms.
+# Handles label propagation from params, math label normalization,
+# and face validation -- identical for typst and mitex backends.
+setup_data_math <- function(data, params, kind, fn) {
+  from_params <- is.null(data$label) && !is.null(params$label)
+  if (from_params) {
+    data$label <- rep(params$label, length.out = nrow(data))
+  }
+
+  if (is.null(data$label)) {
+    return(GeomTypst$setup_data(data, params))
+  }
+
+  # Static labels were already normalized/converted in the geom constructor;
+  # only process mapped labels from data.
+  if (!from_params) {
+    verb <- if (kind == "typst") "normalize" else "convert"
+    noun <- if (kind == "typst") "Typst" else "LaTeX"
+
+    data$label <- normalize_math_label_values(
+      label = data$label,
+      inline = isTRUE(params$inline),
+      fn = fn,
+      rows = seq_len(nrow(data)),
+      kind = kind,
+      static_error = sprintf(
+        "Failed to %s the static {.arg label} parameter in {.fn {fn}}.",
+        verb
+      ),
+      mapped_error = sprintf(
+        "Failed to %s a %s math label in {.fn {fn}}.",
+        verb,
+        noun
+      ),
+      static_call = if (kind == "mitex") rlang::call2(fn)
+    )
+  }
+
+  data$face <- normalize_face_values(
+    data$face,
+    rows = seq_len(nrow(data)),
+    fn = fn,
+    detail = "Math labels only support \"plain\" and \"bold\".",
+    supported = c("plain", "bold")
+  )
+
+  data
+}
+
 #' @rdname geom_math_typst
 #' @format NULL
 #' @usage NULL
@@ -79,47 +131,9 @@ GeomMathTypst <- ggplot2::ggproto(
   GeomTypst,
   extra_params = c("na.rm", "size.unit", "inline"),
   setup_data = function(data, params) {
-    from_params <- is.null(data$label) && !is.null(params$label)
-    if (from_params) {
-      data$label <- rep(params$label, length.out = nrow(data))
-    }
-
-    if (is.null(data$label)) {
-      return(GeomTypst$setup_data(data, params))
-    }
-
-    if (!from_params) {
-      data$label <- normalize_math_labels(
-        data$label,
-        inline = isTRUE(params$inline),
-        fn = "geom_math_typst",
-        rows = seq_len(nrow(data))
-      )
-    }
-
-    data$face <- normalize_face_values(
-      data$face,
-      rows = seq_len(nrow(data)),
-      fn = "geom_math_typst",
-      detail = "Math labels only support \"plain\" and \"bold\".",
-      supported = c("plain", "bold")
-    )
-
-    data
+    setup_data_math(data, params, kind = "typst", fn = "geom_math_typst")
   }
 )
-
-normalize_math_labels <- function(label, inline, fn, rows = NULL) {
-  normalize_math_label_values(
-    label = label,
-    inline = inline,
-    fn = fn,
-    rows = rows,
-    kind = "typst",
-    static_error = "Failed to normalize the static {.arg label} parameter in {.fn {fn}}.",
-    mapped_error = "Failed to normalize a Typst math label in {.fn {fn}}."
-  )
-}
 
 # geom_math_mitex
 
@@ -159,10 +173,14 @@ geom_math_mitex <- function(
     fn = "geom_math_mitex",
     supported = c("plain", "bold")
   )
-  params$label <- normalize_mitex_labels(
-    params$label,
+  params$label <- normalize_math_label_values(
+    label = params$label,
     inline = inline,
-    fn = "geom_math_mitex"
+    fn = "geom_math_mitex",
+    kind = "mitex",
+    static_error = "Failed to convert the static {.arg label} parameter in {.fn {fn}}.",
+    mapped_error = "Failed to convert a LaTeX math label in {.fn {fn}}.",
+    static_call = rlang::call2("geom_math_mitex")
   )
   position <- resolve_typst_position(
     position,
@@ -201,47 +219,6 @@ GeomMathMitex <- ggplot2::ggproto(
   extra_params = c("na.rm", "size.unit", "inline"),
 
   setup_data = function(data, params) {
-    from_params <- is.null(data$label) && !is.null(params$label)
-    if (from_params) {
-      data$label <- rep(params$label, length.out = nrow(data))
-    }
-
-    if (is.null(data$label)) {
-      return(GeomTypst$setup_data(data, params))
-    }
-
-    # Static labels were already converted in geom_math_mitex();
-    # only convert mapped labels from data.
-    if (!from_params) {
-      data$label <- normalize_mitex_labels(
-        data$label,
-        inline = isTRUE(params$inline),
-        fn = "geom_math_mitex",
-        rows = seq_len(nrow(data))
-      )
-    }
-
-    data$face <- normalize_face_values(
-      data$face,
-      rows = seq_len(nrow(data)),
-      fn = "geom_math_mitex",
-      detail = "Math labels only support \"plain\" and \"bold\".",
-      supported = c("plain", "bold")
-    )
-
-    data
+    setup_data_math(data, params, kind = "mitex", fn = "geom_math_mitex")
   }
 )
-
-normalize_mitex_labels <- function(label, inline, fn, rows = NULL) {
-  normalize_math_label_values(
-    label = label,
-    inline = inline,
-    fn = fn,
-    rows = rows,
-    kind = "mitex",
-    static_error = "Failed to convert the static {.arg label} parameter in {.fn {fn}}.",
-    mapped_error = "Failed to convert a LaTeX math label in {.fn {fn}}.",
-    static_call = rlang::call2(fn)
-  )
-}
