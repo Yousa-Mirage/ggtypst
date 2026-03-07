@@ -119,20 +119,26 @@ normalize_face <- function(face, arg = "face", allow_null = TRUE) {
   if (is.null(face) || length(face) == 0 || (length(face) == 1 && is.na(face))) {
     if (allow_null) return(NULL)
   } else if (length(face) == 1) {
-    if (is.numeric(face) && face %in% 1:4) {
+    if (is.numeric(face) && (face %in% 1:4)) {
       return(c("plain", "bold", "italic", "bold.italic")[[face]])
-    }
+    } else {
+      normalized <- gsub("[[:space:]_.-]+", "", tolower(as.character(face)))
 
-    normalized <- gsub("[[:space:]_.-]+", "", tolower(as.character(face)))
-    out <- switch(
-      normalized,
-      plain = "plain",
-      bold = "bold",
-      italic = "italic",
-      bolditalic = "bold.italic"
-    )
-    if (!is.null(out)) {
-      return(out)
+      out <- switch(
+        normalized,
+        `1` = ,
+        plain = "plain",
+        `2` = ,
+        bold = "bold",
+        `3` = ,
+        italic = "italic",
+        `4` = ,
+        bolditalic = "bold.italic"
+      )
+
+      if (!is.null(out)) {
+        return(out)
+      }
     }
   }
 

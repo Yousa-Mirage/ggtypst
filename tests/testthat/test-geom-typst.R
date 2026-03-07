@@ -136,10 +136,10 @@ test_that("geom_typst drops rows with missing mapped size", {
 
 test_that("geom_typst normalizes factor-backed face aesthetics", {
   df <- data.frame(
-    x = c(1, 2),
-    y = c(1, 2),
-    label = c("a", "b"),
-    face = factor(c("Bold Italic", "plain"))
+    x = 1:8,
+    y = 1:8,
+    label = letters[1:8],
+    face = factor(c("plain", "bold", "italic", "bold.italic", 1, 2, 3, 4))
   )
 
   p <- ggplot(df, aes(x, y, label = label, face = face)) +
@@ -147,7 +147,7 @@ test_that("geom_typst normalizes factor-backed face aesthetics", {
 
   grob <- layer_grob(p)[[1]]
   expect_s3_class(grob, "gTree")
-  expect_length(grob$children, 2)
+  expect_length(grob$children, 8)
 })
 
 test_that("geom_typst reports row and label context for render failures", {
