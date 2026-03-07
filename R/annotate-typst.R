@@ -17,6 +17,7 @@
 #' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
 #' @param fontface Alias of `face`.
+#' @param lineheight Optional line height value. May be negative.
 #' @param math_family Optional font family for math equations.
 #' @param angle Optional text angle in degrees.
 #' @return A `ggplot2` layer.
@@ -36,6 +37,7 @@ annotate_typst <- function(
   family = NULL,
   face = NULL,
   fontface = NULL,
+  lineheight = NULL,
   math_family = NULL,
   angle = NULL
 ) {
@@ -58,6 +60,7 @@ annotate_typst <- function(
     alpha = alpha,
     family = family,
     face = face,
+    lineheight = lineheight,
     math_family = math_family,
     angle = angle
   )
@@ -104,6 +107,7 @@ annotate_math_typst <- function(
   colour = NULL,
   face = NULL,
   fontface = NULL,
+  lineheight = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -124,6 +128,7 @@ annotate_math_typst <- function(
     colour = colour,
     face = face,
     fontface = fontface,
+    lineheight = lineheight,
     math_family = math_family,
     angle = angle
   )
@@ -159,6 +164,7 @@ annotate_math_mitex <- function(
   colour = NULL,
   face = NULL,
   fontface = NULL,
+  lineheight = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -195,6 +201,7 @@ annotate_math_mitex <- function(
     colour = colour,
     face = face,
     fontface = fontface,
+    lineheight = lineheight,
     math_family = math_family,
     angle = angle
   )

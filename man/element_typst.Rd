@@ -37,8 +37,7 @@ element_typst(
 
 \item{angle}{Rotation angle in degrees.}
 
-\item{lineheight}{Line height multiplier (currently unused; reserved for
-future Typst paragraph spacing support).}
+\item{lineheight}{Line height value. May be negative.}
 
 \item{margin}{Margins around the text, created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
 

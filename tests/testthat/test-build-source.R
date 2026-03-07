@@ -31,6 +31,25 @@ test_that("build_typst_source supports alpha-only style", {
   expect_match(src, '#set text\\(fill: rgb\\("#00000080"\\)\\)')
 })
 
+test_that("build_typst_source maps lineheight to Typst paragraph leading", {
+  src <- build_typst_source(typst_code = "line1\nline2", lineheight = 1.25)
+  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
+
+  expect_equal(lines[1], preamble_set[1])
+  expect_equal(lines[2], preamble_set[2])
+  expect_equal(lines[3], "#set par(leading: 1.25em)")
+  expect_equal(lines[4], "line1")
+  expect_equal(lines[5], "line2")
+})
+
+test_that("build_typst_source allows negative lineheight", {
+  src <- build_typst_source(typst_code = "A", lineheight = -0.25)
+  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
+
+  expect_equal(lines[3], "#set par(leading: -0.25em)")
+  expect_equal(lines[4], "A")
+})
+
 test_that("build_typst_source preserves user text content", {
   text <- r"(line1
 line2 {x} % y)"

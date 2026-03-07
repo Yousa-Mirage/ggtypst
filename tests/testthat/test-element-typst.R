@@ -129,6 +129,20 @@ test_that("element_grob.element_typst handles different labels", {
   expect_s3_class(grob_math, "titleGrob")
 })
 
+test_that("element_grob.element_typst lineheight changes rendered height", {
+  label <- "first line #linebreak() second line"
+
+  grob_tight <- element_typst(size = 12, lineheight = 0.8) |>
+    element_grob(label = label)
+  grob_loose <- element_typst(size = 12, lineheight = 1.8) |>
+    element_grob(label = label)
+
+  height_tight <- grid::convertHeight(grid::grobHeight(grob_tight), "pt", valueOnly = TRUE)
+  height_loose <- grid::convertHeight(grid::grobHeight(grob_loose), "pt", valueOnly = TRUE)
+
+  expect_gt(height_loose, height_tight)
+})
+
 # rotate_just
 
 test_that("rotate_just remaps justifications across quadrants", {
@@ -297,4 +311,22 @@ test_that("element_typst visual: facet strip x and y", {
     )
 
   vdiffr::expect_doppelganger("element-typst-facet-strip-x-y", p)
+})
+
+test_that("element_typst visual: multiline lineheight", {
+  skip_if_not_installed("vdiffr")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(colour = "grey35", alpha = 0.8, size = 1.6) +
+    labs(
+      title = "tight #linebreak() spacing",
+      subtitle = "loose #linebreak() spacing"
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(
+      plot.title = element_typst(size = 14, lineheight = 0.8, colour = "#1E66F5"),
+      plot.subtitle = element_typst(size = 14, lineheight = 1.8, colour = "#D20F39")
+    )
+
+  vdiffr::expect_doppelganger("element-typst-lineheight", p)
 })

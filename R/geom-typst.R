@@ -24,6 +24,7 @@
 #' - `face`
 #' - `family`
 #' - `hjust`
+#' - `lineheight`
 #' - `math_family`
 #' - `size`
 #' - `vjust`
@@ -115,6 +116,7 @@ GeomTypst <- ggplot2::ggproto(
     angle = 0,
     face = "plain",
     hjust = 0.5,
+    lineheight = NA,
     vjust = 0.5,
     alpha = NA,
     family = "",
@@ -172,6 +174,7 @@ GeomTypst <- ggplot2::ggproto(
       colour = data$colour,
       face = data$face,
       family = data$family,
+      lineheight = data$lineheight,
       math_family = data$math_family,
       angle = data$angle,
       hjust = data$hjust,
@@ -200,6 +203,7 @@ GeomTypst <- ggplot2::ggproto(
 #' @param colour Optional text colour.
 #' @param face Optional text face.
 #' @param family Optional text font family.
+#' @param lineheight Optional line height value. May be negative.
 #' @param math_family Optional math font family.
 #' @param angle Optional rotation angle in degrees.
 #' @param hjust,vjust Horizontal and vertical justification values.
@@ -216,6 +220,7 @@ geom_typst_row_grob <- function(
   colour,
   face,
   family,
+  lineheight,
   math_family,
   angle,
   hjust,
@@ -233,6 +238,7 @@ geom_typst_row_grob <- function(
         color = normalize_optional_string(colour),
         face = face,
         family = normalize_optional_string(family, empty_is_null = TRUE),
+        lineheight = normalize_optional_number(lineheight),
         math_family = normalize_optional_string(math_family, empty_is_null = TRUE),
         angle = normalize_optional_number(angle)
       )

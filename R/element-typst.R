@@ -20,8 +20,7 @@ NULL
 #' @param hjust Horizontal justification (0 = left, 0.5 = centre, 1 = right).
 #' @param vjust Vertical justification (0 = bottom, 0.5 = centre, 1 = top).
 #' @param angle Rotation angle in degrees.
-#' @param lineheight Line height multiplier (currently unused; reserved for
-#'   future Typst paragraph spacing support).
+#' @param lineheight Line height value. May be negative.
 #' @param margin Margins around the text, created with [ggplot2::margin()].
 #' @param math_family Optional font family for Typst math mode.
 #' @param size.unit Unit used to interpret `size`. Either `"pt"` (default) or
@@ -54,13 +53,13 @@ element_typst <- function(
   hjust = NULL,
   vjust = NULL,
   angle = NULL,
-  # TODO: support lineheight in typst
   lineheight = NULL,
   color = NULL,
   margin = NULL,
   math_family = NULL,
   size.unit = "pt",
   debug = NULL,
+  # TODO: inherit.blank not implemented
   inherit.blank = FALSE
 ) {
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
@@ -118,6 +117,7 @@ element_grob.element_typst <- function(
   hjust <- hjust %||% element$hjust %||% 0.5
   vjust <- vjust %||% element$vjust %||% 0.5
   angle <- angle %||% element$angle %||% 0
+  lineheight <- lineheight %||% element$lineheight
   margin <- margin %||% element$margin %||% ggplot2::margin(0, 0, 0, 0)
   size <- size %||% element$size
   colour <- colour %||% element$colour
@@ -155,6 +155,7 @@ element_grob.element_typst <- function(
   # Normalize other args
   face <- normalize_face(face, "face")
   size_pt <- convert_size_to_pt(size, size.unit = size.unit)
+  lineheight <- check_number(lineheight, "lineheight")
   family <- normalize_optional_string(family, empty_is_null = TRUE)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
 
@@ -168,6 +169,7 @@ element_grob.element_typst <- function(
     colour = colour,
     family = family,
     face = face,
+    lineheight = lineheight,
     math_family = math_family,
     angle = angle,
     margin = margin,
@@ -193,6 +195,7 @@ element_grob.element_typst <- function(
 #' @param colour Text colour string.
 #' @param family Font family or `NULL`.
 #' @param face Normalised face string or `NULL`.
+#' @param lineheight Line height value or `NULL`.
 #' @param math_family Math font family or `NULL`.
 #' @param angle Rotation angle in degrees.
 #' @param margin Margin object.
@@ -210,6 +213,7 @@ typst_title_grob <- function(
   colour,
   family,
   face,
+  lineheight,
   math_family,
   angle,
   margin,
@@ -237,6 +241,7 @@ typst_title_grob <- function(
       colour = colour,
       family = family,
       face = face,
+      lineheight = lineheight,
       math_family = math_family,
       angle = angle
     )
@@ -273,6 +278,7 @@ typst_title_grob <- function(
 #' @param colour Text colour string.
 #' @param family Font family or `NULL`.
 #' @param face Normalised face string or `NULL`.
+#' @param lineheight Line height value or `NULL`.
 #' @param math_family Math font family or `NULL`.
 #' @param angle Rotation angle in degrees.
 #' @return A list with `$grob`, `$width_pt`, and `$height_pt`.
@@ -287,6 +293,7 @@ typst_element_grob <- function(
   colour,
   family,
   face,
+  lineheight,
   math_family,
   angle
 ) {
@@ -298,6 +305,7 @@ typst_element_grob <- function(
     color = colour,
     family = family,
     face = face,
+    lineheight = lineheight,
     math_family = math_family,
     angle = angle
   )

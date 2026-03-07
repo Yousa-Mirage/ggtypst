@@ -19,6 +19,7 @@ annotate_typst(
   family = NULL,
   face = NULL,
   fontface = NULL,
+  lineheight = NULL,
   math_family = NULL,
   angle = NULL
 )
@@ -49,6 +50,8 @@ Use \code{"mm"} for ggplot2-style text sizes.}
 \code{"bold.italic"}.}
 
 \item{fontface}{Alias of \code{face}.}
+
+\item{lineheight}{Optional line height value. May be negative.}
 
 \item{math_family}{Optional font family for math equations.}
 
