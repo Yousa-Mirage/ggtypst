@@ -46,6 +46,22 @@
       Error in `check_positive_number()`:
       ! `size` must be a single positive finite number.
 
+# normalize_face normalizes supported face values
+
+    Code
+      normalize_face("oblique", "face")
+    Condition
+      Error in `normalize_face()`:
+      ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
+
+---
+
+    Code
+      normalize_face(5, "face")
+    Condition
+      Error in `normalize_face()`:
+      ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
+
 # as_typst_math_code supports inline mode
 
     Code

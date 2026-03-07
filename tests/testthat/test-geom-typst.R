@@ -67,6 +67,14 @@ test_that("geom_typst converts mapped size according to size.unit", {
   expect_snapshot(geom_typst(label = "scale", size.unit = "px"), error = TRUE)
 })
 
+test_that("geom_typst validates face", {
+  p <- data.frame(x = 1, y = 1, label = "scale") |>
+    ggplot(aes(x, y, label = label)) +
+    geom_typst(face = "oblique")
+
+  expect_snapshot(ggplotGrob(p), error = TRUE)
+})
+
 test_that("geom_typst reports row and label context for render failures", {
   df <- data.frame(
     x = c(1, 2),
@@ -97,6 +105,7 @@ test_that("geom_typst visual stability with mapped style coverage", {
     alpha = c(NA, 0.7, 1, 1, 1),
     size = c(11, 11, 13, 12, 12),
     angle = c(0, 0, 0, 20, 0),
+    face = c("plain", "bold", "plain", "bold.italic", "italic"),
     hjust = c(0.5, 0.5, 0.5, 0.5, 0),
     vjust = c(0.5, 0.5, 0.5, 0.5, 1)
   )
@@ -109,6 +118,7 @@ test_that("geom_typst visual stability with mapped style coverage", {
         alpha = alpha,
         size = size,
         angle = angle,
+        face = face,
         hjust = hjust,
         vjust = vjust
       ),

@@ -85,6 +85,39 @@ check_size_unit <- function(size.unit, arg = "size.unit") {
   size.unit
 }
 
+#' Validate a supported text face
+#'
+#' @param face Face name or ggplot-style numeric code.
+#' @param arg Argument name used in error messages.
+#' @param allow_null Whether `NULL` is accepted.
+#' @return The normalized face name.
+#' @noRd
+normalize_face <- function(face, arg = "face", allow_null = TRUE) {
+  if (is.null(face) || length(face) == 0 || (length(face) == 1 && is.na(face))) {
+    if (allow_null) return(NULL)
+  } else if (length(face) == 1) {
+    if (is.numeric(face) && face %in% 1:4) {
+      return(c("plain", "bold", "italic", "bold.italic")[[face]])
+    }
+
+    normalized <- gsub("[[:space:]_.-]+", "", tolower(as.character(face)))
+    out <- switch(
+      normalized,
+      plain = "plain",
+      bold = "bold",
+      italic = "italic",
+      bolditalic = "bold.italic"
+    )
+    if (!is.null(out)) {
+      return(out)
+    }
+  }
+
+  cli::cli_abort(
+    "{.arg {arg}} must be one of \"plain\", \"bold\", \"italic\", or \"bold.italic\" (or numeric codes 1-4)."
+  )
+}
+
 #' Validate an alpha multiplier
 #'
 #' @param alpha Optional numeric alpha value in `[0, 1]`.
@@ -186,6 +219,28 @@ normalize_optional_string <- function(x, empty_is_null = FALSE) {
   }
 
   x
+}
+
+#' Map a normalized face to Typst text settings
+#'
+#' @param face A normalized face string.
+#' @return A character vector of Typst commands.
+#' @noRd
+face_to_typst_styles <- function(face) {
+  switch(
+    face,
+    plain = character(0),
+    bold = c(
+      '#set text(weight: "bold")',
+      '#show math.equation: set text(weight: "bold")'
+    ),
+    italic = c('#set text(style: "italic")'),
+    `bold.italic` = c(
+      '#set text(weight: "bold")',
+      '#set text(style: "italic")',
+      '#show math.equation: set text(weight: "bold")'
+    )
+  )
 }
 
 #' Resolve character justifications against panel coordinates

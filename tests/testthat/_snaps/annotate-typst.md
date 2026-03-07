@@ -22,3 +22,11 @@
       Error in `check_number()`:
       ! `vjust` must be a single finite number.
 
+# annotate_typst validates face
+
+    Code
+      annotate_typst("A", x = 3, y = 25, face = "oblique")
+    Condition
+      Error in `normalize_face()`:
+      ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
+

@@ -30,6 +30,14 @@
       Error in `grDevices::col2rgb()`:
       ! invalid color name 'not-a-color'
 
+---
+
+    Code
+      build_typst_source("A", face = "oblique")
+    Condition
+      Error in `normalize_face()`:
+      ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
+
 # convert_latex_to_typst reports mitex conversion errors
 
     Code

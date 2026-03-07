@@ -139,6 +139,7 @@ in bold):
 \item \code{alpha}
 \item \code{angle}
 \item \code{colour}
+\item \code{face}
 \item \code{family}
 \item \code{hjust}
 \item \code{math_family}

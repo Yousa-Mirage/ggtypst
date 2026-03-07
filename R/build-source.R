@@ -9,6 +9,8 @@
 #'   multiplied with the alpha channel embedded in `color`.
 #' @param family Font family name. The font must be available in the Typst rendering
 #'   environment (e.g., system fonts or embedded fonts).
+#' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
+#'   `"bold.italic"`.
 #' @param math_family Optional font family for math mode. Defaults to `New Computer Modern Math`.
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @return A single UTF-8 Typst source string.
@@ -19,6 +21,7 @@ build_typst_source <- function(
   color = NULL,
   alpha = NULL,
   family = NULL,
+  face = NULL,
   math_family = NULL,
   angle = NULL
 ) {
@@ -30,6 +33,7 @@ build_typst_source <- function(
   family <- check_single_string(family, "family")
   math_family <- check_single_string(math_family, "math_family")
   angle <- check_number(angle, "angle")
+  face <- normalize_face(face, "face")
 
   text_args <- c()
 
@@ -49,6 +53,11 @@ build_typst_source <- function(
   # Family
   if (!is.null(family)) {
     text_args <- c(text_args, sprintf('#set text(font: "%s")', family))
+  }
+
+  # Face
+  if (!is.null(face)) {
+    text_args <- c(text_args, face_to_typst_styles(face))
   }
 
   # Math Family

@@ -75,6 +75,48 @@ test_that("convert_size_to_pt supports pt and mm units", {
   expect_snapshot(convert_size_to_pt(0, "pt"), error = TRUE)
 })
 
+test_that("normalize_face normalizes supported face values", {
+  expect_null(normalize_face(NULL, "face"))
+  expect_equal(normalize_face("plain", "face"), "plain")
+  expect_equal(normalize_face("bold", "face"), "bold")
+  expect_equal(normalize_face("italic", "face"), "italic")
+  expect_equal(normalize_face("bold.italic", "face"), "bold.italic")
+  expect_equal(normalize_face("Bold Italic", "face"), "bold.italic")
+  expect_equal(normalize_face(1, "face"), "plain")
+  expect_equal(normalize_face(2, "face"), "bold")
+  expect_equal(normalize_face(3, "face"), "italic")
+  expect_equal(normalize_face(4, "face"), "bold.italic")
+
+  expect_snapshot(normalize_face("oblique", "face"), error = TRUE)
+  expect_snapshot(normalize_face(5, "face"), error = TRUE)
+})
+
+test_that("face_to_typst_styles maps text and math styles correctly", {
+  expect_equal(
+    face_to_typst_styles("plain"),
+    character(0)
+  )
+  expect_equal(
+    face_to_typst_styles("bold"),
+    c(
+      '#set text(weight: "bold")',
+      '#show math.equation: set text(weight: "bold")'
+    )
+  )
+  expect_equal(
+    face_to_typst_styles("italic"),
+    '#set text(style: "italic")'
+  )
+  expect_equal(
+    face_to_typst_styles("bold.italic"),
+    c(
+      '#set text(weight: "bold")',
+      '#set text(style: "italic")',
+      '#show math.equation: set text(weight: "bold")'
+    )
+  )
+})
+
 test_that("unwrap_math_dollar_delimiters unwraps only outer math delimiters", {
   expect_equal(unwrap_math_dollar_delimiters("x^2 + y^2"), "x^2 + y^2")
   expect_equal(unwrap_math_dollar_delimiters("$ x^2 + y^2 $"), "x^2 + y^2")

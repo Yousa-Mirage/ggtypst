@@ -19,6 +19,7 @@
 #' - `alpha`
 #' - `angle`
 #' - `colour`
+#' - `face`
 #' - `family`
 #' - `hjust`
 #' - `math_family`
@@ -110,6 +111,7 @@ GeomTypst <- ggplot2::ggproto(
     colour = "black",
     size = 11,
     angle = 0,
+    face = "plain",
     hjust = 0.5,
     vjust = 0.5,
     alpha = NA,
@@ -158,6 +160,7 @@ GeomTypst <- ggplot2::ggproto(
       size.unit = size.unit,
       alpha = data$alpha,
       colour = data$colour,
+      face = data$face,
       family = data$family,
       math_family = data$math_family,
       angle = data$angle,
@@ -182,6 +185,7 @@ GeomTypst <- ggplot2::ggproto(
 #' @param size.unit Unit used to interpret `size`.
 #' @param alpha Optional alpha multiplier.
 #' @param colour Optional text colour.
+#' @param face Optional text face.
 #' @param family Optional text font family.
 #' @param math_family Optional math font family.
 #' @param angle Optional rotation angle in degrees.
@@ -197,6 +201,7 @@ geom_typst_row_grob <- function(
   size.unit,
   alpha,
   colour,
+  face,
   family,
   math_family,
   angle,
@@ -213,6 +218,7 @@ geom_typst_row_grob <- function(
         ),
         alpha = normalize_optional_number(alpha),
         color = normalize_optional_string(colour),
+        face = face,
         family = normalize_optional_string(family, empty_is_null = TRUE),
         math_family = normalize_optional_string(math_family, empty_is_null = TRUE),
         angle = normalize_optional_number(angle)

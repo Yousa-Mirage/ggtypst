@@ -28,6 +28,7 @@ test_that("annotate_typst visual stability with default Typst fonts", {
       x = 5.35,
       y = 27.8,
       angle = 20,
+      face = "italic",
       size = 12
     ) +
     annotate_typst(
@@ -37,6 +38,7 @@ test_that("annotate_typst visual stability with default Typst fonts", {
       hjust = 1,
       vjust = 0,
       scale = 1.2,
+      face = "bold",
       size = 12
     ) +
     annotate_typst(
@@ -45,6 +47,7 @@ test_that("annotate_typst visual stability with default Typst fonts", {
       y = 10.8,
       hjust = 0,
       vjust = 1,
+      face = "bold.italic",
       size = 11,
       color = "#1E66F5"
     )
@@ -141,4 +144,8 @@ test_that("annotate_typst converts size according to size.unit", {
   )
 
   expect_equal(width_mm, width_pt, tolerance = 1e-6)
+})
+
+test_that("annotate_typst validates face", {
+  expect_snapshot(annotate_typst("A", x = 3, y = 25, face = "oblique"), error = TRUE)
 })

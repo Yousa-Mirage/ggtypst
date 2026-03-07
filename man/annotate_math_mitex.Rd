@@ -15,6 +15,7 @@ annotate_math_mitex(
   size.unit = "pt",
   alpha = NULL,
   color = NULL,
+  face = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -38,6 +39,9 @@ Use \code{"mm"} for ggplot2-style text sizes.}
 \item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
 
 \item{color}{Optional text color accepted by \code{\link[grDevices:col2rgb]{grDevices::col2rgb()}}.}
+
+\item{face}{Optional math face. Only \code{"plain"} and \code{"bold"} are supported
+for math annotations.}
 
 \item{math_family}{Optional font family for math equations.}
 

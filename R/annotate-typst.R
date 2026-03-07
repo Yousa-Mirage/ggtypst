@@ -13,6 +13,8 @@
 #' @param alpha Optional alpha multiplier in `[0, 1]`.
 #' @param color Optional text color accepted by [grDevices::col2rgb()].
 #' @param family Optional text font family.
+#' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
+#'   `"bold.italic"`.
 #' @param math_family Optional font family for math equations.
 #' @param angle Optional text angle in degrees.
 #' @return A `ggplot2` layer.
@@ -29,6 +31,7 @@ annotate_typst <- function(
   alpha = NULL,
   color = NULL,
   family = NULL,
+  face = NULL,
   math_family = NULL,
   angle = NULL
 ) {
@@ -47,6 +50,7 @@ annotate_typst <- function(
     color = color,
     alpha = alpha,
     family = family,
+    face = face,
     math_family = math_family,
     angle = angle
   )
@@ -71,6 +75,8 @@ annotate_typst <- function(
 #' @inheritParams annotate_typst
 #' @param typst_math_code Typst source code representing math content. It will be
 #'   wrapped in `$ ... $` before rendering.
+#' @param face Optional math face. Only `"plain"` and `"bold"` are supported
+#'   for math annotations.
 #' @param inline Whether to render as inline math. Default `FALSE` renders as
 #'   display-style math.
 #' @return A `ggplot2` layer.
@@ -86,6 +92,7 @@ annotate_math_typst <- function(
   size.unit = "pt",
   alpha = NULL,
   color = NULL,
+  face = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -103,6 +110,7 @@ annotate_math_typst <- function(
     size.unit = size.unit,
     alpha = alpha,
     color = color,
+    face = face,
     math_family = math_family,
     angle = angle
   )
@@ -116,6 +124,8 @@ annotate_math_typst <- function(
 #' @inheritParams annotate_typst
 #' @param latex_math_code A single LaTeX math string. Outer `$...$` or `$$...$$`
 #'   delimiters are optional and will be normalized.
+#' @param face Optional math face. Only `"plain"` and `"bold"` are supported
+#'   for math annotations.
 #' @param inline Whether to render as inline math. Default `FALSE` renders as
 #'   display-style math.
 #' @return A `ggplot2` layer.
@@ -131,6 +141,7 @@ annotate_math_mitex <- function(
   size.unit = "pt",
   alpha = NULL,
   color = NULL,
+  face = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -164,6 +175,7 @@ annotate_math_mitex <- function(
     size.unit = size.unit,
     alpha = alpha,
     color = color,
+    face = face,
     math_family = math_family,
     angle = angle
   )
