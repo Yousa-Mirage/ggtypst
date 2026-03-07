@@ -152,7 +152,7 @@ GeomTypst <- ggplot2::ggproto(
     data <- ggplot2::remove_missing(
       data,
       na.rm = na.rm,
-      vars = c("x", "y", "label", "hjust", "vjust", "colour", "face", "family"),
+      vars = c("x", "y", "label", "size", "hjust", "vjust", "colour", "face", "family"),
       name = "geom_typst"
     )
 

@@ -88,6 +88,21 @@ test_that("geom_math_typst validates mapped math face before rendering", {
   expect_snapshot(ggplotGrob(p), error = TRUE)
 })
 
+test_that("geom_math_typst drops rows with missing mapped size", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = c("x^2", "y^2"),
+    size = c(12, NA_real_)
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, size = size)) +
+    geom_math_typst(na.rm = TRUE) +
+    scale_size_identity()
+
+  expect_length(layer_grob(p)[[1]]$children, 1)
+})
+
 test_that("geom_math_typst reports row and label context for invalid math", {
   df <- data.frame(
     x = c(1, 2),
