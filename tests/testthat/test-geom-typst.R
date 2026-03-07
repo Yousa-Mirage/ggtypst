@@ -154,7 +154,7 @@ test_that("geom_typst reports row and label context for render failures", {
   df <- data.frame(
     x = c(1, 2),
     y = c(1, 2),
-    label = c("ok", "BROKEN_LABEL_123 [")
+    label = c("ok", "BROKEN_LABEL$_123 #[")
   )
 
   p <- ggplot(df, aes(x, y, label = label)) +
