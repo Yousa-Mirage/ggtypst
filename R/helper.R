@@ -255,8 +255,8 @@ normalize_optional_string <- function(x, empty_is_null = FALSE) {
 #'
 #' A generic helper that deduplicates values marked `valid`, applies
 #' `transform_fn()` to each unique value, and maps results back to the
-#' original positions.  Shared by [normalize_face_values()] and
-#' [normalize_math_label_values()] to eliminate duplicated boilerplate.
+#' original positions. Shared by `normalize_face_values()` and
+#' `normalize_math_label_values()` to eliminate duplicated boilerplate.
 #'
 #' @param values Character vector of values to transform.
 #' @param valid Logical mask of the same length as `values`.
