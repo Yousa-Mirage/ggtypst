@@ -143,36 +143,12 @@ test_that("element_grob.element_typst lineheight changes rendered height", {
   expect_gt(height_loose, height_tight)
 })
 
-# rotate_just
+test_that("element_grob.element_typst anchors rotated grobs by rotated justification", {
+  grob <- element_typst(size = 12, angle = 90, vjust = 1) |>
+    element_grob(label = "Test")
 
-test_that("rotate_just remaps justifications across quadrants", {
-  expect_equal(
-    rotate_just(angle = 0, hjust = 0.2, vjust = 0.8),
-    list(hjust = 0.2, vjust = 0.8)
-  )
-  expect_equal(
-    rotate_just(angle = 90, hjust = 0.2, vjust = 0.8),
-    list(hjust = 0.2, vjust = 0.2)
-  )
-  expect_equal(
-    rotate_just(angle = 180, hjust = 0.2, vjust = 0.8),
-    list(hjust = 0.8, vjust = 0.2)
-  )
-  expect_equal(
-    rotate_just(angle = 270, hjust = 0.2, vjust = 0.8),
-    list(hjust = 0.8, vjust = 0.8)
-  )
-})
-
-test_that("rotate_just normalizes negative and large angles", {
-  expect_equal(
-    rotate_just(angle = -90, hjust = 0.25, vjust = 0.75),
-    rotate_just(angle = 270, hjust = 0.25, vjust = 0.75)
-  )
-  expect_equal(
-    rotate_just(angle = 450, hjust = 0.25, vjust = 0.75),
-    rotate_just(angle = 90, hjust = 0.25, vjust = 0.75)
-  )
+  just <- grob$children[[1]]$children[[1]]$vp[[1]]$justification
+  expect_equal(unname(just), c(0, 0.5))
 })
 
 # Visual regression tests
@@ -204,7 +180,7 @@ test_that("element_typst visual: rotated axis text", {
 
   p <- ggplot(mtcars, aes(factor(cyl), mpg)) +
     geom_boxplot() +
-    theme(axis.text.x = element_typst(size = 10, angle = 45, hjust = 1))
+    theme(axis.text.x = element_typst(size = 10, angle = 45))
 
   vdiffr::expect_doppelganger("element-typst-rotated-axis-text", p)
 })

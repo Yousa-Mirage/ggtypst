@@ -383,3 +383,22 @@ as_typst_math_code <- function(typst_code, inline = FALSE) {
     sprintf("$ %s $", core)
   }
 }
+
+#' Rotate justification values for angled text
+#'
+#' Computes rotated default positions so that `x` and `y` fall on the correct
+#' anchor point when the Typst content is rotated.  Ported from ggtext / ggplot2.
+#'
+#' @param angle Rotation angle in degrees.
+#' @param hjust,vjust Original justification values.
+#' @return A list with `$hjust` and `$vjust`.
+#' @noRd
+rotate_just <- function(angle, hjust, vjust) {
+  angle <- (angle %||% 0) %% 360
+  q <- (angle %/% 90) + 1L # 1=[0,90) 2=[90,180) 3=[180,270) 4=[270,360)
+
+  list(
+    hjust = c(hjust, 1 - vjust, 1 - hjust, vjust)[q],
+    vjust = c(vjust, hjust, 1 - vjust, 1 - hjust)[q]
+  )
+}

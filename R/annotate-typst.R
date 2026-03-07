@@ -66,11 +66,13 @@ annotate_typst <- function(
   )
   rendered <- typst_svg(full_source)
 
-  grob <- annotation_typst_grob(
+  grob <- positioned_typst_grob(
     rendered,
     scale = scale,
     hjust = hjust,
-    vjust = vjust
+    vjust = vjust,
+    angle = angle,
+    class = "typst_annotation_grob"
   )
 
   ggplot2::annotation_custom(grob, xmin = x, xmax = x, ymin = y, ymax = y)

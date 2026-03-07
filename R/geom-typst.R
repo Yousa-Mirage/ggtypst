@@ -252,6 +252,7 @@ geom_typst_row_grob <- function(
         default.units = "native",
         hjust = hjust,
         vjust = vjust,
+        angle = normalize_optional_number(angle),
         class = "typst_label_grob"
       )
     },

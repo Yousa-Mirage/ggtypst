@@ -173,3 +173,35 @@ test_that("as_latex_math_code rejects inline unescaped dollars", {
   expect_snapshot(as_latex_math_code("\\$100 + $x$"), error = TRUE)
   expect_equal(as_latex_math_code(r"(\\$100 + x)"), r"(\\$100 + x)")
 })
+
+# rotate_just
+
+test_that("rotate_just remaps justifications across quadrants", {
+  expect_equal(
+    rotate_just(angle = 0, hjust = 0.2, vjust = 0.8),
+    list(hjust = 0.2, vjust = 0.8)
+  )
+  expect_equal(
+    rotate_just(angle = 90, hjust = 0.2, vjust = 0.8),
+    list(hjust = 0.2, vjust = 0.2)
+  )
+  expect_equal(
+    rotate_just(angle = 180, hjust = 0.2, vjust = 0.8),
+    list(hjust = 0.8, vjust = 0.2)
+  )
+  expect_equal(
+    rotate_just(angle = 270, hjust = 0.2, vjust = 0.8),
+    list(hjust = 0.8, vjust = 0.8)
+  )
+})
+
+test_that("rotate_just normalizes negative and large angles", {
+  expect_equal(
+    rotate_just(angle = -90, hjust = 0.25, vjust = 0.75),
+    rotate_just(angle = 270, hjust = 0.25, vjust = 0.75)
+  )
+  expect_equal(
+    rotate_just(angle = 450, hjust = 0.25, vjust = 0.75),
+    rotate_just(angle = 90, hjust = 0.25, vjust = 0.75)
+  )
+})
