@@ -7,6 +7,21 @@ test_that("geom_math_mitex converts LaTeX and renders a grob", {
   expect_length(grob$children, 1)
 })
 
+test_that("geom_math_mitex normalizes factor-backed labels", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = factor(c(r"(\alpha)", r"(\beta)"))
+  )
+
+  p <- ggplot(df, aes(x, y, label = label)) +
+    geom_math_mitex()
+
+  grob <- layer_grob(p)[[1]]
+  expect_s3_class(grob, "gTree")
+  expect_length(grob$children, 2)
+})
+
 test_that("geom_math_mitex normalizes outer LaTeX delimiters", {
   get_width <- function(label) {
     p <- ggplot(data.frame(x = 1, y = 1), aes(x, y)) +

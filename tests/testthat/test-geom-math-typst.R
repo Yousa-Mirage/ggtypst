@@ -55,6 +55,21 @@ test_that("geom_math_typst supports static label parameters", {
   expect_length(layer_grob(p)[[1]]$children, 1)
 })
 
+test_that("geom_math_typst normalizes factor-backed labels", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = factor(c("x^2", "y^2"))
+  )
+
+  p <- ggplot(df, aes(x, y, label = label)) +
+    geom_math_typst()
+
+  grob <- layer_grob(p)[[1]]
+  expect_s3_class(grob, "gTree")
+  expect_length(grob$children, 2)
+})
+
 test_that("geom_math_typst validates static math face", {
   expect_snapshot(geom_math_typst(label = "x^2", face = "italic"), error = TRUE)
 })

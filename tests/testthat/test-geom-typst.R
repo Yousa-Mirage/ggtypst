@@ -119,6 +119,22 @@ test_that("geom_typst supports mapped numeric face codes", {
   expect_length(layer_grob(p)[[1]]$children, 2)
 })
 
+test_that("geom_typst normalizes factor-backed face aesthetics", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = c("a", "b"),
+    face = factor(c("Bold Italic", "plain"))
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, face = face)) +
+    geom_typst()
+
+  grob <- layer_grob(p)[[1]]
+  expect_s3_class(grob, "gTree")
+  expect_length(grob$children, 2)
+})
+
 test_that("geom_typst reports row and label context for render failures", {
   df <- data.frame(
     x = c(1, 2),

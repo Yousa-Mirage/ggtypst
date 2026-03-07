@@ -322,7 +322,7 @@ normalize_face_values <- function(face, fn = NULL, detail = NULL, supported = NU
   # Vector path: validate each unique mapped aesthetic value
   valid <- !is.na(face)
   if (!any(valid)) {
-    return(face)
+    return(as.character(face))
   }
 
   face_values <- face[valid]
@@ -363,8 +363,9 @@ normalize_face_values <- function(face, fn = NULL, detail = NULL, supported = NU
     USE.NAMES = FALSE
   )
 
-  face[valid] <- normalized_unique[match(face_keys, unique_face_keys)]
-  face
+  result <- as.character(face)
+  result[valid] <- normalized_unique[match(face_keys, unique_face_keys)]
+  result
 }
 
 #' Create a compact label preview for geom_typst errors

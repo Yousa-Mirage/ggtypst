@@ -265,7 +265,8 @@ normalize_math_label_values <- function(
     return(label)
   }
 
-  labels <- as.character(label[valid])
+  label <- as.character(label)
+  labels <- label[valid]
   unique_labels <- unique(labels)
 
   first_rows <- NULL
