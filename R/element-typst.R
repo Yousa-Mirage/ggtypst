@@ -18,14 +18,10 @@ element_typst_class <- S7::new_class(
   )
 )
 
-# ggplot2 does not export this S7 generic, so use getFromNamespace() rather
-# than ::: while keeping the dependency explicit.
-merge_element_generic <- utils::getFromNamespace("merge_element", "ggplot2")
-
 # ggplot2's default S7 element merge expects parent elements to expose the same
 # property set. element_typst extends element_text with math_family and
 # size.unit, so merge only the fields that exist on the parent.
-S7::method(merge_element_generic, list(element_typst_class, S7::class_any)) <- function(new, old, ...) {
+merge_element_element_typst <- function(new, old, ...) {
   # Match ggplot2's element semantics: a concrete element overrides an existing
   # element_blank() at the same theme slot. inherit.blank is resolved later when
   # calc_element() combines parent and child theme elements.

@@ -98,6 +98,44 @@ test_that("element_typst inherit.blank is resolved by ggplot2 theme merging", {
   expect_true(inherits(el_keep, "ggtypst::element_typst"))
 })
 
+test_that("element_typst inherit.blank also applies to axis text", {
+  calc_element <- utils::getFromNamespace("calc_element", "ggplot2")
+
+  th_blank <- theme(
+    axis.text = element_blank(),
+    axis.text.x = element_typst(inherit.blank = TRUE)
+  )
+  th_keep <- theme(
+    axis.text = element_blank(),
+    axis.text.x = element_typst(inherit.blank = FALSE)
+  )
+
+  el_blank <- calc_element("axis.text.x", th_blank)
+  el_keep <- calc_element("axis.text.x", th_keep)
+
+  expect_true(inherits(el_blank, "ggplot2::element_blank"))
+  expect_true(inherits(el_keep, "ggtypst::element_typst"))
+})
+
+test_that("element_typst inherit.blank also applies to strip text", {
+  calc_element <- utils::getFromNamespace("calc_element", "ggplot2")
+
+  th_blank <- theme(
+    strip.text = element_blank(),
+    strip.text.x = element_typst(inherit.blank = TRUE)
+  )
+  th_keep <- theme(
+    strip.text = element_blank(),
+    strip.text.x = element_typst(inherit.blank = FALSE)
+  )
+
+  el_blank <- calc_element("strip.text.x.top", th_blank)
+  el_keep <- calc_element("strip.text.x.top", th_keep)
+
+  expect_true(inherits(el_blank, "ggplot2::element_blank"))
+  expect_true(inherits(el_keep, "ggtypst::element_typst"))
+})
+
 test_that("element_typst merge keeps concrete element over same-slot blank", {
   merged <- ggplot2::merge_element(element_typst(), element_blank())
 
