@@ -251,6 +251,206 @@ normalize_optional_string <- function(x, empty_is_null = FALSE) {
   x
 }
 
+#' Deduplicate and transform unique values
+#'
+#' A generic helper that deduplicates values marked `valid`, applies
+#' `transform_fn()` to each unique value, and maps results back to the
+#' original positions. Shared by `normalize_face_values()` and
+#' `normalize_math_label_values()` to eliminate duplicated boilerplate.
+#'
+#' @param values Character vector of values to transform.
+#' @param valid Logical mask of the same length as `values`.
+#' @param rows Optional integer vector of row indices (same length as
+#'   `values`).  When `NULL`, `transform_fn()` receives `NULL` as its
+#'   second argument.
+#' @param transform_fn A function `function(value, row)` that returns a
+#'   single character string.  `row` is the first row index associated
+#'   with `value`, or `NULL` when `rows` is `NULL`.
+#' @return `values` with valid entries replaced by transformed results.
+#' @noRd
+transform_unique_values <- function(values, valid, rows, transform_fn) {
+  if (!any(valid)) {
+    return(values)
+  }
+
+  valid_values <- values[valid]
+  unique_vals <- unique(valid_values)
+
+  first_rows <- if (!is.null(rows)) {
+    rows[valid][match(unique_vals, valid_values)]
+  }
+
+  transformed <- vapply(
+    seq_along(unique_vals),
+    function(i) {
+      transform_fn(
+        unique_vals[[i]],
+        if (!is.null(first_rows)) first_rows[[i]]
+      )
+    },
+    character(1)
+  )
+
+  values[valid] <- transformed[match(valid_values, unique_vals)]
+  values
+}
+
+#' @param params Parameter list that may contain `face` and `fontface`.
+#' @param fn Calling function name for error messages.
+#' @param supported Optional set of allowed normalized face values.
+#' @return `params` with aliases resolved and `face` normalized.
+#' @noRd
+normalize_face_param <- function(params, fn = NULL, supported = NULL) {
+  params$face <- resolve_arg_alias(params$face, params$fontface, "face", "fontface")
+  params$fontface <- NULL
+
+  if (!("face" %in% names(params))) {
+    return(params)
+  }
+
+  params$face <- normalize_face_values(
+    params$face,
+    fn = fn,
+    supported = supported
+  )
+
+  params
+}
+
+#' Normalize scalar or vector face values
+#'
+#' @param face Face value(s).
+#' @param fn Calling function name for error messages.
+#' @param detail Extra detail for mapped-aesthetic errors.
+#' @param supported Optional set of allowed normalized face values.
+#' @param rows Optional row indices for mapped aesthetics.
+#' @return Normalized face value(s).
+#' @noRd
+normalize_face_values <- function(face, fn = NULL, detail = NULL, supported = NULL, rows = NULL) {
+  if (is.null(face) || length(face) == 0) {
+    return(face)
+  }
+
+  # Scalar path: validate a single static parameter value
+  if (is.null(rows)) {
+    face <- normalize_face(face, "face")
+    if (!is.null(supported) && !(face %in% supported)) {
+      cli::cli_abort(
+        "{.arg face} for {.fn {fn}} must be either \"plain\" or \"bold\".",
+        call = rlang::call2(fn)
+      )
+    }
+    return(face)
+  }
+
+  # Vector path: validate each unique mapped aesthetic value
+  transform_unique_values(
+    as.character(face),
+    !is.na(face),
+    rows,
+    function(value, row) {
+      abort_invalid_face <- function() {
+        cli::cli_abort(
+          c(
+            "Invalid {.arg face} aesthetic in {.fn {fn}}.",
+            "x" = "Problem in row {row} with value {.val {value}}.",
+            "i" = detail
+          ),
+          call = NULL
+        )
+      }
+
+      tryCatch(
+        {
+          normalized <- normalize_face(value, "face", allow_null = FALSE)
+          if (!is.null(supported) && !(normalized %in% supported)) {
+            abort_invalid_face()
+          }
+          normalized
+        },
+        error = function(cnd) abort_invalid_face()
+      )
+    }
+  )
+}
+
+#' Normalize math labels for Typst- and MiTeX-backed APIs
+#'
+#' @param label Label vector.
+#' @param inline Whether to use inline math delimiters.
+#' @param fn Calling function name for error messages.
+#' @param rows Optional row indices for mapped aesthetics.
+#' @param kind Either `"typst"` or `"mitex"`.
+#' @param static_error Error header for static labels.
+#' @param mapped_error Error header for mapped labels.
+#' @param static_call Optional call object for static-label errors.
+#' @param preserve_blank Whether blank strings should be preserved unchanged.
+#' @return A character vector with normalized math labels.
+#' @noRd
+normalize_math_label_values <- function(
+  label,
+  inline,
+  fn,
+  rows = NULL,
+  kind,
+  static_error,
+  mapped_error,
+  static_call = NULL,
+  preserve_blank = FALSE
+) {
+  if (is.null(label) || length(label) == 0) {
+    return(label)
+  }
+
+  label <- as.character(label)
+  valid <- !is.na(label)
+  if (preserve_blank) {
+    valid <- valid & !grepl("^\\s*$", label)
+  }
+
+  transform_unique_values(
+    label,
+    valid,
+    rows,
+    function(value, row) {
+      preview <- trimws(value)
+      if (nchar(preview) > 80) {
+        preview <- paste0(substr(preview, 1, 77), "...")
+      }
+
+      tryCatch(
+        switch(
+          kind,
+          typst = as_typst_math_code(value, inline = inline),
+          mitex = convert_latex_to_typst(value, inline = inline)
+        ),
+        error = function(cnd) {
+          if (is.null(row)) {
+            cli::cli_abort(
+              c(
+                static_error,
+                "i" = "Label: {.val {preview}}"
+              ),
+              parent = cnd,
+              call = static_call
+            )
+          }
+
+          cli::cli_abort(
+            c(
+              mapped_error,
+              "x" = "Problem in row {row}.",
+              "i" = "Label: {.val {preview}}"
+            ),
+            parent = cnd,
+            call = NULL
+          )
+        }
+      )
+    }
+  )
+}
+
 #' Map a normalized face to Typst text settings
 #'
 #' @param face A normalized face string.
@@ -382,4 +582,23 @@ as_typst_math_code <- function(typst_code, inline = FALSE) {
   } else {
     sprintf("$ %s $", core)
   }
+}
+
+#' Rotate justification values for angled text
+#'
+#' Computes rotated default positions so that `x` and `y` fall on the correct
+#' anchor point when the Typst content is rotated.  Ported from ggtext / ggplot2.
+#'
+#' @param angle Rotation angle in degrees.
+#' @param hjust,vjust Original justification values.
+#' @return A list with `$hjust` and `$vjust`.
+#' @noRd
+rotate_just <- function(angle, hjust, vjust) {
+  angle <- (angle %||% 0) %% 360
+  q <- (angle %/% 90) + 1L # 1=[0,90) 2=[90,180) 3=[180,270) 4=[270,360)
+
+  list(
+    hjust = c(hjust, 1 - vjust, 1 - hjust, vjust)[q],
+    vjust = c(vjust, hjust, 1 - vjust, 1 - hjust)[q]
+  )
 }

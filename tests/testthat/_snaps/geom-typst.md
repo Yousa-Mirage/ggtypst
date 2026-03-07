@@ -55,8 +55,10 @@
       Caused by error:
       ! Failed to render a Typst label in `geom_typst()`.
       x Problem in row 2.
-      i Label: "BROKEN_LABEL_123 ["
+      i Label: "BROKEN_LABEL$_123 #["
       Caused by error in `typst_svg()`:
       ! Typst compilation failed
+      x unclosed delimiter
+      x unexpected underscore
       x unclosed delimiter
 

@@ -150,6 +150,26 @@ test_that("annotate_typst validates face", {
   expect_snapshot(annotate_typst("A", x = 3, y = 25, face = "oblique"), error = TRUE)
 })
 
+test_that("annotate_typst lineheight changes rendered annotation height", {
+  label <- "first line #linebreak() second line"
+
+  layer_tight <- annotate_typst(label, x = 3, y = 25, size = 12, lineheight = 0.8)
+  layer_loose <- annotate_typst(label, x = 3, y = 25, size = 12, lineheight = 1.8)
+
+  height_tight <- grid::convertHeight(
+    grid::grobHeight(layer_tight$geom_params$grob),
+    "pt",
+    valueOnly = TRUE
+  )
+  height_loose <- grid::convertHeight(
+    grid::grobHeight(layer_loose$geom_params$grob),
+    "pt",
+    valueOnly = TRUE
+  )
+
+  expect_gt(height_loose, height_tight)
+})
+
 test_that("annotate_typst supports colour and fontface aliases", {
   expect_no_error(
     annotate_typst("A", x = 3, y = 25, colour = "#D20F39", fontface = "bold")
@@ -165,4 +185,32 @@ test_that("annotate_typst rejects duplicate alias arguments", {
     annotate_typst("A", x = 3, y = 25, face = "plain", fontface = "bold"),
     error = TRUE
   )
+})
+
+test_that("annotate_typst visual: multiline lineheight", {
+  skip_if_not_installed("vdiffr")
+
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(size = 1.2, alpha = 0.45, colour = "grey40") +
+    coord_cartesian(xlim = c(1.6, 5.6), ylim = c(10, 35)) +
+    theme_minimal(base_size = 11) +
+    annotate_typst(
+      typst_code = "tight #linebreak() spacing",
+      x = 2.1,
+      y = 31,
+      size = 12,
+      lineheight = 0.8,
+      color = "#1E66F5"
+    ) +
+    annotate_typst(
+      typst_code = "loose #linebreak() spacing",
+      x = 4.9,
+      y = 31,
+      size = 12,
+      lineheight = 1.8,
+      hjust = 1,
+      color = "#D20F39"
+    )
+
+  vdiffr::expect_doppelganger("annotate-typst-lineheight", p)
 })

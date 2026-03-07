@@ -150,11 +150,35 @@ test_that("geom_typst normalizes factor-backed face aesthetics", {
   expect_length(grob$children, 8)
 })
 
+test_that("geom_typst lineheight changes rendered label height", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = c("tight #linebreak() spacing", "loose #linebreak() spacing"),
+    lineheight = c(0.8, 1.8)
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, lineheight = lineheight)) +
+    geom_typst(size = 12) +
+    coord_cartesian(xlim = c(0, 3), ylim = c(0, 3))
+
+  grobs <- layer_grob(p)[[1]]
+  heights <- vapply(
+    grobs$children,
+    function(child) {
+      grid::convertHeight(grid::grobHeight(child), "pt", valueOnly = TRUE)
+    },
+    numeric(1)
+  )
+
+  expect_gt(heights[[2]], heights[[1]])
+})
+
 test_that("geom_typst reports row and label context for render failures", {
   df <- data.frame(
     x = c(1, 2),
     y = c(1, 2),
-    label = c("ok", "BROKEN_LABEL_123 [")
+    label = c("ok", "BROKEN_LABEL$_123 #[")
   )
 
   p <- ggplot(df, aes(x, y, label = label)) +
@@ -269,6 +293,28 @@ test_that("geom_typst visual size.unit pt and mm agree", {
     theme_minimal(base_size = 11)
 
   vdiffr::expect_doppelganger("geom-typst-size-unit-pt-vs-mm", p)
+})
+
+test_that("geom_typst visual: multiline lineheight", {
+  skip_if_not_installed("vdiffr")
+
+  df <- data.frame(
+    x = c(2.1, 4.9),
+    y = c(30, 30),
+    label = c("tight #linebreak() spacing", "loose #linebreak() spacing"),
+    lineheight = c(0.8, 1.8),
+    colour = c("#1E66F5", "#D20F39"),
+    hjust = c(0, 1)
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, lineheight = lineheight, colour = colour, hjust = hjust)) +
+    geom_point(size = 1.1, alpha = 0.5, colour = "grey45") +
+    geom_typst(size = 12) +
+    scale_colour_identity() +
+    coord_cartesian(xlim = c(1.5, 5.3), ylim = c(24, 33)) +
+    theme_minimal(base_size = 11)
+
+  vdiffr::expect_doppelganger("geom-typst-lineheight", p)
 })
 
 test_that("geom_typst visual inward outward just with facets and legend", {

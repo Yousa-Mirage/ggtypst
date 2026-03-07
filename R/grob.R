@@ -1,25 +1,3 @@
-#' Build a measured Typst grob for plot annotations
-#'
-#' @param rendered A rendered Typst result containing SVG bytes and dimensions.
-#' @param scale Scaling factor applied to rendered dimensions.
-#' @param hjust,vjust Horizontal and vertical justification values.
-#' @return A grid grob with class `"typst_annotation_grob"`.
-#' @noRd
-annotation_typst_grob <- function(
-  rendered,
-  scale = 1,
-  hjust = 0.5,
-  vjust = 0.5
-) {
-  positioned_typst_grob(
-    rendered,
-    scale = scale,
-    hjust = hjust,
-    vjust = vjust,
-    class = "typst_annotation_grob"
-  )
-}
-
 #' Build a positioned Typst grob from rendered output
 #'
 #' @param rendered A rendered Typst result containing SVG bytes and dimensions.
@@ -27,6 +5,7 @@ annotation_typst_grob <- function(
 #' @param default.units Grid units for numeric `x` and `y`.
 #' @param scale Scaling factor applied to rendered dimensions.
 #' @param hjust,vjust Horizontal and vertical justification values.
+#' @param angle Rotation angle in ggplot2/grid semantics.
 #' @param class Optional extra class name prepended before `"typst_grob"`.
 #' @return A positioned measured Typst grob.
 #' @noRd
@@ -38,6 +17,7 @@ positioned_typst_grob <- function(
   scale = 1,
   hjust = 0.5,
   vjust = 0.5,
+  angle = NULL,
   class = NULL
 ) {
   width_pt <- rendered$width_pt * scale
@@ -52,7 +32,8 @@ positioned_typst_grob <- function(
       width_pt = width_pt,
       height_pt = height_pt,
       hjust = hjust,
-      vjust = vjust
+      vjust = vjust,
+      angle = angle
     ),
     error = function(cnd) {
       cli::cli_abort(c(
@@ -82,6 +63,7 @@ positioned_typst_grob <- function(
 #' @param default.units Grid units for numeric `x` and `y`.
 #' @param width_pt,height_pt Output dimensions in points.
 #' @param hjust,vjust Horizontal and vertical justification values.
+#' @param angle Rotation angle in ggplot2/grid semantics.
 #' @return A `grImport2` picture grob.
 #' @noRd
 vector_typst_grob <- function(
@@ -92,8 +74,11 @@ vector_typst_grob <- function(
   width_pt,
   height_pt,
   hjust,
-  vjust
+  vjust,
+  angle = NULL
 ) {
+  just <- rotate_just(angle = angle, hjust = hjust, vjust = vjust)
+
   canonical_svg <- rsvg::rsvg_svg(svg)
 
   # TODO: Replace tempfile-based SVG import with an in-memory pipeline.
@@ -110,8 +95,8 @@ vector_typst_grob <- function(
     width = grid::unit(width_pt, "pt"),
     height = grid::unit(height_pt, "pt"),
     default.units = default.units,
-    hjust = hjust,
-    vjust = vjust,
+    hjust = just$hjust,
+    vjust = just$vjust,
     ext = "clipbbox"
   )
 }

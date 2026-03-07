@@ -18,6 +18,7 @@ annotate_math_mitex(
   colour = NULL,
   face = NULL,
   fontface = NULL,
+  lineheight = NULL,
   math_family = NULL,
   angle = NULL,
   inline = FALSE
@@ -49,6 +50,8 @@ for math annotations.}
 
 \item{fontface}{Alias of \code{face}. Only \code{"plain"} and \code{"bold"} are supported
 for math annotations.}
+
+\item{lineheight}{Optional line height value. May be negative.}
 
 \item{math_family}{Optional font family for math equations.}
 

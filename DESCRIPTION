@@ -22,6 +22,7 @@ SystemRequirements: Cargo (Rust's package manager), rustc >= 1.89.0, xz
 Depends: 
     R (>= 4.2)
 Imports:
+    S7,
     cli,
     ggplot2,
     grImport2,
@@ -39,10 +40,13 @@ Collate:
     'annotate-typst.R'
     'build-source.R'
     'diagnostic.R'
+    'typst-svg.R'
+    'grob.R'
+    'helper.R'
+    'element-typst.R'
+    'element-math.R'
     'extendr-wrappers.R'
     'geom-typst.R'
     'geom-math.R'
-    'grob.R'
-    'helper.R'
     'mitex.R'
-    'typst-svg.R'
+    'zzz.R'

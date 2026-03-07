@@ -24,6 +24,7 @@
 #' - `face`
 #' - `family`
 #' - `hjust`
+#' - `lineheight`
 #' - `math_family`
 #' - `size`
 #' - `vjust`
@@ -115,6 +116,7 @@ GeomTypst <- ggplot2::ggproto(
     angle = 0,
     face = "plain",
     hjust = 0.5,
+    lineheight = NA,
     vjust = 0.5,
     alpha = NA,
     family = "",
@@ -172,6 +174,7 @@ GeomTypst <- ggplot2::ggproto(
       colour = data$colour,
       face = data$face,
       family = data$family,
+      lineheight = data$lineheight,
       math_family = data$math_family,
       angle = data$angle,
       hjust = data$hjust,
@@ -200,6 +203,7 @@ GeomTypst <- ggplot2::ggproto(
 #' @param colour Optional text colour.
 #' @param face Optional text face.
 #' @param family Optional text font family.
+#' @param lineheight Optional line height value. May be negative.
 #' @param math_family Optional math font family.
 #' @param angle Optional rotation angle in degrees.
 #' @param hjust,vjust Horizontal and vertical justification values.
@@ -216,6 +220,7 @@ geom_typst_row_grob <- function(
   colour,
   face,
   family,
+  lineheight,
   math_family,
   angle,
   hjust,
@@ -233,6 +238,7 @@ geom_typst_row_grob <- function(
         color = normalize_optional_string(colour),
         face = face,
         family = normalize_optional_string(family, empty_is_null = TRUE),
+        lineheight = normalize_optional_number(lineheight),
         math_family = normalize_optional_string(math_family, empty_is_null = TRUE),
         angle = normalize_optional_number(angle)
       )
@@ -246,6 +252,7 @@ geom_typst_row_grob <- function(
         default.units = "native",
         hjust = hjust,
         vjust = vjust,
+        angle = normalize_optional_number(angle),
         class = "typst_label_grob"
       )
     },
@@ -283,89 +290,6 @@ resolve_typst_position <- function(
   }
 
   ggplot2::position_nudge(nudge_x, nudge_y)
-}
-
-normalize_face_param <- function(params, fn = NULL, supported = NULL) {
-  params$face <- resolve_arg_alias(params$face, params$fontface, "face", "fontface")
-  params$fontface <- NULL
-
-  if (!("face" %in% names(params))) {
-    return(params)
-  }
-
-  params$face <- normalize_face_values(
-    params$face,
-    fn = fn,
-    supported = supported
-  )
-
-  params
-}
-
-normalize_face_values <- function(face, fn = NULL, detail = NULL, supported = NULL, rows = NULL) {
-  if (is.null(face) || length(face) == 0) {
-    return(face)
-  }
-
-  # Scalar path: validate a single static parameter value
-  if (is.null(rows)) {
-    face <- normalize_face(face, "face")
-    if (!is.null(supported) && !(face %in% supported)) {
-      cli::cli_abort(
-        "{.arg face} for {.fn {fn}} must be either \"plain\" or \"bold\".",
-        call = rlang::call2(fn)
-      )
-    }
-    return(face)
-  }
-
-  # Vector path: validate each unique mapped aesthetic value
-  valid <- !is.na(face)
-  if (!any(valid)) {
-    return(as.character(face))
-  }
-
-  face_values <- face[valid]
-  face_keys <- as.character(face_values)
-  unique_faces <- unique(face_values)
-  unique_face_keys <- as.character(unique_faces)
-  first_rows <- rows[valid][match(unique_face_keys, face_keys)]
-
-  normalized_unique <- vapply(
-    seq_along(unique_faces),
-    function(i) {
-      face_value <- unique_faces[[i]]
-      row <- first_rows[[i]]
-
-      abort_invalid_face <- function() {
-        cli::cli_abort(
-          c(
-            "Invalid {.arg face} aesthetic in {.fn {fn}}.",
-            "x" = "Problem in row {row} with value {.val {face_value}}.",
-            "i" = detail
-          ),
-          call = NULL
-        )
-      }
-
-      tryCatch(
-        {
-          normalized <- normalize_face(face_value, "face", allow_null = FALSE)
-          if (!is.null(supported) && !(normalized %in% supported)) {
-            abort_invalid_face()
-          }
-          normalized
-        },
-        error = function(cnd) abort_invalid_face()
-      )
-    },
-    FUN.VALUE = character(1),
-    USE.NAMES = FALSE
-  )
-
-  result <- as.character(face)
-  result[valid] <- normalized_unique[match(face_keys, unique_face_keys)]
-  result
 }
 
 #' Create a compact label preview for geom_typst errors

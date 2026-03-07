@@ -144,6 +144,7 @@ in bold):
 \item \code{face}
 \item \code{family}
 \item \code{hjust}
+\item \code{lineheight}
 \item \code{math_family}
 \item \code{size}
 \item \code{vjust}

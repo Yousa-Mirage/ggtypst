@@ -13,6 +13,8 @@
 #' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
 #' @param fontface Alias of `face`.
+#' @param lineheight Optional line height value, mapped to Typst paragraph
+#'   leading in `em` units. May be negative.
 #' @param math_family Optional font family for math mode. Defaults to `New Computer Modern Math`.
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @return A single UTF-8 Typst source string.
@@ -26,6 +28,7 @@ build_typst_source <- function(
   family = NULL,
   face = NULL,
   fontface = NULL,
+  lineheight = NULL,
   math_family = NULL,
   angle = NULL
 ) {
@@ -38,6 +41,7 @@ build_typst_source <- function(
   size <- check_positive_number(size, "size")
   alpha <- check_alpha(alpha)
   family <- check_single_string(family, "family")
+  lineheight <- check_number(lineheight, "lineheight")
   math_family <- check_single_string(math_family, "math_family")
   angle <- check_number(angle, "angle")
   face <- normalize_face(face, "face")
@@ -62,6 +66,12 @@ build_typst_source <- function(
     text_args <- c(text_args, sprintf('#set text(font: "%s")', family))
   }
 
+  # Line height
+  if (!is.null(lineheight)) {
+    lineheight_str <- format_typst_number(lineheight)
+    text_args <- c(text_args, sprintf('#set par(leading: %sem)', lineheight_str))
+  }
+
   # Face
   if (!is.null(face)) {
     text_args <- c(text_args, face_to_typst_styles(face))
@@ -73,8 +83,9 @@ build_typst_source <- function(
   }
 
   # Angle
-  if (!is.null(angle)) {
-    angle <- format_typst_number(angle)
+  if (!is.null(angle) && (angle %% 360 != 0)) {
+    # Typst's visible SVG rotation direction is opposite to grid's text rotation.
+    angle <- format_typst_number(-angle)
     typst_code <- sprintf("#rotate(%sdeg, reflow: true)[%s]", angle, typst_code)
   }
 
