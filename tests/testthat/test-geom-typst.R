@@ -71,6 +71,13 @@ test_that("geom_typst validates face", {
   expect_snapshot(geom_typst(label = "scale", face = "oblique"), error = TRUE)
 })
 
+test_that("geom_typst rejects position with nudge parameters", {
+  expect_snapshot(
+    geom_typst(label = "scale", position = "identity", nudge_x = 0.1),
+    error = TRUE
+  )
+})
+
 test_that("geom_typst supports fontface alias", {
   layer <- geom_typst(label = "scale", fontface = "bold")
 
@@ -96,6 +103,20 @@ test_that("geom_typst validates mapped face vectors before row rendering", {
     geom_typst()
 
   expect_snapshot(ggplotGrob(p), error = TRUE)
+})
+
+test_that("geom_typst supports mapped numeric face codes", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = c("plain", "bold"),
+    face = c(1, 2)
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, face = face)) +
+    geom_typst()
+
+  expect_length(layer_grob(p)[[1]]$children, 2)
 })
 
 test_that("geom_typst reports row and label context for render failures", {

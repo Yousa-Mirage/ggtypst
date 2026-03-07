@@ -47,24 +47,15 @@ geom_typst <- function(
   inherit.aes = TRUE
 ) {
   size.unit <- check_size_unit(size.unit, "size.unit")
-  params <- list(...)
-
-  params$face <- resolve_arg_alias(params$face, params$fontface, "face", "fontface")
-  params$fontface <- NULL
-
-  if ("face" %in% names(params)) {
-    params$face <- normalize_face(params$face, "face")
-  }
-
-  if (!missing(nudge_x) || !missing(nudge_y)) {
-    if (!missing(position)) {
-      cli::cli_abort(
-        "You must specify either {.arg position} or {.arg nudge_x}/{.arg nudge_y}, not both."
-      )
-    }
-
-    position <- ggplot2::position_nudge(nudge_x, nudge_y)
-  }
+  params <- normalize_face_param(list(...))
+  position <- resolve_typst_position(
+    position,
+    nudge_x = nudge_x,
+    nudge_y = nudge_y,
+    fn = "geom_typst",
+    position_supplied = !missing(position),
+    nudge_supplied = !missing(nudge_x) || !missing(nudge_y)
+  )
 
   ggplot2::layer(
     data = data,
@@ -74,12 +65,85 @@ geom_typst <- function(
     position = position,
     show.legend = show.legend,
     inherit.aes = inherit.aes,
-    params = c(list(
-      size.unit = size.unit,
-      na.rm = na.rm
-    ), params)
+    params = c(
+      list(
+        size.unit = size.unit,
+        na.rm = na.rm
+      ),
+      params
+    )
   )
 }
+
+#' Typst math labels
+#'
+#' Draw Typst math labels at data positions, similar to [geom_typst()]. Each
+#' `label` is treated as Typst math content; outer `$...$` or `$$...$$`
+#' delimiters are optional and will be normalized before rendering.
+#'
+#' Static layer parameters also accept `fontface` as an alias of `face`.
+#' Math labels only support `face = "plain"` and `face = "bold"`.
+#'
+#' @inheritParams geom_typst
+#' @param inline Whether to render labels as inline math. Default `FALSE`
+#'   renders display-style math.
+#' @return A ggplot2 layer that can be added to a plot.
+#' @export
+geom_math_typst <- function(
+  mapping = NULL,
+  data = NULL,
+  stat = "identity",
+  position = "identity",
+  ...,
+  nudge_x = 0,
+  nudge_y = 0,
+  inline = FALSE,
+  size.unit = "pt",
+  na.rm = FALSE,
+  show.legend = NA,
+  inherit.aes = TRUE
+) {
+  size.unit <- check_size_unit(size.unit, "size.unit")
+  inline <- check_bool(inline, "inline", allow_null = FALSE)
+  params <- normalize_face_param(
+    list(...),
+    fn = "geom_math_typst",
+    supported = c("plain", "bold")
+  )
+  params$label <- normalize_math_labels(
+    params$label,
+    inline = inline,
+    fn = "geom_math_typst"
+  )
+  position <- resolve_typst_position(
+    position,
+    nudge_x = nudge_x,
+    nudge_y = nudge_y,
+    fn = "geom_math_typst",
+    position_supplied = !missing(position),
+    nudge_supplied = !missing(nudge_x) || !missing(nudge_y)
+  )
+
+  ggplot2::layer(
+    data = data,
+    mapping = mapping,
+    stat = stat,
+    geom = GeomMathTypst,
+    position = position,
+    show.legend = show.legend,
+    inherit.aes = inherit.aes,
+    params = c(
+      list(
+        inline = inline,
+        size.unit = size.unit,
+        na.rm = na.rm
+      ),
+      params
+    )
+  )
+}
+
+# ggproto objects
 
 #' Draw a compact legend key for Typst labels
 #'
@@ -91,14 +155,10 @@ geom_typst <- function(
 #' @noRd
 draw_key_typst <- function(data, params, size) {
   key_size <- normalize_optional_number(data$size)
-  size_unit <- params$size.unit
-  if (is.null(size_unit)) {
-    size_unit <- "pt"
-  }
 
   if (is.null(key_size)) {
     key_size <- 3
-  } else if (size_unit == "pt") {
+  } else if (is.null(params$size.unit) || params$size.unit == "pt") {
     key_size <- key_size / ggplot2::.pt
   }
 
@@ -114,6 +174,7 @@ draw_key_typst <- function(data, params, size) {
 #' @usage NULL
 GeomTypst <- ggplot2::ggproto(
   "GeomTypst",
+
   ggplot2::Geom,
   required_aes = c("x", "y", "label"),
   default_aes = ggplot2::aes(
@@ -127,15 +188,25 @@ GeomTypst <- ggplot2::ggproto(
     family = "",
     math_family = NA
   ),
+
+  setup_data = function(data, params) {
+    data$face <- normalize_face_values(
+      data$face,
+      rows = seq_len(nrow(data)),
+      fn = "geom_typst",
+      detail = r"(Supported values are "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).)"
+    )
+    data
+  },
+
   draw_panel = function(data, panel_params, coord, na.rm = FALSE, size.unit = "pt") {
     if (nrow(data) == 0) {
       return(ggplot2::zeroGrob())
     }
 
-    # Transform data coordinates to panel coordinates
     data <- coord$transform(data, panel_params)
 
-    # Resolve justifications
+    # Resolve character justifications ("inward"/"outward") to numeric
     if (is.character(data$vjust)) {
       data$vjust <- compute_just(data$vjust, data$y)
     }
@@ -146,7 +217,6 @@ GeomTypst <- ggplot2::ggproto(
     data$label <- as.character(data$label)
     data$.ggtypst_row <- seq_len(nrow(data))
 
-    # Remove rows with missing required aesthetics
     data <- ggplot2::remove_missing(
       data,
       na.rm = na.rm,
@@ -158,35 +228,6 @@ GeomTypst <- ggplot2::ggproto(
       return(ggplot2::zeroGrob())
     }
 
-    if (!is.null(data$face)) {
-      u_faces <- unique(data$face)
-      clean_u_faces <- vapply(
-        seq_along(u_faces),
-        function(i) {
-          face_value <- u_faces[[i]]
-
-          tryCatch(
-            normalize_face(face_value, "face", allow_null = FALSE),
-            error = function(cnd) {
-              bad_idx <- which(as.character(data$face) == as.character(face_value))[1]
-              original_row <- data$.ggtypst_row[[bad_idx]]
-              cli::cli_abort(
-                c(
-                  "Invalid {.arg face} aesthetic in {.fn geom_typst}.",
-                  "x" = "Problem in row {original_row} with value {.val {as.character(face_value)}}.",
-                  "i" = "Supported values are \"plain\", \"bold\", \"italic\", or \"bold.italic\" (or numeric codes 1-4)."
-                ),
-                call = NULL
-              )
-            }
-          )
-        },
-        FUN.VALUE = character(1),
-        USE.NAMES = FALSE
-      )
-    }
-
-    # Render labels for each row and combine into a gTree
     grobs <- Map(
       f = geom_typst_row_grob,
       index = data$.ggtypst_row,
@@ -210,8 +251,45 @@ GeomTypst <- ggplot2::ggproto(
       cl = "geom_typst_grob"
     )
   },
+
   draw_key = draw_key_typst
 )
+
+#' @rdname geom_math_typst
+#' @format NULL
+#' @usage NULL
+GeomMathTypst <- ggplot2::ggproto(
+  "GeomMathTypst",
+  GeomTypst,
+  extra_params = c("na.rm", "size.unit", "inline"),
+
+  setup_data = function(data, params) {
+    if (is.null(data$label) && !is.null(params$label)) {
+      data$label <- rep(params$label, length.out = nrow(data))
+    }
+
+    if (is.null(data$label)) {
+      return(GeomTypst$setup_data(data, params))
+    }
+
+    data$label <- normalize_math_labels(
+      data$label,
+      inline = isTRUE(params$inline),
+      fn = "geom_math_typst",
+      rows = seq_len(nrow(data))
+    )
+    data$face <- normalize_face_values(
+      data$face,
+      rows = seq_len(nrow(data)),
+      fn = "geom_math_typst",
+      detail = "Math labels only support \"plain\" and \"bold\".",
+      supported = c("plain", "bold")
+    )
+    data
+  }
+)
+
+# Row rendering
 
 #' Build one positioned Typst label grob
 #'
@@ -274,18 +352,178 @@ geom_typst_row_grob <- function(
       )
     },
     error = function(cnd) {
-      label_preview <- geom_typst_error_preview(label)
-
       cli::cli_abort(
         c(
           "Failed to render a Typst label in {.fn geom_typst}.",
           "x" = "Problem in row {index}.",
-          "i" = "Label: {.val {label_preview}}"
+          "i" = "Label: {.val {geom_typst_error_preview(label)}}"
         ),
         parent = cnd
       )
     }
   )
+}
+
+# Helper functions
+resolve_typst_position <- function(
+  position,
+  nudge_x,
+  nudge_y,
+  fn,
+  position_supplied,
+  nudge_supplied
+) {
+  if (!nudge_supplied) {
+    return(position)
+  }
+
+  if (position_supplied) {
+    cli::cli_abort(
+      "You must specify either {.arg position} or {.arg nudge_x}/{.arg nudge_y}, not both.",
+      call = rlang::call2(fn)
+    )
+  }
+
+  ggplot2::position_nudge(nudge_x, nudge_y)
+}
+
+normalize_face_param <- function(params, fn = NULL, supported = NULL) {
+  params$face <- resolve_arg_alias(params$face, params$fontface, "face", "fontface")
+  params$fontface <- NULL
+
+  if (!("face" %in% names(params))) {
+    return(params)
+  }
+
+  params$face <- normalize_face_values(
+    params$face,
+    fn = fn,
+    supported = supported
+  )
+
+  params
+}
+
+normalize_face_values <- function(face, fn = NULL, detail = NULL, supported = NULL, rows = NULL) {
+  if (is.null(face) || length(face) == 0) {
+    return(face)
+  }
+
+  # Scalar path: validate a single static parameter value
+  if (is.null(rows)) {
+    face <- normalize_face(face, "face")
+    if (!is.null(supported) && !(face %in% supported)) {
+      cli::cli_abort(
+        "{.arg face} for {.fn {fn}} must be either \"plain\" or \"bold\".",
+        call = rlang::call2(fn)
+      )
+    }
+    return(face)
+  }
+
+  # Vector path: validate each unique mapped aesthetic value
+  valid <- !is.na(face)
+  if (!any(valid)) {
+    return(face)
+  }
+
+  face_values <- face[valid]
+  face_keys <- as.character(face_values)
+  unique_faces <- unique(face_values)
+  unique_face_keys <- as.character(unique_faces)
+  first_rows <- rows[valid][match(unique_face_keys, face_keys)]
+
+  normalized_unique <- vapply(
+    seq_along(unique_faces),
+    function(i) {
+      face_value <- unique_faces[[i]]
+      row <- first_rows[[i]]
+
+      abort_invalid_face <- function() {
+        cli::cli_abort(
+          c(
+            "Invalid {.arg face} aesthetic in {.fn {fn}}.",
+            "x" = "Problem in row {row} with value {.val {face_value}}.",
+            "i" = detail
+          ),
+          call = NULL
+        )
+      }
+
+      tryCatch(
+        {
+          normalized <- normalize_face(face_value, "face", allow_null = FALSE)
+          if (!is.null(supported) && !(normalized %in% supported)) {
+            abort_invalid_face()
+          }
+          normalized
+        },
+        error = function(cnd) abort_invalid_face()
+      )
+    },
+    FUN.VALUE = character(1),
+    USE.NAMES = FALSE
+  )
+
+  face[valid] <- normalized_unique[match(face_keys, unique_face_keys)]
+  face
+}
+
+normalize_math_labels <- function(label, inline, fn, rows = NULL) {
+  if (is.null(label) || length(label) == 0) {
+    return(label)
+  }
+
+  valid <- !is.na(label)
+  if (!any(valid)) {
+    return(label)
+  }
+
+  labels <- as.character(label[valid])
+  unique_labels <- unique(labels)
+
+  first_rows <- NULL
+  if (!is.null(rows)) {
+    first_rows <- rows[valid][match(unique_labels, labels)]
+  }
+
+  wrapped <- vapply(
+    seq_along(unique_labels),
+    function(i) {
+      label_value <- unique_labels[[i]]
+
+      tryCatch(
+        as_typst_math_code(label_value, inline = inline),
+        error = function(cnd) {
+          if (is.null(first_rows)) {
+            cli::cli_abort(
+              c(
+                "Failed to normalize the static {.arg label} parameter in {.fn {fn}}.",
+                "i" = "Label: {.val {geom_typst_error_preview(label_value)}}"
+              ),
+              parent = cnd,
+              call = NULL
+            )
+          }
+
+          cli::cli_abort(
+            c(
+              "Failed to normalize a Typst math label in {.fn {fn}}.",
+              "x" = "Problem in row {first_rows[[i]]}.",
+              "i" = "Label: {.val {geom_typst_error_preview(label_value)}}"
+            ),
+            parent = cnd,
+            call = NULL
+          )
+        }
+      )
+    },
+    FUN.VALUE = character(1),
+    USE.NAMES = FALSE
+  )
+
+  label[valid] <- wrapped[match(labels, unique_labels)]
+  label
 }
 
 #' Create a compact label preview for geom_typst errors

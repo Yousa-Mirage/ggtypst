@@ -14,6 +14,14 @@
       Error in `normalize_face()`:
       ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
 
+# geom_typst rejects position with nudge parameters
+
+    Code
+      geom_typst(label = "scale", position = "identity", nudge_x = 0.1)
+    Condition
+      Error in `geom_typst()`:
+      ! You must specify either `position` or `nudge_x`/`nudge_y`, not both.
+
 # geom_typst rejects duplicate face aliases
 
     Code
@@ -29,7 +37,7 @@
       ggplotGrob(p)
     Condition
       Error in `geom_typst()`:
-      ! Problem while converting geom to grob.
+      ! Problem while setting up geom.
       i Error occurred in the 1st layer.
       Caused by error:
       ! Invalid `face` aesthetic in `geom_typst()`.
