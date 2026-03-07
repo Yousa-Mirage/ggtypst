@@ -251,25 +251,6 @@ normalize_optional_string <- function(x, empty_is_null = FALSE) {
   x
 }
 
-#' Normalize a math-only face value
-#'
-#' @param face Face value or `NULL`.
-#' @param fn Calling function name for error messages.
-#' @return A normalized face or `NULL`.
-#' @noRd
-normalize_math_face <- function(face, fn) {
-  face <- normalize_face(face, "face")
-
-  if (!is.null(face) && !(face %in% c("plain", "bold"))) {
-    cli::cli_abort(
-      "{.arg face} for {.fn {fn}} must be either \"plain\" or \"bold\".",
-      call = rlang::call2(fn)
-    )
-  }
-
-  face
-}
-
 #' Normalize math labels for Typst- and MiTeX-backed APIs
 #'
 #' @param label Label vector.
@@ -362,26 +343,6 @@ normalize_math_label_values <- function(
 
   label[valid] <- wrapped[match(labels, unique_labels)]
   label
-}
-
-#' Normalize Typst math labels while preserving blank entries
-#'
-#' @param label Label vector.
-#' @param inline Whether to use inline math delimiters.
-#' @param fn Calling function name for error messages.
-#' @return A character vector with non-blank labels wrapped as Typst math.
-#' @noRd
-normalize_typst_math_element_labels <- function(label, inline, fn) {
-  normalize_math_label_values(
-    label = label,
-    inline = inline,
-    fn = fn,
-    kind = "typst",
-    static_error = "Failed to normalize a Typst math label in {.fn {fn}}.",
-    mapped_error = "Failed to normalize a Typst math label in {.fn {fn}}.",
-    static_call = rlang::call2(fn),
-    preserve_blank = TRUE
-  )
 }
 
 #' Map a normalized face to Typst text settings

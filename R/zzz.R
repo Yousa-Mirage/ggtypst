@@ -18,4 +18,11 @@
     element_grob.element_math_typst,
     envir = asNamespace("ggplot2")
   )
+
+  registerS3method(
+    "element_grob",
+    paste0(pkgname, "::element_math_mitex"),
+    element_grob.element_math_mitex,
+    envir = asNamespace("ggplot2")
+  )
 }
