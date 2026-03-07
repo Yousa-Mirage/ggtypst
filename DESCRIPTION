@@ -41,7 +41,7 @@ Collate:
     'diagnostic.R'
     'extendr-wrappers.R'
     'geom-typst.R'
-    'geom-math-typst.R'
+    'geom-math.R'
     'grob.R'
     'helper.R'
     'mitex.R'
