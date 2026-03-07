@@ -251,6 +251,139 @@ normalize_optional_string <- function(x, empty_is_null = FALSE) {
   x
 }
 
+#' Normalize a math-only face value
+#'
+#' @param face Face value or `NULL`.
+#' @param fn Calling function name for error messages.
+#' @return A normalized face or `NULL`.
+#' @noRd
+normalize_math_face <- function(face, fn) {
+  face <- normalize_face(face, "face")
+
+  if (!is.null(face) && !(face %in% c("plain", "bold"))) {
+    cli::cli_abort(
+      "{.arg face} for {.fn {fn}} must be either \"plain\" or \"bold\".",
+      call = rlang::call2(fn)
+    )
+  }
+
+  face
+}
+
+#' Normalize math labels for Typst- and MiTeX-backed APIs
+#'
+#' @param label Label vector.
+#' @param inline Whether to use inline math delimiters.
+#' @param fn Calling function name for error messages.
+#' @param rows Optional row indices for mapped aesthetics.
+#' @param kind Either `"typst"` or `"mitex"`.
+#' @param static_error Error header for static labels.
+#' @param mapped_error Error header for mapped labels.
+#' @param static_call Optional call object for static-label errors.
+#' @param preserve_blank Whether blank strings should be preserved unchanged.
+#' @return A character vector with normalized math labels.
+#' @noRd
+normalize_math_label_values <- function(
+  label,
+  inline,
+  fn,
+  rows = NULL,
+  kind,
+  static_error,
+  mapped_error,
+  static_call = NULL,
+  preserve_blank = FALSE
+) {
+  if (is.null(label) || length(label) == 0) {
+    return(label)
+  }
+
+  label <- as.character(label)
+  valid <- !is.na(label)
+  if (preserve_blank) {
+    valid <- valid & !grepl("^\\s*$", label)
+  }
+
+  if (!any(valid)) {
+    return(label)
+  }
+
+  labels <- label[valid]
+  unique_labels <- unique(labels)
+
+  first_rows <- NULL
+  if (!is.null(rows)) {
+    first_rows <- rows[valid][match(unique_labels, labels)]
+  }
+
+  wrapped <- vapply(
+    seq_along(unique_labels),
+    function(i) {
+      label_value <- unique_labels[[i]]
+
+      preview <- trimws(label_value)
+      if (nchar(preview) > 80) {
+        preview <- paste0(substr(preview, 1, 77), "...")
+      }
+
+      tryCatch(
+        switch(
+          kind,
+          typst = as_typst_math_code(label_value, inline = inline),
+          mitex = convert_latex_to_typst(label_value, inline = inline)
+        ),
+        error = function(cnd) {
+          if (is.null(first_rows)) {
+            cli::cli_abort(
+              c(
+                static_error,
+                "i" = "Label: {.val {preview}}"
+              ),
+              parent = cnd,
+              call = static_call
+            )
+          }
+
+          cli::cli_abort(
+            c(
+              mapped_error,
+              "x" = "Problem in row {first_rows[[i]]}.",
+              "i" = "Label: {.val {preview}}"
+            ),
+            parent = cnd,
+            call = NULL
+          )
+        }
+      )
+    },
+    FUN.VALUE = character(1),
+    USE.NAMES = FALSE
+  )
+
+  label[valid] <- wrapped[match(labels, unique_labels)]
+  label
+}
+
+#' Normalize Typst math labels while preserving blank entries
+#'
+#' @param label Label vector.
+#' @param inline Whether to use inline math delimiters.
+#' @param fn Calling function name for error messages.
+#' @return A character vector with non-blank labels wrapped as Typst math.
+#' @noRd
+normalize_typst_math_element_labels <- function(label, inline, fn) {
+  normalize_math_label_values(
+    label = label,
+    inline = inline,
+    fn = fn,
+    kind = "typst",
+    static_error = "Failed to normalize a Typst math label in {.fn {fn}}.",
+    mapped_error = "Failed to normalize a Typst math label in {.fn {fn}}.",
+    static_call = rlang::call2(fn),
+    preserve_blank = TRUE
+  )
+}
+
 #' Map a normalized face to Typst text settings
 #'
 #' @param face A normalized face string.

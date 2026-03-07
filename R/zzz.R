@@ -11,4 +11,11 @@
     element_grob.element_typst,
     envir = asNamespace("ggplot2")
   )
+
+  registerS3method(
+    "element_grob",
+    paste0(pkgname, "::element_math_typst"),
+    element_grob.element_math_typst,
+    envir = asNamespace("ggplot2")
+  )
 }
