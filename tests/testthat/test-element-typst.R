@@ -2,7 +2,9 @@
 
 test_that("element_typst() returns correct class", {
   el <- element_typst()
-  expect_s3_class(el, c("element_typst", "element_text", "element"))
+  expect_true(inherits(el, "ggtypst::element_typst"))
+  expect_true(inherits(el, "ggplot2::element_text"))
+  expect_true(inherits(el, "ggplot2::element"))
 })
 
 test_that("element_typst() stores parameters", {
@@ -75,6 +77,23 @@ test_that("element_typst() defaults are NULL / FALSE", {
   expect_equal(el$size.unit, "pt")
   expect_null(el$debug)
   expect_false(el$inherit.blank)
+})
+
+test_that("element_typst inherit.blank is resolved by ggplot2 theme merging", {
+  th_blank <- theme(
+    axis.title = element_blank(),
+    axis.title.x = element_typst(inherit.blank = TRUE)
+  )
+  th_keep <- theme(
+    axis.title = element_blank(),
+    axis.title.x = element_typst(inherit.blank = FALSE)
+  )
+
+  el_blank <- ggplot2:::calc_element("axis.title.x", th_blank)
+  el_keep <- ggplot2:::calc_element("axis.title.x", th_keep)
+
+  expect_true(inherits(el_blank, "ggplot2::element_blank"))
+  expect_true(inherits(el_keep, "ggtypst::element_typst"))
 })
 
 

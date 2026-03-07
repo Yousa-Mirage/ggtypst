@@ -3,6 +3,47 @@ NULL
 
 # element_typst ----------------------------------------------------------------
 
+# ggplot2 4.x theme elements are S7 objects. Defining element_typst as an S7
+# subclass of element_text lets ggplot2 resolve inheritance, including
+# inherit.blank, before element_grob() is called.
+element_typst_class <- S7::new_class(
+  "element_typst",
+  parent = ggplot2::element_text,
+  properties = list(
+    size.unit = S7::new_property(S7::class_character, default = "pt"),
+    math_family = S7::new_property(
+      S7::new_union(S7::class_character, NULL),
+      default = NULL
+    )
+  )
+)
+
+merge_element_generic <- get("merge_element", asNamespace("ggplot2"))
+
+# ggplot2's default S7 element merge expects parent elements to expose the same
+# property set. element_typst extends element_text with math_family and
+# size.unit, so merge only the fields that exist on the parent.
+S7::method(merge_element_generic, list(element_typst_class, S7::class_any)) <- function(new, old, ...) {
+  if (!inherits(new, class(old)[1])) {
+    cli::cli_abort("Only elements of the same class can be merged.")
+  }
+
+  old_props <- if (S7::S7_inherits(old)) {
+    S7::props(old)
+  } else {
+    old
+  }
+
+  idx <- lengths(S7::props(new)) == 0
+  idx <- intersect(names(idx[idx]), names(old_props))
+
+  if (length(idx) > 0) {
+    S7::props(new)[idx] <- old_props[idx]
+  }
+
+  new
+}
+
 #' Theme element that renders text with Typst
 #'
 #' A drop-in replacement for [ggplot2::element_text()] that compiles each label
@@ -59,31 +100,28 @@ element_typst <- function(
   math_family = NULL,
   size.unit = "pt",
   debug = NULL,
-  # TODO: inherit.blank not implemented
   inherit.blank = FALSE
 ) {
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
   colour <- resolve_arg_alias(colour, color, "colour", "color")
 
   size.unit <- check_size_unit(size.unit)
+  math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
 
-  structure(
-    list(
-      family = family,
-      face = face,
-      size = size,
-      colour = colour,
-      hjust = hjust,
-      vjust = vjust,
-      angle = angle,
-      lineheight = lineheight,
-      margin = margin,
-      math_family = math_family,
-      size.unit = size.unit,
-      debug = debug,
-      inherit.blank = inherit.blank
-    ),
-    class = c("element_typst", "element_text", "element")
+  element_typst_class(
+    family = family,
+    face = face,
+    size = size,
+    colour = colour,
+    hjust = hjust,
+    vjust = vjust,
+    angle = angle,
+    lineheight = lineheight,
+    margin = margin,
+    math_family = math_family,
+    size.unit = size.unit,
+    debug = debug,
+    inherit.blank = inherit.blank
   )
 }
 

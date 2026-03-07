@@ -22,6 +22,7 @@ SystemRequirements: Cargo (Rust's package manager), rustc >= 1.89.0, xz
 Depends: 
     R (>= 4.2)
 Imports:
+    S7,
     cli,
     ggplot2,
     grImport2,
@@ -47,3 +48,4 @@ Collate:
     'geom-typst.R'
     'geom-math.R'
     'mitex.R'
+    'zzz.R'
