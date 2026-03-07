@@ -73,7 +73,7 @@ build_typst_source <- function(
   }
 
   # Angle
-  if (!is.null(angle)) {
+  if (!is.null(angle) && (angle %% 360 != 0)) {
     angle <- format_typst_number(angle)
     typst_code <- sprintf("#rotate(%sdeg, reflow: true)[%s]", angle, typst_code)
   }
