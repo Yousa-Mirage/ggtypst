@@ -106,6 +106,17 @@ test_that("annotate_math_typst normalization yields equivalent layer parameters"
   expect_equal(layer_signature(layer_typst), sig_plain)
 })
 
+test_that("annotate_math_typst validates math-only face", {
+  expect_snapshot(
+    annotate_math_typst("x^2", x = 2, y = 20, face = "italic"),
+    error = TRUE
+  )
+
+  expect_no_error(
+    annotate_math_typst("x^2", x = 2, y = 20, fontface = "bold")
+  )
+})
+
 test_that("annotate_math_typst supports inline rendering mode", {
   layer_display <- annotate_math_typst(
     typst_math_code = r"(frac(1, 2))",

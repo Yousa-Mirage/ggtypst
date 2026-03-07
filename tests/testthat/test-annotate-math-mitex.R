@@ -99,6 +99,17 @@ test_that("annotate_math_mitex reports MiTeX conversion errors", {
   expect_snapshot(annotate_math_mitex("\\end{}", x = 2, y = 20), error = TRUE)
 })
 
+test_that("annotate_math_mitex validates math-only face", {
+  expect_snapshot(
+    annotate_math_mitex(r"(\frac{1}{2})", x = 2, y = 20, face = "italic"),
+    error = TRUE
+  )
+
+  expect_no_error(
+    annotate_math_mitex(r"(\frac{1}{2})", x = 2, y = 20, fontface = "bold")
+  )
+})
+
 test_that("annotate_math_mitex supports inline rendering mode", {
   layer_display <- annotate_math_mitex(
     latex_math_code = r"(\frac{1}{2})",

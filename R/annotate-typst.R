@@ -114,6 +114,11 @@ annotate_math_typst <- function(
   angle = NULL,
   inline = FALSE
 ) {
+  params <- normalize_face_param(
+    list(face = face, fontface = fontface),
+    fn = "annotate_math_typst",
+    supported = c("plain", "bold")
+  )
   typst_math_code <- as_typst_math_code(typst_math_code, inline = inline)
 
   annotate_typst(
@@ -128,8 +133,7 @@ annotate_math_typst <- function(
     alpha = alpha,
     color = color,
     colour = colour,
-    face = face,
-    fontface = fontface,
+    face = params$face,
     lineheight = lineheight,
     math_family = math_family,
     angle = angle
@@ -171,6 +175,11 @@ annotate_math_mitex <- function(
   angle = NULL,
   inline = FALSE
 ) {
+  params <- normalize_face_param(
+    list(face = face, fontface = fontface),
+    fn = "annotate_math_mitex",
+    supported = c("plain", "bold")
+  )
   typst_math_code <- tryCatch(
     convert_latex_to_typst(latex_math_code, inline = inline),
     error = function(cnd) {
@@ -201,8 +210,7 @@ annotate_math_mitex <- function(
     alpha = alpha,
     color = color,
     colour = colour,
-    face = face,
-    fontface = fontface,
+    face = params$face,
     lineheight = lineheight,
     math_family = math_family,
     angle = angle
