@@ -156,7 +156,7 @@ test_that("element_grob.element_typst produces titleGrob", {
 
 test_that("element_grob.element_typst returns zeroGrob for NULL label", {
   grob <- element_typst(size = 11) |>
-    element_grob(el, label = NULL)
+    element_grob(label = NULL)
 
   expect_s3_class(grob, "zeroGrob")
 })
