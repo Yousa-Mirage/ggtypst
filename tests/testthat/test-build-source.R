@@ -96,6 +96,13 @@ test_that("build_typst_source does not force italic styling onto math", {
   expect_equal(lines[4], "$ x $")
 })
 
+test_that("build_typst_source negates angle to match grid semantics", {
+  src <- build_typst_source("A", angle = 45)
+  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
+
+  expect_equal(lines[3], "#rotate(-45deg, reflow: true)[A]")
+})
+
 test_that("build_typst_source validates arguments", {
   expect_snapshot(build_typst_source(NULL), error = TRUE)
   expect_snapshot(build_typst_source("A", size = 0), error = TRUE)
