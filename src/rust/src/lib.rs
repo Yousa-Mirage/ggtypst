@@ -12,7 +12,7 @@ fn rs_typst_svg(typst_code: &str) -> List {
     let world = world::InMemoryWorld::new(typst_code.to_string(), fonts);
 
     match world.compile_to_svg() {
-        Ok(rendered_svg) => rendered_svg.to_r_list(),
+        Ok(rendered_svg) => rendered_svg.into_r_list(),
         Err(err) => err.to_typst_error(),
     }
 }

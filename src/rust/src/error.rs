@@ -69,8 +69,10 @@ impl RenderError {
             diagnostics = diagnostics
         );
 
-        #[allow(clippy::unwrap_used)]
-        err.set_class(&["typst_error", "list"]).unwrap();
+        if let Err(_err) = err.set_class(&["typst_error", "list"]) {
+            // The class assignment should not fail for a fresh list,
+            // but keep error handling unwrap-free for consistency.
+        }
         err
     }
 }

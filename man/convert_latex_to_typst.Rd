@@ -4,10 +4,10 @@
 \alias{convert_latex_to_typst}
 \title{Convert LaTeX Math to Typst Math Source}
 \usage{
-convert_latex_to_typst(latex_code, inline = FALSE)
+convert_latex_to_typst(latex_math_code, inline = FALSE)
 }
 \arguments{
-\item{latex_code}{A single LaTeX math string. Outer \verb{$...$} or \verb{$$...$$}
+\item{latex_math_code}{A single LaTeX math string. Outer \verb{$...$} or \verb{$$...$$}
 delimiters are optional and will be normalized.}
 
 \item{inline}{Whether to render as inline math. Default \code{FALSE} renders as
@@ -20,3 +20,4 @@ A single Typst source string.
 Converts a LaTeX math expression to Typst math code using MiTeX and wraps it
 with the mitex-scope.
 }
+\keyword{internal}

@@ -15,9 +15,9 @@ pub struct RenderedSvg {
 }
 
 impl RenderedSvg {
-    pub fn to_r_list(&self) -> List {
+    pub fn into_r_list(self) -> List {
         list!(
-            svg = self.svg.clone(),
+            svg = self.svg,
             width_pt = self.width_pt,
             height_pt = self.height_pt,
             warnings = diagnostics_to_r_list(&self.warnings)
@@ -93,9 +93,8 @@ mod tests {
     fn compile_latex(latex_source: &str) -> Result<RenderedSvg, RenderError> {
         let fragment = mitex::convert_latex_to_typst(latex_source)?;
         let typst_source = format!(
-            "{import}\n{let_expr}\n{eval_expr}",
+            "{import}\n#let _ggtypst_mitex_expr = \"{fragment}\"\n{eval_expr}",
             import = r#"#import "/specs/mod.typ": mitex-scope"#,
-            let_expr = format!(r#"#let _ggtypst_mitex_expr = "{}""#, fragment),
             eval_expr = r#"#eval("$ " + _ggtypst_mitex_expr + " $", scope: mitex-scope)"#
         );
         compile_source(&typst_source)

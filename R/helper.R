@@ -120,6 +120,7 @@ normalize_face <- function(face, arg = "face", allow_null = TRUE) {
     if (allow_null) return(NULL)
   } else if (length(face) == 1) {
     if (is.numeric(face) && (face %in% 1:4)) {
+      # Fast-path genuine numeric ggplot2 face codes before string normalization.
       return(c("plain", "bold", "italic", "bold.italic")[[face]])
     } else {
       normalized <- gsub("[[:space:]_.-]+", "", tolower(as.character(face)))
@@ -256,6 +257,8 @@ normalize_optional_string <- function(x, empty_is_null = FALSE) {
 #' @return A character vector of Typst commands.
 #' @noRd
 face_to_typst_styles <- function(face) {
+  # Keep math styling conservative: Typst math text only inherits bold here.
+  # Italic is left to Typst's default math styling instead of being forced.
   switch(
     face,
     plain = character(0),

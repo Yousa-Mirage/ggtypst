@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::sync::{Arc, LazyLock};
 
 use chrono::Datelike;
 use typst::diag::{FileError, FileResult};
@@ -13,6 +13,9 @@ const MITEX_MOD_TYP: &str = include_str!("../specs/mod.typ");
 const MITEX_PRELUDE_TYP: &str = include_str!("../specs/prelude.typ");
 const MITEX_STANDARD_TYP: &str = include_str!("../specs/latex/standard.typ");
 
+static LIBRARY: LazyLock<LazyHash<Library>> =
+    LazyLock::new(|| LazyHash::new(Library::builder().build()));
+
 fn virtual_typst_file(path: &str) -> Option<&'static str> {
     match path {
         "/specs/mod.typ" => Some(MITEX_MOD_TYP),
@@ -26,14 +29,14 @@ pub struct InMemoryWorld {
     main: FileId,
     source: Source,
     bytes: Bytes,
-    library: LazyHash<Library>,
+    library: &'static LazyHash<Library>,
     book: LazyHash<FontBook>,
     fonts: Arc<Fonts>,
 }
 
 impl World for InMemoryWorld {
     fn library(&self) -> &LazyHash<Library> {
-        &self.library
+        self.library
     }
 
     fn book(&self) -> &LazyHash<FontBook> {
@@ -95,14 +98,13 @@ impl InMemoryWorld {
         let main = FileId::new_fake(VirtualPath::new("<ggtypst>"));
         let source = Source::new(main, typst_code.clone());
         let bytes = Bytes::from_string(typst_code);
-        let library = LazyHash::new(Library::builder().build());
         let book = LazyHash::new(fonts.book.clone());
 
         Self {
             main,
             source,
             bytes,
-            library,
+            library: &LIBRARY,
             book,
             fonts,
         }

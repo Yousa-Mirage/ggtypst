@@ -11,8 +11,9 @@ mod tests {
 
     #[test]
     fn test_convert_latex_to_typst_fragment_returns_raw_fragment() {
-        let fragment = convert_latex_to_typst(r#"\frac{1}{2}"#)
-            .expect("valid latex should convert successfully");
+        let Ok(fragment) = convert_latex_to_typst(r#"\frac{1}{2}"#) else {
+            panic!("valid latex should convert successfully");
+        };
 
         assert_eq!(fragment, "frac(1 ,2 )");
         assert!(
