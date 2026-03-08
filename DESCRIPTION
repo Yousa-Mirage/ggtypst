@@ -38,6 +38,7 @@ Config/testthat/edition: 3
 Config/testthat/parallel: true
 Collate: 
     'annotate-typst.R'
+    'annotate-math.R'
     'build-source.R'
     'diagnostic.R'
     'typst-svg.R'
