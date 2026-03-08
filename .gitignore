@@ -38,3 +38,6 @@ src/vendor/
 src/rust/vendor.tar.xz
 src/rust/vendor-config.toml
 src/rust/vendor/
+
+# pkgdown site
+docs/

@@ -1,0 +1,31 @@
+template:
+  bootstrap: 5
+
+home:
+  title: ggtypst
+  description: Typst-powered text and math rendering for ggplot2.
+
+navbar:
+  structure:
+    left: [home, get-started, reference, news]
+    right: [github]
+  components:
+    get-started:
+      text: Get Started
+      href: articles/get-started.html
+
+reference:
+  - title: Core APIs
+    contents:
+      - annotate_typst
+      - geom_typst
+      - element_typst
+
+  - title: Math APIs
+    contents:
+      - annotate_math_typst
+      - annotate_math_mitex
+      - geom_math_typst
+      - geom_math_mitex
+      - element_math_typst
+      - element_math_mitex

@@ -1,0 +1,43 @@
+---
+title: "Get Started"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Get Started}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+`ggtypst` brings Typst-powered text and math rendering to `ggplot2`.
+
+This article will be the main onboarding guide for the package. The initial
+structure is in place now, and the next iteration can expand each section with
+more examples and troubleshooting notes.
+
+## Installation
+
+```r
+pak::pak("Yousa-Mirage/ggtypst")
+```
+
+## Three workflows
+
+- `annotate_typst()` for one-off plot annotations
+- `geom_typst()` for data-driven Typst labels
+- `element_typst()` for Typst-rendered theme text
+
+## Native Typst math and MiTeX math
+
+`ggtypst` supports both Typst-native math helpers and MiTeX-backed conversion
+from LaTeX-style math input.
+
+## Next steps
+
+For now, use the homepage and reference index as the primary documentation.
+This article is scaffolded and ready for a fuller walkthrough in the next pass.

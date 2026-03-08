@@ -27,5 +27,9 @@ test:
     TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"
     cargo test --quiet --manifest-path src/rust/Cargo.toml
 
+site:
+    Rscript -e "pkgdown::build_site(preview = FALSE, devel = TRUE, lazy = TRUE)"
+    xdg-open docs/index.html
+
 render-showcases:
     Rscript -e "devtools::load_all('.'); source('inst/examples/render-showcases.R'); render_all_showcases()"

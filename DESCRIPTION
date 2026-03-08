@@ -31,10 +31,14 @@ Imports:
     rlang,
     rsvg
 Suggests: 
+    knitr,
+    pkgdown,
+    rmarkdown,
     spelling,
     svglite,
     testthat (>= 3.0.0),
     vdiffr
+VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Collate: 

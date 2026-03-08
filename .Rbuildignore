@@ -15,6 +15,7 @@
 ^dev\.typ$
 ^target($|/)
 ^justfile$
+^\docs($|/)
 
 ^AGENTS\.md$
 ^cran-comments\.md$
