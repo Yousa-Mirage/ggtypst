@@ -1,6 +1,5 @@
 use std::sync::{Arc, LazyLock};
 
-use chrono::Datelike;
 use typst::diag::{FileError, FileResult};
 use typst::foundations::{Bytes, Datetime};
 use typst::syntax::{FileId, Source, VirtualPath};
@@ -77,19 +76,8 @@ impl World for InMemoryWorld {
         self.fonts.fonts.get(index)?.get()
     }
 
-    fn today(&self, offset: Option<i64>) -> Option<Datetime> {
-        let now = chrono::Local::now();
-
-        let naive = match offset {
-            None => now.naive_local(),
-            Some(o) => now.naive_utc() + chrono::Duration::hours(o),
-        };
-
-        Datetime::from_ymd(
-            naive.year(),
-            naive.month().try_into().ok()?,
-            naive.day().try_into().ok()?,
-        )
+    fn today(&self, _offset: Option<i64>) -> Option<Datetime> {
+        None
     }
 }
 
