@@ -31,6 +31,7 @@ Imports:
     rlang,
     rsvg
 Suggests: 
+    spelling,
     svglite,
     testthat (>= 3.0.0),
     vdiffr
@@ -51,3 +52,4 @@ Collate:
     'geom-math.R'
     'mitex.R'
     'zzz.R'
+Language: en-US
