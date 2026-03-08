@@ -98,7 +98,9 @@ Remember to attach an image and the reproduction code to show the issue
 clearly.
 
 If you want to make contributions, please take a look at the
-[contributing guide]() for instructions.
+[contributing
+guide](https://yousa-mirage.github.io/ggtypst/CONTRIBUTING.html) for
+instructions.
 
 ## Acknowledgements
 

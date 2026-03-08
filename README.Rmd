@@ -95,7 +95,7 @@ You can even render a matrix as the title!
 If you found any bugs or errors about `ggtypst`, you can report it on [GitHub Issues](https://github.com/yousa-mirage/ggtypst/issues/).
 Remember to attach an image and the reproduction code to show the issue clearly.
 
-If you want to make contributions, please take a look at the [contributing guide]() for instructions.
+If you want to make contributions, please take a look at the [contributing guide](https://yousa-mirage.github.io/ggtypst/CONTRIBUTING.html) for instructions.
 
 ## Acknowledgements
 
