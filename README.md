@@ -91,18 +91,6 @@ ggplot(mtcars, aes(wt, mpg)) +
   )
 ```
 
-## Development
-
-Useful project commands:
-
-```sh
-just format
-just check
-just document
-just test
-just build-check
-```
-
 ## License
 
 MIT.

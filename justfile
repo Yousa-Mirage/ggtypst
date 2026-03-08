@@ -26,6 +26,3 @@ document:
 test:
     TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"
     cargo test --quiet --manifest-path src/rust/Cargo.toml
-
-vendor:
-	cd src/rust && cargo vendor-filterer --format=tar.xz --tier=1,2 vendor.tar.xz
