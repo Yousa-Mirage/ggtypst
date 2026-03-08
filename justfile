@@ -26,3 +26,6 @@ document:
 test:
     TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"
     cargo test --quiet --manifest-path src/rust/Cargo.toml
+
+render-showcases:
+    Rscript -e "devtools::load_all('.'); source('inst/examples/render-showcases.R'); render_all_showcases()"
