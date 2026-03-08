@@ -1,17 +1,19 @@
-^src/\.cargo$
-^src/rust/vendor$
-^src/rust/target$
+^src/\.cargo($|/)
+^src/rust/vendor($|/)
+^src/rust/target($|/)
 ^src/Makevars$
 ^src/Makevars\.win$
 ^LICENSE\.md$
-^\.vscode$
-^\.zed$
+^\.vscode($|/)
+^\.zed($|/)
+^\.github($|/)
 
 # temp files
 ^test\.R$
 ^test\.typ$
 ^dev\.R$
 ^dev\.typ$
+^target($|/)
 ^justfile$
 
 ^AGENTS\.md$

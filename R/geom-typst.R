@@ -30,6 +30,8 @@
 #' - `vjust`
 #'
 #' @inheritParams ggplot2::geom_text
+#' @param nudge_x,nudge_y Horizontal and vertical nudge offsets. Supply these
+#'   instead of `position` to shift labels after the default identity position.
 #' @param size.unit Unit used to interpret the `size` aesthetic. Defaults to
 #'   points (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
 #' @return A ggplot2 layer that can be added to a plot.

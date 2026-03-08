@@ -96,6 +96,9 @@ lists which parameters it can accept.
 \link[ggplot2:draw_key]{key glyphs}, to change the display of the layer in the legend.
 }}
 
+\item{nudge_x, nudge_y}{Horizontal and vertical nudge offsets. Supply these
+instead of \code{position} to shift labels after the default identity position.}
+
 \item{inline}{Whether to render labels as inline math. Default \code{FALSE}
 renders display-style math.}
 

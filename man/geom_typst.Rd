@@ -95,6 +95,9 @@ lists which parameters it can accept.
 \link[ggplot2:draw_key]{key glyphs}, to change the display of the layer in the legend.
 }}
 
+\item{nudge_x, nudge_y}{Horizontal and vertical nudge offsets. Supply these
+instead of \code{position} to shift labels after the default identity position.}
+
 \item{size.unit}{Unit used to interpret the \code{size} aesthetic. Defaults to
 points (\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
 

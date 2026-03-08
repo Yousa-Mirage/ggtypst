@@ -26,12 +26,12 @@ warn_typst_warnings <- function(warnings) {
   diag_bullets <- unlist(
     lapply(warnings, function(diagnostic) {
       bullet <- if (identical(diagnostic$severity, "Warning")) "!" else "x"
-      msg <- setNames(escape_cli(diagnostic$message), bullet)
+      msg <- stats::setNames(escape_cli(diagnostic$message), bullet)
 
       hints <- diagnostic$hints
       if (length(hints) > 0) {
-        msg <- c(msg, setNames("{.strong Hint:}", "i"))
-        msg <- c(msg, setNames(escape_cli(hints), rep(" ", length(hints))))
+        msg <- c(msg, stats::setNames("{.strong Hint:}", "i"))
+        msg <- c(msg, stats::setNames(escape_cli(hints), rep(" ", length(hints))))
       }
 
       msg
@@ -77,13 +77,13 @@ abort_typst_errors <- function(err) {
         bullet <- if (identical(diagnostic$severity, "Warning")) "!" else "x"
 
         msg_text <- escape_cli(diagnostic$message)
-        msg <- setNames(msg_text, bullet)
+        msg <- stats::setNames(msg_text, bullet)
 
         hints <- diagnostic$hints
         if (length(hints) > 0) {
-          msg <- c(msg, setNames("{.strong Hint:}", "i"))
+          msg <- c(msg, stats::setNames("{.strong Hint:}", "i"))
           hints_text <- escape_cli(hints)
-          hints_named <- setNames(hints_text, rep(" ", length(hints)))
+          hints_named <- stats::setNames(hints_text, rep(" ", length(hints)))
           msg <- c(msg, hints_named)
         }
 
