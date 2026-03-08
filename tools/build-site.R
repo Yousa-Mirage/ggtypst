@@ -15,6 +15,19 @@ if (file.exists("README.Rmd")) {
   unlink("README.html")
 }
 
+if (file.exists(".github/CONTRIBUTING.Rmd")) {
+  rmarkdown::render(
+    input = ".github/CONTRIBUTING.Rmd",
+    output_format = "github_document",
+    output_file = "CONTRIBUTING.md",
+    output_dir = ".github",
+    quiet = TRUE,
+    envir = new.env(parent = globalenv())
+  )
+
+  unlink(".github/CONTRIBUTING.html")
+}
+
 restore_agents <- function() {
   if (file.exists(hidden_agents_path) && !file.exists(agents_path)) {
     file.rename(hidden_agents_path, agents_path)
