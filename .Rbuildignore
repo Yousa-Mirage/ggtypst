@@ -17,6 +17,7 @@
 ^justfile$
 
 ^AGENTS\.md$
+^cran-comments\.md$
 ^air\.toml$
 ^\\.\\.Rcheck$
 ^[^/]+\\.xml$

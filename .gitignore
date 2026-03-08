@@ -32,3 +32,9 @@ dev.typ
 
 # Agent
 AGENTS.md
+
+# vendor
+src/vendor/
+src/rust/vendor.tar.xz
+src/rust/vendor-config.toml
+src/rust/vendor/
