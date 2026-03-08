@@ -1,96 +1,113 @@
+
 # ggtypst
 
-`ggtypst` brings Typst-powered text and math rendering to `ggplot2`.
+**`ggtypst`** brings Typst-powered text and math rendering to `ggplot2`.
+`ggtypst` is built around three public API families:
 
-It lets you add rich Typst labels to plot annotations, data-driven layers, and
-theme text elements without requiring a local Typst or LaTeX installation. The
-package renders through a Rust backend and returns SVG-based grid grobs that fit
-into normal `ggplot2` workflows.
+- `annotate_*()` for one-off annotations
+- `geom_*()` for data-driven text layers
+- `element_*()` for Typst-rendered theme text
 
-## Features
+The package supports both **native Typst math** and **LaTeX-style math**
+converted through [MiTeX](https://github.com/mitex-rs/mitex), which
+makes it useful for scientific plots, teaching material, technical
+dashboards, and publication-ready figures.
 
-- `annotate_typst()` for one-off Typst annotations
-- `geom_typst()` for data-driven Typst text layers
-- `element_typst()` for Typst-rendered theme text
-- `annotate_math_typst()`, `geom_math_typst()`, and `element_math_typst()` for
-  Typst math
-- `annotate_math_mitex()`, `geom_math_mitex()`, and `element_math_mitex()` for
-  LaTeX-style math converted through MiTeX
+Under the hood, an embedded Rust backend renders Typst output to SVG
+grobs, so the result fits naturally into normal `ggplot2` workflows
+**without requiring a separate local Typst or LaTeX setup**.
+
+## Highlights
+
+Typst gives you expressive text layout, math typesetting, programmable
+markup and high-quality rendering in a compact syntax. `ggtypst` uses
+that strength inside `ggplot2` without asking you to leave the plotting
+pipeline.
+
+- ✍️ Write raw Typst markup directly inside `ggplot2`
+- ⚙️ Render high-quality equations without installing Typst or LaTeX
+  separately
+- 📊 Plot rich titles, axis, facets, and legends with Typst contents
+- 🎨 Customize text size, colors, angles, faces, and families
+  freelyilies freely
+- 🔁 Choose native Typst math or LaTeX-style math, depends on your wish
+- 🧩 Keep the familiar `ggplot2` layout system and theme semantics
 
 ## Installation
 
-`ggtypst` is not on CRAN yet.
+For now, install `ggtypst` from GitHub with `remotes::install_github()`:
 
-Install it from GitHub with:
-
-```r
-pak::pak("Yousa-Mirage/ggtypst")
+``` r
+install.packages("remotes")
+remotes::install_github("Yousa-Mirage/ggtypst")
 ```
 
-System requirements:
+`ggtypst` builds a Rust backend during installation, so you need an
+available Rust toolchain with `rustc` on your system. You can install
+Rust easily through [rustup](https://rust-lang.org/tools/install/).
 
-- R >= 4.2
-- `cargo`
-- `rustc >= 1.89.0`
-- `xz`
+Binary/package distribution through r-universe and r-multiverse is
+planned for later.
 
-You do not need a separate Typst or LaTeX installation.
+## Get Started
 
-## Examples
+Please read [Get
+Started](https://yousa-mirage.github.io/ggtypst/articles/get-started.html)
+to get a detailed guide for `ggtypst`. There you will see some
+instructions and examples about how to use `ggtypst` in `ggplot2` to
+plot rich contents.
 
-### Typst annotations
+For detailed documentation of functions and the code architecture of
+`ggtypst`, please also see the [website
+page](https://yousa-mirage.github.io/ggtypst/).
 
-```r
-library(ggplot2)
-library(ggtypst)
+## Showcase
 
-ggplot(mtcars, aes(wt, mpg)) +
-  geom_point() +
-  annotate_typst(
-    typst_code = "#text(fill: navy)[*Fuel economy*]",
-    x = 4.5,
-    y = 33,
-    size = 14
-  )
-```
+There are three plots as showcases about the three main workflows:
+annotations, data-driven labels, and Typst-powered theme elements.
 
-### Data-driven math labels
+### Annotation: Just add something
 
-```r
-library(ggplot2)
-library(ggtypst)
+`annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`
+let you place rich notes, callouts, or equations at precise plot
+locations.
 
-df <- data.frame(
-  x = c(1, 2, 3),
-  y = c(1, 4, 9),
-  label = c(r"(x)", r"(x^2)", r"(\\frac{x^3}{3})")
-)
+<img src="man/figures/annotate-showcase.png" alt="Annotation showcase" />
 
-ggplot(df, aes(x, y, label = label)) +
-  geom_point() +
-  geom_math_mitex(nudge_y = 0.4, size = 11)
-```
+### Geom: Data-driven labels
 
-### Typst theme text
+`geom_typst()`, `geom_math_typst()`, and `geom_math_mitex()` turn Typst
+labels into real plotting layers, so styling and label content can vary
+row by row.
 
-```r
-library(ggplot2)
-library(ggtypst)
+<img src="man/figures/geom-showcase.png" alt="Geom showcase" />
 
-ggplot(mtcars, aes(wt, mpg)) +
-  geom_point() +
-  labs(
-    title = "$E = mc^2$",
-    x = "$w_t$",
-    y = "$mpg$"
-  ) +
-  theme(
-    plot.title = element_math_typst(size = 16),
-    axis.title.x = element_math_typst(size = 12),
-    axis.title.y = element_math_typst(size = 12)
-  )
-```
+### Element: Render theme elements
 
-## License
+`element_typst()`, `element_math_typst()`, and `element_math_mitex()`
+take over the themes and rendering of titles, axis labels, strips, and
+legends. You can even render a matrix as the title!
 
-MIT.
+<img src="man/figures/element-showcase.png" alt="Element showcase" />
+
+## Contributing
+
+If you found any bugs or errors about `ggtypst`, you can report it on
+[GitHub Issues](https://github.com/yousa-mirage/ggtypst/issues/).
+Remember to attach an image and the reproduction code to show the issue
+clearly.
+
+If you want to make contributions, please take a look at the
+[contributing guide]() for instructions.
+
+## Acknowledgements
+
+`ggtypst` would not exist without two excellent upstream projects:
+
+- [Typst](https://github.com/typst/typst) for the rendering engine and
+  typography system
+- [MiTeX](https://github.com/mitex-rs/mitex) for LaTeX-to-Typst math
+  conversion
+
+Thanks to the Typst and MiTeX maintainers and contributors for building
+the underlying tooling that makes this package possible.

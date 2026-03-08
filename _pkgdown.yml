@@ -1,5 +1,15 @@
+url: https://yousa-mirage.github.io/ggtypst/
+
 template:
   bootstrap: 5
+  bslib:
+    primary: "#40A2B4"
+    line-height-base: 1.7
+
+authors:
+  Hao Cheng:
+    href: https://yousa-mirage.github.io/
+    html: Yousa Mirage
 
 home:
   title: ggtypst
@@ -8,24 +18,27 @@ home:
 navbar:
   structure:
     left: [home, get-started, reference, news]
-    right: [github]
+    right: [search, github]
   components:
     get-started:
       text: Get Started
       href: articles/get-started.html
 
 reference:
-  - title: Core APIs
+  - title: Annotate Functions
     contents:
       - annotate_typst
-      - geom_typst
-      - element_typst
-
-  - title: Math APIs
-    contents:
       - annotate_math_typst
       - annotate_math_mitex
+
+  - title: Geom Functions
+    contents:
+      - geom_typst
       - geom_math_typst
       - geom_math_mitex
+
+  - title: Element Functions
+    contents:
+      - element_typst
       - element_math_typst
       - element_math_mitex

@@ -11,7 +11,8 @@ Description: Provides a seamless integration of the 'Typst' typesetting engine
     equations, and rich text directly in plot annotations, axis labels, 
     and titles without requiring a local Typst or LaTeX installation. Under
     the hood, it leverages Rust FFI to compile Typst code into SVG.
-URL: https://github.com/Yousa-Mirage/ggtypst
+URL: https://github.com/Yousa-Mirage/ggtypst,
+    https://yousa-mirage.github.io/ggtypst/
 BugReports: https://github.com/Yousa-Mirage/ggtypst/issues
 License: MIT + file LICENSE
 Encoding: UTF-8

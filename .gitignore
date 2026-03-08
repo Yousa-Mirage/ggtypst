@@ -13,11 +13,11 @@ Rplots.pdf
 # Generated make/config files
 src/Makevars
 src/Makevars.win
-src/.cargo/
 
 # Rust build artifacts
 **/target/
 src/rust/vendor/
+**/.cargo/
 
 # IDE settings
 .vscode/

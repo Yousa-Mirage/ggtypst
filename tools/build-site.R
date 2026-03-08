@@ -1,6 +1,20 @@
 agents_path <- "AGENTS.md"
 hidden_agents_path <- ".AGENTS.md.pkgdown-hidden"
 
+if (file.exists("README.Rmd")) {
+  pkgload::load_all(".", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+
+  rmarkdown::render(
+    input = "README.Rmd",
+    output_format = "github_document",
+    output_file = "README.md",
+    quiet = TRUE,
+    envir = new.env(parent = globalenv())
+  )
+
+  unlink("README.html")
+}
+
 restore_agents <- function() {
   if (file.exists(hidden_agents_path) && !file.exists(agents_path)) {
     file.rename(hidden_agents_path, agents_path)
@@ -17,7 +31,10 @@ if (file.exists(agents_path)) {
   }
 }
 
+pkgdown::init_site()
 pkgdown::build_site(preview = FALSE, devel = TRUE, lazy = TRUE)
 
 unlink("docs/AGENTS.html")
 unlink("docs/dev/AGENTS.html")
+unlink("docs/AGENTS.md")
+unlink("docs/dev/AGENTS.md")
