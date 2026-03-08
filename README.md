@@ -17,6 +17,9 @@ Under the hood, an embedded Rust backend renders Typst output to SVG
 grobs, so the result fits naturally into normal `ggplot2` workflows
 **without requiring a separate local Typst or LaTeX setup**.
 
+:information_source: *For showcases, please see [Showcase](#showcase)
+below.*
+
 ## Highlights
 
 Typst gives you expressive text layout, math typesetting, programmable
