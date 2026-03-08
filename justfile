@@ -28,7 +28,7 @@ test:
     cargo test --quiet --manifest-path src/rust/Cargo.toml
 
 site:
-    Rscript -e "pkgdown::build_site(preview = FALSE, devel = TRUE, lazy = TRUE)"
+    Rscript tools/build-site.R
     xdg-open docs/index.html
 
 render-showcases:
