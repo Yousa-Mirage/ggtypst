@@ -30,6 +30,3 @@ test:
 site:
     Rscript tools/build-site.R
     @xdg-open docs/index.html || true
-
-render-showcases:
-    Rscript -e "devtools::load_all('.'); source('inst/examples/render-showcases.R'); render_all_showcases()"
