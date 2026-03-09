@@ -21,6 +21,7 @@ You will need:
 - [`Air`](https://posit-dev.github.io/air/) for formatting R code and [`Jarl`](https://jarl.etiennebacher.com/) for checking R code
 - Recommended development packages such as `devtools`, `pkgdown`, `testthat`, and `vdiffr`
 - Optional: [`just`](https://github.com/casey/just) to run development commands in `justfile`
+- Optional: [`pre-commit`](https://pre-commit.com/) or [`prek`](https://prek.j178.dev/) to run some checks on staged files before committing
 
 Install package dependencies in your usual R environment, then use the project
 root as your working directory.

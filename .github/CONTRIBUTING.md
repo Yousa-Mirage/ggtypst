@@ -21,6 +21,9 @@ You will need:
   `testthat`, and `vdiffr`
 - Optional: [`just`](https://github.com/casey/just) to run development
   commands in `justfile`
+- Optional: [`pre-commit`](https://pre-commit.com/) or
+  [`prek`](https://prek.j178.dev/) to run some checks on staged files
+  before committing
 
 Install package dependencies in your usual R environment, then use the
 project root as your working directory.

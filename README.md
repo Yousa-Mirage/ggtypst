@@ -1,21 +1,18 @@
 
 # ggtypst
 
-**`ggtypst`** brings Typst-powered text and math rendering to `ggplot2`.
-`ggtypst` is built around three public API families:
+**`ggtypst`** brings Typst-powered high-quality text and math rendering
+to `ggplot2`. Without requiring a separate local Typst or LaTeX setup,
+you can add rich text and math equations directly to your `ggplot2`
+plots through three public API families:
 
 - `annotate_*()` for one-off annotations
 - `geom_*()` for data-driven text layers
 - `element_*()` for Typst-rendered theme text
 
-The package supports both **native Typst math** and **LaTeX-style math**
-converted through [MiTeX](https://github.com/mitex-rs/mitex), which
-makes it useful for scientific plots, teaching material, technical
-dashboards, and publication-ready figures.
-
-Under the hood, an embedded Rust backend renders Typst output to SVG
-grobs, so the result fits naturally into normal `ggplot2` workflows
-**without requiring a separate local Typst or LaTeX setup**.
+`ggtypst` supports both native Typst math and **LaTeX-style math**
+thanks to [MiTeX](https://github.com/mitex-rs/mitex). Just choose one
+math style you are more familiar with.
 
 ℹ️*For showcases, please see [Showcase](#showcase) below.*
 
@@ -59,14 +56,12 @@ to get a detailed guide for `ggtypst`. There you will see some
 instructions and examples about how to use `ggtypst` in `ggplot2` to
 plot rich contents.
 
-For detailed documentation of functions and the code architecture of
-`ggtypst`, please also see the [website
-page](https://yousa-mirage.github.io/ggtypst/).
-
 ## Showcase
 
-There are three plots as showcases about the three main workflows:
-annotations, data-driven labels, and Typst-powered theme elements.
+With `ggtypst`, you can easily make publication-ready scientific figures
+with excellent rich texts and math equations. There are three plots as
+showcases about the three main workflows: annotations, data-driven
+labels, and Typst-powered theme elements.
 
 ### Annotation: Just add something
 
