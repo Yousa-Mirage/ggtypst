@@ -1,4 +1,4 @@
-name: check
+name: Code Quality Check
 
 on:
   push:
@@ -61,6 +61,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
+
+      - uses: r-lib/actions/setup-r@v2
+        with:
+          use-public-rspm: true
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable
