@@ -29,3 +29,6 @@ test:
 site:
     Rscript tools/build-site.R
     @xdg-open docs/index.html || true
+
+update-wordlist:
+    Rscript -e "spelling::update_wordlist(confirm = FALSE)"

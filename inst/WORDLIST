@@ -3,9 +3,8 @@ FFI
 MiTeX
 Typst
 behaviour
+callout
 callouts
-centre
-colour
 coloured
 freelyilies
 geom's
@@ -13,10 +12,7 @@ geoms
 ggplot
 ggproto
 mitex
-onboarding
 rustup
-scaffolded
 toolchain
 unmapped
-walkthrough
 ️

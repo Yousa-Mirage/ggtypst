@@ -37,6 +37,14 @@ repos:
         language: system
         pass_filenames: false
         stages: [pre-commit]
+      
+      - id: spell-check
+        name: spell check
+        entry: Rscript
+        args: [-e, "devtools::spell_check()"]
+        language: system
+        pass_filenames: false
+        stages: [pre-commit]
 
       - id: cargo-clippy
         name: cargo clippy
