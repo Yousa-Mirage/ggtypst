@@ -1,0 +1,47 @@
+name: test-rust
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - .github/workflows/Rust-test.yml
+      - src/**
+  pull_request:
+    branches: [main, master]
+    paths:
+      - .github/workflows/Rust-test.yml
+      - src/**
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  cargo-test:
+    name: cargo-test
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust toolchain (Unix)
+        if: runner.os != 'Windows'
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Install Rust toolchain (Windows GNU)
+        if: runner.os == 'Windows'
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: x86_64-pc-windows-gnu
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src/rust -> target
+
+      - name: Run cargo test
+        run: cargo test --manifest-path src/rust/Cargo.toml
