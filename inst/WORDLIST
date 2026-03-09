@@ -1,8 +1,11 @@
 Acknowledgements
 FFI
+GC
+LTO
 MiTeX
 OpenCode
 Typst
+Typst's
 behaviour
 callout
 callouts
@@ -15,7 +18,11 @@ ggplot
 ggproto
 md
 mitex
+overbrace
 rustup
 toolchain
+transpilation
+underbrace
 unmapped
+ℹ️
 ️

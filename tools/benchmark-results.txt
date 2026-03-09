@@ -1,0 +1,64 @@
+══════════════════════════════════════════════════════════════════════════════
+  ggtypst Benchmark Results
+  Date: 2026-03-09
+  R 4.5.2 | ggtypst 0.0.0.9000 | x86_64-pc-linux-gnu
+══════════════════════════════════════════════════════════════════════════════
+
+── Layer 1: Typst Rendering (Rust FFI) ──
+
+  Measures the time of build_typst_source() + typst_svg() calls only,
+  bypassing ggplot2 layer construction and SVG-to-grob import.
+
+  expression                  median        min        max         sd    n_itr
+──────────────────────────────────────────────────────────────────────────────
+  plain_short                  2.0ms   1000.0µs      2.0ms   449.8µs       30
+  plain_styled                 2.0ms      2.0ms      3.0ms   345.7µs       30
+  math_simple                  2.0ms      2.0ms      4.0ms   484.2µs       30
+  math_moderate                2.0ms      2.0ms      3.0ms   345.7µs       30
+  math_complex                 5.0ms      4.0ms      7.0ms   746.6µs       30
+  mitex_simple                 6.0ms      5.0ms     15.0ms      1.8ms       30
+  mitex_complex                8.0ms      8.0ms     10.0ms   621.5µs       30
+
+── Layer 2: Full Plot Performance (End-to-End) ──
+
+  Measures build-and-draw time from already assembled ggplot objects,
+  including Typst compilation, SVG import, and grid drawing to a null PDF device.
+
+── 2A: API Type Comparison ──
+
+  Fixed math content: sum_(i=1)^n x_i
+
+  expression                  median        min        max         sd    n_itr
+──────────────────────────────────────────────────────────────────────────────
+  base plot                   56.0ms     51.0ms     82.0ms      7.8ms       15
+  annotate (1 item)           64.0ms     59.0ms     72.0ms      3.3ms       15
+  annotate (5 items)         124.0ms    111.0ms    142.0ms      7.0ms       15
+  geom (1 row)               173.0ms    167.0ms    245.0ms     18.8ms       15
+  geom (10 rows)               1.19s      1.13s      1.28s     47.6ms       15
+  geom (50 rows)               5.64s      5.38s      5.96s    194.8ms       15
+  element (title)            171.0ms    158.0ms    180.0ms      6.5ms       15
+
+── 2B: Content Complexity (annotate_typst) ──
+
+  All rendered via annotate_typst() at the same position.
+
+  expression                  median        min        max         sd    n_itr
+──────────────────────────────────────────────────────────────────────────────
+  text_only                   66.0ms     63.0ms     72.0ms      2.7ms       15
+  text_styled                 66.0ms     62.0ms     90.0ms      7.0ms       15
+  math_inline                 66.0ms     63.0ms     73.0ms      3.6ms       15
+  math_display                68.0ms     63.0ms     76.0ms      3.5ms       15
+  math_massive               168.0ms    158.0ms    179.0ms      6.3ms       15
+
+── 2C: Geom Row Scaling (geom_typst) ──
+
+  Fixed label: "*Point* #linebreak() text"
+
+  expression                  median        min        max         sd    n_itr
+──────────────────────────────────────────────────────────────────────────────
+  n = 1                      185.0ms    174.0ms    263.0ms     21.1ms       15
+  n = 5                      684.0ms    655.0ms    706.0ms     14.4ms       15
+  n = 10                       1.39s      1.32s      1.49s     54.1ms       15
+  n = 25                       3.35s      3.16s      3.50s    107.3ms       15
+  n = 50                       7.05s      6.51s      7.67s    326.5ms       15
+
