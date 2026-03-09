@@ -11,8 +11,10 @@ test_that("element_typst() stores parameters", {
   el <- element_typst(
     family = "Arial",
     face = "bold",
+    scale = 1.2,
     size = 14,
     colour = "red",
+    alpha = 0.4,
     hjust = 0,
     vjust = 1,
     angle = 45,
@@ -26,8 +28,10 @@ test_that("element_typst() stores parameters", {
 
   expect_equal(el$family, "Arial")
   expect_equal(el$face, "bold")
+  expect_equal(el$scale, 1.2)
   expect_equal(el$size, 14)
   expect_equal(el$colour, "red")
+  expect_equal(el$alpha, 0.4)
   expect_equal(el$hjust, 0)
   expect_equal(el$vjust, 1)
   expect_equal(el$angle, 45)
@@ -66,8 +70,10 @@ test_that("element_typst() defaults are NULL / FALSE", {
   el <- element_typst()
   expect_null(el$family)
   expect_null(el$face)
+  expect_null(el$scale)
   expect_null(el$size)
   expect_null(el$colour)
+  expect_null(el$alpha)
   expect_null(el$hjust)
   expect_null(el$vjust)
   expect_null(el$angle)
@@ -77,6 +83,22 @@ test_that("element_typst() defaults are NULL / FALSE", {
   expect_equal(el$size.unit, "pt")
   expect_null(el$debug)
   expect_false(el$inherit.blank)
+})
+
+test_that("element_typst scale changes rendered grob dimensions", {
+  grob_one <- element_grob.element_typst(
+    element_typst(scale = 1, size = 12),
+    label = "Scale me"
+  )
+  grob_two <- element_grob.element_typst(
+    element_typst(scale = 2, size = 12),
+    label = "Scale me"
+  )
+
+  width_one <- grid::convertWidth(grid::grobWidth(grob_one), "pt", valueOnly = TRUE)
+  width_two <- grid::convertWidth(grid::grobWidth(grob_two), "pt", valueOnly = TRUE)
+
+  expect_equal(width_two / width_one, 2, tolerance = 1e-6)
 })
 
 test_that("element_typst inherit.blank is resolved by ggplot2 theme merging", {

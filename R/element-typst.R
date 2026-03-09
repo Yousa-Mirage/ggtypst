@@ -10,6 +10,14 @@ element_typst_class <- S7::new_class(
   "element_typst",
   parent = ggplot2::element_text,
   properties = list(
+    scale = S7::new_property(
+      S7::new_union(S7::class_numeric, NULL),
+      default = NULL
+    ),
+    alpha = S7::new_property(
+      S7::new_union(S7::class_numeric, NULL),
+      default = NULL
+    ),
     size.unit = S7::new_property(S7::class_character, default = "pt"),
     math_family = S7::new_property(
       S7::new_union(S7::class_character, NULL),
@@ -62,10 +70,12 @@ merge_element_element_typst <- function(new, old, ...) {
 #'
 #' @param face,fontface Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
+#' @param scale A positive scaling factor applied to the rendered Typst size.
 #' @param size Optional font size.
 #' @param size.unit The unit of `size`. Defaults to points
 #'   (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
 #' @param color,colour Optional text color. RGB or color name are supported.
+#' @param alpha Optional color alpha multiplier in `[0, 1]`.
 #' @param hjust,vjust Horizontal and vertical justification for the rendered
 #'   grob (`0` = bottom, `0.5` = center, `1` = top).
 #' @param angle Optional text rotation angle in degrees.
@@ -98,12 +108,12 @@ merge_element_element_typst <- function(new, old, ...) {
 element_typst <- function(
   hjust = NULL,
   vjust = NULL,
-  # TODO: scale?
+  scale = NULL,
   size = NULL,
   size.unit = "pt",
   color = NULL,
   colour = NULL,
-  # TODO: alpha?
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
   angle = NULL,
@@ -118,14 +128,18 @@ element_typst <- function(
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
   colour <- resolve_arg_alias(colour, color, "colour", "color")
 
+  scale <- check_positive_number(scale, "scale")
   size.unit <- check_size_unit(size.unit)
+  alpha <- check_alpha(alpha)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
 
   element_typst_class(
     family = family,
     face = face,
+    scale = scale,
     size = size,
     colour = colour,
+    alpha = alpha,
     hjust = hjust,
     vjust = vjust,
     angle = angle,
@@ -141,6 +155,8 @@ element_typst <- function(
 
 # element_grob dispatching ----------------------------------------------------
 
+#' @noRd
+#' @exportS3Method ggplot2::element_grob
 element_grob.element_typst <- function(
   element,
   label = "",
@@ -173,12 +189,13 @@ element_grob.element_typst <- function(
   colour <- colour %||% element$colour
   family <- family %||% element$family
   face <- face %||% element$face
+  scale <- element$scale %||% 1
+  alpha <- element$alpha
   math_family <- element$math_family
   size.unit <- element$size.unit %||% "pt"
   debug <- isTRUE(element$debug)
 
   # Compute default position from rotated justification
-  # TODO: if this can be made in Typst?
   just <- rotate_just(angle, hjust, vjust)
 
   n <- max(length(label), length(x), length(y), 1)
@@ -215,8 +232,10 @@ element_grob.element_typst <- function(
     y = y,
     hjust = hjust,
     vjust = vjust,
+    scale = scale,
     size = size_pt,
     colour = colour,
+    alpha = alpha,
     family = family,
     face = face,
     lineheight = lineheight,
@@ -241,8 +260,10 @@ element_grob.element_typst <- function(
 #' @param label Character vector of Typst source labels.
 #' @param x,y Grid units for label positions.
 #' @param hjust,vjust Justification values.
+#' @param scale Scaling factor applied after Typst rendering.
 #' @param size Font size in points (already converted).
 #' @param colour Text colour string.
+#' @param alpha Optional alpha multiplier.
 #' @param family Font family or `NULL`.
 #' @param face Normalised face string or `NULL`.
 #' @param lineheight Line height value or `NULL`.
@@ -259,8 +280,10 @@ typst_title_grob <- function(
   y,
   hjust,
   vjust,
+  scale,
   size,
   colour,
+  alpha,
   family,
   face,
   lineheight,
@@ -287,8 +310,10 @@ typst_title_grob <- function(
       y = yi,
       hjust = hjust,
       vjust = vjust,
+      scale = scale,
       size = size,
       colour = colour,
+      alpha = alpha,
       family = family,
       face = face,
       lineheight = lineheight,
@@ -324,8 +349,10 @@ typst_title_grob <- function(
 #' @param label A single Typst source string.
 #' @param x,y Grid units for position.
 #' @param hjust,vjust Justification values.
+#' @param scale Scaling factor applied after Typst rendering.
 #' @param size Font size in points or `NULL`.
 #' @param colour Text colour string.
+#' @param alpha Optional alpha multiplier.
 #' @param family Font family or `NULL`.
 #' @param face Normalised face string or `NULL`.
 #' @param lineheight Line height value or `NULL`.
@@ -339,8 +366,10 @@ typst_element_grob <- function(
   y,
   hjust,
   vjust,
+  scale,
   size,
   colour,
+  alpha,
   family,
   face,
   lineheight,
@@ -353,6 +382,7 @@ typst_element_grob <- function(
     typst_code = label,
     size = size,
     color = colour,
+    alpha = alpha,
     family = family,
     face = face,
     lineheight = lineheight,
@@ -362,8 +392,8 @@ typst_element_grob <- function(
 
   rendered <- typst_svg(source)
 
-  width_pt <- rendered$width_pt
-  height_pt <- rendered$height_pt
+  width_pt <- rendered$width_pt * scale
+  height_pt <- rendered$height_pt * scale
 
   grob <- vector_typst_grob(
     svg = rendered$svg,

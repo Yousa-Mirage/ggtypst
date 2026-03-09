@@ -22,6 +22,15 @@
       Error in `geom_typst()`:
       ! You must specify either `position` or `nudge_x`/`nudge_y`, not both.
 
+# geom_typst supports color alias
+
+    Code
+      geom_typst(label = "scale", colour = "red", color = "blue")
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `colour` and `color`.
+      i Use `colour`; `color` is an alias.
+
 # geom_typst rejects duplicate face aliases
 
     Code

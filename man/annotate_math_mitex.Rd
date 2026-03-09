@@ -42,7 +42,7 @@ grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
 \item{color, colour}{Optional text color. RGB or color name are supported.}
 
-\item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
+\item{alpha}{Optional color alpha multiplier in \verb{[0, 1]}.}
 
 \item{face, fontface}{Optional math face. Only \code{"plain"} and \code{"bold"} are supported, because math text in Typst is italic by default.}
 

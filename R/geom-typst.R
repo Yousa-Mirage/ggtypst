@@ -1,6 +1,3 @@
-# TODO: colour not working, it's just a factor.
-# TODO: plot xy range will change.
-
 #' Plot Labels in Data with Typst Text
 #'
 #' `geom_typst()` is a more powerful replacement for [ggplot2::annotate()] and
@@ -17,16 +14,20 @@
 #' - **`label`** Raw Typst source code. `label` can be mapped in [ggplot2::aes()] or supplied as a constant value, for example `geom_typst(label = "Hello")`, to render the same Typst label for every row in the layer.
 #' - `hjust`
 #' - `vjust`
+#' - `scale`
 #' - `size`
-#' - `colour`
+#' - `colour` (alias `color`)
 #' - `alpha`
-#' - `face`
+#' - `face` (alias `fontface`)
 #' - `angle`
 #' - `lineheight`
 #' - `family`
 #' - `math_family`
 #'
-#' To learn more about these theme arguments, see [annotate_typst()].
+#' To learn more about these theme arguments, see [annotate_typst()]. If mapped
+#' `colour` values are already literal colours such as `"#1E66F5"`, add
+#' [ggplot2::scale_colour_identity()] so ggplot2 treats them as colours instead
+#' of discrete categories.
 #'
 #' @inheritParams ggplot2::geom_text
 #' @param nudge_x,nudge_y Horizontal and vertical nudge offsets. Supply these
@@ -52,9 +53,11 @@
 #'   geom_typst(
 #'     data = labels,
 #'     aes(wt, mpg, label = label, colour = colour),
+#'     scale = 1.1,
 #'     size = 14,
 #'     show.legend = FALSE
 #'   ) +
+#'   scale_colour_identity() +
 #'   theme_minimal()
 #' @export
 geom_typst <- function(
@@ -71,7 +74,9 @@ geom_typst <- function(
   inherit.aes = TRUE
 ) {
   size.unit <- check_size_unit(size.unit, "size.unit")
-  params <- normalize_face_param(list(...))
+  params <- list(...)
+  params <- normalize_colour_param(params)
+  params <- normalize_face_param(params)
   position <- resolve_typst_position(
     position,
     nudge_x = nudge_x,
@@ -111,11 +116,16 @@ geom_typst <- function(
 #' @noRd
 draw_key_typst <- function(data, params, size) {
   key_size <- normalize_optional_number(data$size)
+  key_scale <- normalize_optional_number(data$scale)
 
   if (is.null(key_size)) {
     key_size <- 3
   } else if (is.null(params$size.unit) || params$size.unit == "pt") {
     key_size <- key_size / ggplot2::.pt
+  }
+
+  if (!is.null(key_scale)) {
+    key_size <- key_size * key_scale
   }
 
   data$shape <- 16
@@ -134,8 +144,8 @@ GeomTypst <- ggplot2::ggproto(
   ggplot2::Geom,
   required_aes = c("x", "y", "label"),
   default_aes = ggplot2::aes(
-    #
     colour = "black",
+    scale = 1,
     size = 11,
     angle = 0,
     face = "plain",
@@ -178,7 +188,7 @@ GeomTypst <- ggplot2::ggproto(
     data <- ggplot2::remove_missing(
       data,
       na.rm = na.rm,
-      vars = c("x", "y", "label", "size", "hjust", "vjust", "colour", "face", "family"),
+      vars = c("x", "y", "label", "scale", "size", "hjust", "vjust", "colour", "face", "family"),
       name = "geom_typst"
     )
 
@@ -192,6 +202,7 @@ GeomTypst <- ggplot2::ggproto(
       label = data$label,
       x = data$x,
       y = data$y,
+      scale = data$scale,
       size = data$size,
       size.unit = size.unit,
       alpha = data$alpha,
@@ -221,6 +232,7 @@ GeomTypst <- ggplot2::ggproto(
 #' @param index Row index of the label inside the layer data.
 #' @param label Raw Typst source code.
 #' @param x,y Position in transformed panel coordinates.
+#' @param scale Scaling factor applied after Typst rendering.
 #' @param size Text size interpreted according to `size.unit`.
 #' @param size.unit Unit used to interpret `size`.
 #' @param alpha Optional alpha multiplier.
@@ -238,6 +250,7 @@ geom_typst_row_grob <- function(
   label,
   x,
   y,
+  scale,
   size,
   size.unit,
   alpha,
@@ -252,6 +265,8 @@ geom_typst_row_grob <- function(
 ) {
   tryCatch(
     {
+      scale <- normalize_optional_number(scale) %||% 1
+
       source <- build_typst_source(
         typst_code = label,
         size = convert_size_to_pt(
@@ -274,6 +289,7 @@ geom_typst_row_grob <- function(
         x = x,
         y = y,
         default.units = "native",
+        scale = check_positive_number(scale, "scale", allow_null = FALSE),
         hjust = hjust,
         vjust = vjust,
         angle = normalize_optional_number(angle),

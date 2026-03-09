@@ -43,8 +43,10 @@ geom_math_typst <- function(
 ) {
   size.unit <- check_size_unit(size.unit, "size.unit")
   inline <- check_bool(inline, "inline", allow_null = FALSE)
+  params <- list(...)
+  params <- normalize_colour_param(params)
   params <- normalize_face_param(
-    list(...),
+    params,
     fn = "geom_math_typst",
     supported = c("plain", "bold")
   )
@@ -197,8 +199,10 @@ geom_math_mitex <- function(
 ) {
   size.unit <- check_size_unit(size.unit, "size.unit")
   inline <- check_bool(inline, "inline", allow_null = FALSE)
+  params <- list(...)
+  params <- normalize_colour_param(params)
   params <- normalize_face_param(
-    list(...),
+    params,
     fn = "geom_math_mitex",
     supported = c("plain", "bold")
   )

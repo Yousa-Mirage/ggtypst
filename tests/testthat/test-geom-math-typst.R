@@ -42,10 +42,45 @@ test_that("geom_math_typst supports inline rendering mode", {
   expect_gt(h_display, h_inline)
 })
 
+test_that("geom_math_typst maps scale aesthetics to rendered grob dimensions", {
+  df <- data.frame(
+    x = c(1, 2),
+    y = c(1, 2),
+    label = c("frac(1, 2)", "frac(1, 2)"),
+    scale = c(1, 2)
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, scale = scale)) +
+    geom_math_typst(size = 12)
+
+  grobs <- layer_grob(p)[[1]]
+
+  widths <- vapply(
+    grobs$children,
+    function(child) {
+      grid::convertWidth(grid::grobWidth(child), "pt", valueOnly = TRUE)
+    },
+    numeric(1)
+  )
+
+  expect_equal(widths[[2]] / widths[[1]], 2, tolerance = 1e-6)
+})
+
 test_that("geom_math_typst supports fontface alias", {
   layer <- geom_math_typst(label = "x^2", fontface = "bold")
 
   expect_equal(layer$aes_params$face, "bold")
+})
+
+test_that("geom_math_typst supports color alias", {
+  layer <- geom_math_typst(label = "x^2", color = "blue")
+
+  expect_equal(layer$aes_params$colour, "blue")
+
+  expect_snapshot(
+    geom_math_typst(label = "x^2", colour = "red", color = "blue"),
+    error = TRUE
+  )
 })
 
 test_that("geom_math_typst supports static label parameters", {

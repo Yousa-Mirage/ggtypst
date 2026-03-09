@@ -7,10 +7,12 @@
 element_math_typst(
   hjust = NULL,
   vjust = NULL,
+  scale = NULL,
   size = NULL,
   size.unit = "pt",
   color = NULL,
   colour = NULL,
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
   angle = NULL,
@@ -26,12 +28,16 @@ element_math_typst(
 \item{hjust, vjust}{Horizontal and vertical justification for the rendered
 grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
+\item{scale}{A positive scaling factor applied to the rendered Typst size.}
+
 \item{size}{Optional font size.}
 
 \item{size.unit}{The unit of \code{size}. Defaults to points
 (\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
 
 \item{color, colour}{Optional text color. RGB or color name are supported.}
+
+\item{alpha}{Optional color alpha multiplier in \verb{[0, 1]}.}
 
 \item{face, fontface}{Optional math face. Only \code{"plain"} and \code{"bold"} are supported, because math text in Typst is italic by default.}
 

@@ -42,10 +42,12 @@ element_math_typst_class <- S7::new_class(
 element_math_typst <- function(
   hjust = NULL,
   vjust = NULL,
+  scale = NULL,
   size = NULL,
   size.unit = "pt",
   color = NULL,
   colour = NULL,
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
   angle = NULL,
@@ -65,14 +67,18 @@ element_math_typst <- function(
     fn = "element_math_typst",
     supported = c("plain", "bold")
   )
+  scale <- check_positive_number(scale, "scale")
   size.unit <- check_size_unit(size.unit)
+  alpha <- check_alpha(alpha)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
   inline <- check_bool(inline, "inline", allow_null = FALSE)
 
   element_math_typst_class(
     face = face,
+    scale = scale,
     size = size,
     colour = colour,
+    alpha = alpha,
     hjust = hjust,
     vjust = vjust,
     angle = angle,
@@ -153,6 +159,8 @@ element_grob_math_impl <- function(
   )
 }
 
+#' @noRd
+#' @exportS3Method ggplot2::element_grob
 element_grob.element_math_typst <- function(
   element,
   label = "",
@@ -228,10 +236,12 @@ element_math_mitex_class <- S7::new_class(
 element_math_mitex <- function(
   hjust = NULL,
   vjust = NULL,
+  scale = NULL,
   size = NULL,
   size.unit = "pt",
   color = NULL,
   colour = NULL,
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
   angle = NULL,
@@ -251,14 +261,18 @@ element_math_mitex <- function(
     fn = "element_math_mitex",
     supported = c("plain", "bold")
   )
+  scale <- check_positive_number(scale, "scale")
   size.unit <- check_size_unit(size.unit)
+  alpha <- check_alpha(alpha)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
   inline <- check_bool(inline, "inline", allow_null = FALSE)
 
   element_math_mitex_class(
     face = face,
+    scale = scale,
     size = size,
     colour = colour,
+    alpha = alpha,
     hjust = hjust,
     vjust = vjust,
     angle = angle,
@@ -272,6 +286,8 @@ element_math_mitex <- function(
   )
 }
 
+#' @noRd
+#' @exportS3Method ggplot2::element_grob
 element_grob.element_math_mitex <- function(
   element,
   label = "",

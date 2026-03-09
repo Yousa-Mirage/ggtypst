@@ -12,7 +12,7 @@
 #' @param size Optional text size.
 #' @param size.unit The unit of `size`. Defaults to points
 #'   (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
-#' @param alpha Optional alpha multiplier in `[0, 1]`.
+#' @param alpha Optional color alpha multiplier in `[0, 1]`.
 #' @param color,colour Optional text color. RGB or color name are supported.
 #' @param face,fontface Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.

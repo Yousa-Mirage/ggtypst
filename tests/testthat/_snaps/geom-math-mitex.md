@@ -1,3 +1,12 @@
+# geom_math_mitex supports color alias
+
+    Code
+      geom_math_mitex(label = "\\frac{1}{2}", colour = "red", color = "blue")
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `colour` and `color`.
+      i Use `colour`; `color` is an alias.
+
 # geom_math_mitex validates static math face
 
     Code

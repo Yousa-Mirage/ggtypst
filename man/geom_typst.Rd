@@ -136,17 +136,21 @@ in bold):
 \item \strong{\code{label}} Raw Typst source code. \code{label} can be mapped in \code{\link[ggplot2:aes]{ggplot2::aes()}} or supplied as a constant value, for example \code{geom_typst(label = "Hello")}, to render the same Typst label for every row in the layer.
 \item \code{hjust}
 \item \code{vjust}
+\item \code{scale}
 \item \code{size}
-\item \code{colour}
+\item \code{colour} (alias \code{color})
 \item \code{alpha}
-\item \code{face}
+\item \code{face} (alias \code{fontface})
 \item \code{angle}
 \item \code{lineheight}
 \item \code{family}
 \item \code{math_family}
 }
 
-To learn more about these theme arguments, see \code{\link[=annotate_typst]{annotate_typst()}}.
+To learn more about these theme arguments, see \code{\link[=annotate_typst]{annotate_typst()}}. If mapped
+\code{colour} values are already literal colours such as \code{"#1E66F5"}, add
+\code{\link[ggplot2:scale_identity]{ggplot2::scale_colour_identity()}} so ggplot2 treats them as colours instead
+of discrete categories.
 }
 
 \examples{
@@ -166,9 +170,11 @@ ggplot(mtcars, aes(wt, mpg)) +
   geom_typst(
     data = labels,
     aes(wt, mpg, label = label, colour = colour),
+    scale = 1.1,
     size = 14,
     show.legend = FALSE
   ) +
+  scale_colour_identity() +
   theme_minimal()
 }
 \seealso{

@@ -317,6 +317,15 @@ normalize_face_param <- function(params, fn = NULL, supported = NULL) {
   params
 }
 
+#' @param params Parameter list that may contain `colour` and `color`.
+#' @return `params` with color aliases resolved to `colour`.
+#' @noRd
+normalize_colour_param <- function(params) {
+  params$colour <- resolve_arg_alias(params$colour, params$color, "colour", "color")
+  params$color <- NULL
+  params
+}
+
 #' Normalize scalar or vector face values
 #'
 #' @param face Face value(s).
