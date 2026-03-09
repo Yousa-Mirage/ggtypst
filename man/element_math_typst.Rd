@@ -2,65 +2,78 @@
 % Please edit documentation in R/element-math.R
 \name{element_math_typst}
 \alias{element_math_typst}
-\title{Theme element that renders Typst math}
+\title{Render Theme Elements with Typst Math}
 \usage{
 element_math_typst(
-  face = NULL,
-  fontface = NULL,
-  size = NULL,
-  colour = NULL,
   hjust = NULL,
   vjust = NULL,
+  size = NULL,
+  size.unit = "pt",
+  color = NULL,
+  colour = NULL,
+  face = NULL,
+  fontface = NULL,
   angle = NULL,
   lineheight = NULL,
-  color = NULL,
-  margin = NULL,
   math_family = NULL,
-  size.unit = "pt",
+  inline = FALSE,
+  margin = NULL,
   debug = NULL,
-  inherit.blank = FALSE,
-  inline = FALSE
+  inherit.blank = FALSE
 )
 }
 \arguments{
-\item{face, fontface}{Math face. Only \code{"plain"} and \code{"bold"} are supported.}
+\item{hjust, vjust}{Horizontal and vertical justification for the rendered
+grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
-\item{size}{Font size (default unit controlled by \code{size.unit}).}
+\item{size}{Optional font size.}
 
-\item{colour, color}{Text colour.}
+\item{size.unit}{The unit of \code{size}. Defaults to points
+(\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
 
-\item{hjust}{Horizontal justification (0 = left, 0.5 = centre, 1 = right).}
+\item{color, colour}{Optional text color. RGB or color name are supported.}
 
-\item{vjust}{Vertical justification (0 = bottom, 0.5 = centre, 1 = top).}
+\item{face, fontface}{Optional math face. Only \code{"plain"} and \code{"bold"} are supported, because math text in Typst is italic by default.}
 
-\item{angle}{Rotation angle in degrees.}
+\item{angle}{Optional text rotation angle in degrees.}
 
-\item{lineheight}{Line height value. May be negative.}
+\item{lineheight}{Optional line height value. May be negative.}
 
-\item{margin}{Margins around the text, created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
+\item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
 
-\item{math_family}{Optional font family for Typst math mode.}
+\item{inline}{Whether to render inline math. Default \code{FALSE} renders
+display-style math.}
 
-\item{size.unit}{Unit used to interpret \code{size}. Either \code{"pt"} (default) or
-\code{"mm"}.}
+\item{margin}{Optional text margins created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
 
 \item{debug}{If \code{TRUE}, draw a coloured rectangle behind each label for
 debugging layout.}
 
-\item{inherit.blank}{If \code{TRUE}, \code{element_blank} parents suppress this element.}
-
-\item{inline}{Whether to render labels as inline math. Default \code{FALSE}
-renders display-style math.}
+\item{inherit.blank}{If \code{TRUE}, \code{element_blank()} parents suppress this
+element.}
 }
 \value{
-A ggplot2 theme element that can be used inside a \code{\link[ggplot2:theme]{ggplot2::theme()}}
-call.
+A ggplot2 theme element.
 }
 \description{
-A math-specialized variant of \code{\link[=element_typst]{element_typst()}} that treats every non-blank
-label as Typst math content. Outer \verb{$...$} or \verb{$$...$$} delimiters are
-normalized automatically before rendering.
+\code{element_math_typst()} is the math-specialized variant of \code{\link[=element_typst]{element_typst()}}. It
+treats the theme element's text as Typst math expression and then renders it as
+the element's visual representation.
+It will normalize the outer \verb{$...$} or \verb{$ ... $} delimiters automatically.
 }
-\details{
-Math theme elements only support \code{face = "plain"} and \code{face = "bold"}.
+\examples{
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  labs(
+    title = r"("Matrix Title:" mat(0, 1; 1, 0))",
+    y = r"($sum_(i=1)^n c_i$)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_math_typst(size = 18, face = "bold"),
+    axis.title.y = element_math_typst(size = 14)
+  )
+}
+\seealso{
+\code{\link[=element_typst]{element_typst()}}, \code{\link[=element_math_mitex]{element_math_mitex()}}
 }

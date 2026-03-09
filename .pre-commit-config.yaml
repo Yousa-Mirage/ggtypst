@@ -14,18 +14,18 @@ repos:
 
   - repo: local
     hooks:
-      - id: air-format
-        name: air format
+      - id: air-format-check
+        name: air format check
         entry: r-air
-        args: [format, .]
+        args: [format, ., --check]
         language: system
         pass_filenames: false
         stages: [pre-commit]
 
-      - id: cargo-fmt
-        name: cargo fmt
+      - id: cargo-fmt-check
+        name: cargo fmt check
         entry: cargo
-        args: [fmt, --manifest-path, src/rust/Cargo.toml]
+        args: [fmt, --manifest-path, src/rust/Cargo.toml, --check]
         language: system
         pass_filenames: false
         stages: [pre-commit]

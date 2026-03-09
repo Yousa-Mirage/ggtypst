@@ -2,80 +2,80 @@
 % Please edit documentation in R/element-typst.R
 \name{element_typst}
 \alias{element_typst}
-\title{Theme element that renders text with Typst}
+\title{Render Theme Elements with Typst Text}
 \usage{
 element_typst(
-  family = NULL,
-  face = NULL,
-  fontface = NULL,
-  size = NULL,
-  colour = NULL,
   hjust = NULL,
   vjust = NULL,
+  size = NULL,
+  size.unit = "pt",
+  color = NULL,
+  colour = NULL,
+  face = NULL,
+  fontface = NULL,
   angle = NULL,
   lineheight = NULL,
-  color = NULL,
-  margin = NULL,
+  family = NULL,
   math_family = NULL,
-  size.unit = "pt",
+  margin = NULL,
   debug = NULL,
   inherit.blank = FALSE
 )
 }
 \arguments{
-\item{family}{Font family name.}
+\item{hjust, vjust}{Horizontal and vertical justification for the rendered
+grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
-\item{face, fontface}{Font face (\code{"plain"}, \code{"bold"}, \code{"italic"}, or \code{"bold.italic"}).}
+\item{size}{Optional font size.}
 
-\item{size}{Font size (default unit controlled by \code{size.unit}).}
+\item{size.unit}{The unit of \code{size}. Defaults to points
+(\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
 
-\item{colour, color}{Text colour.}
+\item{color, colour}{Optional text color. RGB or color name are supported.}
 
-\item{hjust}{Horizontal justification (0 = left, 0.5 = centre, 1 = right).}
+\item{face, fontface}{Optional text face: \code{"plain"}, \code{"bold"}, \code{"italic"}, or
+\code{"bold.italic"}.}
 
-\item{vjust}{Vertical justification (0 = bottom, 0.5 = centre, 1 = top).}
+\item{angle}{Optional text rotation angle in degrees.}
 
-\item{angle}{Rotation angle in degrees.}
+\item{lineheight}{Optional line height value. May be negative.}
 
-\item{lineheight}{Line height value. May be negative.}
+\item{family}{Optional text font family. The family must be available to Typst. If \code{NULL} or not found, the default
+family will be used. If you want to show specific languages or characters (e.g., Chinese, Japanese, emoji), you may need to set this.}
 
-\item{margin}{Margins around the text, created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
+\item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
 
-\item{math_family}{Optional font family for Typst math mode.}
-
-\item{size.unit}{Unit used to interpret \code{size}. Either \code{"pt"} (default) or
-\code{"mm"}.}
+\item{margin}{Optional text margins created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
 
 \item{debug}{If \code{TRUE}, draw a coloured rectangle behind each label for
 debugging layout.}
 
-\item{inherit.blank}{If \code{TRUE}, \code{element_blank} parents suppress this element.}
+\item{inherit.blank}{If \code{TRUE}, \code{element_blank()} parents suppress this
+element.}
 }
 \value{
-A ggplot2 theme element that can be used inside a \code{\link[ggplot2:theme]{ggplot2::theme()}}
-call.
+A ggplot2 theme element.
 }
 \description{
-A drop-in replacement for \code{\link[ggplot2:element]{ggplot2::element_text()}} that compiles each label
-through the Typst typesetting engine, enabling rich text formatting and
-mathematical formulas in plot titles, axis labels, tick labels, strip text,
-legend text, and any other position that accepts \code{element_text()}.
-}
-\details{
-By default, \code{size} is interpreted in points (\code{"pt"}). Set \code{size.unit = "mm"}
-to match ggplot2 geom text size conventions.
+\code{element_typst()} is a more powerful replacement for \code{\link[ggplot2:element]{ggplot2::element_text()}} and \code{\link[ggtext:element_markdown]{ggtext::element_markdown()}} that
+renders each theme element through Typst. Use it for plot titles, subtitles,
+axis titles, axis text, facet strips, legend text, and other theme slots that
+accept text elements.
 }
 \examples{
-\dontrun{
-library(ggplot2)
-
 ggplot(mtcars, aes(wt, mpg)) +
   geom_point() +
-  ggtitle("$ E = m c^2 $") +
-  theme(plot.title = element_typst())
-}
+  labs(
+    title = r"(*Typst Title* #linebreak() with inline math $E = m c^2$)",
+    x = r"(X-axis powered by _Typst_: $hat(y) = beta_0 + beta_1 x$)"
+  ) +
+  theme_minimal() +
+  theme(
+    plot.title = element_typst(size = 18, color = "red"),
+    axis.title.x = element_typst(size = 14, color = "#40a2b4")
+  )
 
 }
 \seealso{
-\code{\link[=geom_typst]{geom_typst()}}, \code{\link[=annotate_typst]{annotate_typst()}}
+\code{\link[=element_math_typst]{element_math_typst()}}, \code{\link[=element_math_mitex]{element_math_mitex()}}
 }

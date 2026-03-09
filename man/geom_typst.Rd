@@ -4,7 +4,7 @@
 \name{geom_typst}
 \alias{geom_typst}
 \alias{GeomTypst}
-\title{Typst text labels}
+\title{Plot Labels in Data with Typst Text}
 \usage{
 geom_typst(
   mapping = NULL,
@@ -98,8 +98,8 @@ lists which parameters it can accept.
 \item{nudge_x, nudge_y}{Horizontal and vertical nudge offsets. Supply these
 instead of \code{position} to shift labels after the default identity position.}
 
-\item{size.unit}{Unit used to interpret the \code{size} aesthetic. Defaults to
-points (\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
+\item{size.unit}{The unit of \code{size}. Defaults to points
+(\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
 
 \item{na.rm}{If \code{FALSE}, the default, missing values are removed with
 a warning. If \code{TRUE}, missing values are silently removed.}
@@ -121,17 +121,10 @@ the default plot specification, e.g. \code{\link[ggplot2:annotation_borders]{ann
 A ggplot2 layer that can be added to a plot.
 }
 \description{
-Draw raw Typst labels at data positions, similar to \code{\link[ggplot2:geom_text]{ggplot2::geom_text()}}.
-Each label is compiled independently with Typst and rendered as a vector grob.
-By default, \code{size} is interpreted in points (\code{"pt"}), not millimeters.
-Set \code{size.unit = "mm"} to match ggplot2 text size conventions.
-}
-\details{
-\code{label} can be mapped in \code{\link[ggplot2:aes]{ggplot2::aes()}} or supplied as a constant value,
-for example \code{geom_typst(label = "Hello")}, to render the same Typst label
-for every row in the layer.
-
-Static layer parameters also accept \code{fontface} as an alias of \code{face}.
+\code{geom_typst()} is a more powerful replacement for \code{\link[ggplot2:annotate]{ggplot2::annotate()}} and
+\code{\link[ggtext:geom_richtext]{ggtext::geom_richtext()}} that renders a vector of raw Typst labels at data
+positions. Each label is compiled independently with Typst. Parameter and
+aesthetic names follow the conventions of \code{\link[ggplot2:geom_text]{ggplot2::geom_label()}}.
 }
 \section{Aesthetics}{
 
@@ -140,18 +133,45 @@ in bold):
 \itemize{
 \item \strong{\code{x}}
 \item \strong{\code{y}}
-\item \strong{\code{label}} Raw Typst source code.
-\item \code{alpha}
-\item \code{angle}
-\item \code{colour}
-\item \code{face}
-\item \code{family}
+\item \strong{\code{label}} Raw Typst source code. \code{label} can be mapped in \code{\link[ggplot2:aes]{ggplot2::aes()}} or supplied as a constant value, for example \code{geom_typst(label = "Hello")}, to render the same Typst label for every row in the layer.
 \item \code{hjust}
-\item \code{lineheight}
-\item \code{math_family}
-\item \code{size}
 \item \code{vjust}
-}
+\item \code{size}
+\item \code{colour}
+\item \code{alpha}
+\item \code{face}
+\item \code{angle}
+\item \code{lineheight}
+\item \code{family}
+\item \code{math_family}
 }
 
+To learn more about these theme arguments, see \code{\link[=annotate_typst]{annotate_typst()}}.
+}
+
+\examples{
+labels <- data.frame(
+  wt = c(2, 3.5, 4.5),
+  mpg = c(15, 30, 10),
+  label = c(
+    r"(*Toyota Corolla* 😂)",
+    r"(*Fiat 128*, $y = x$)",
+    r"(*_Maserati Bora_*)"
+  ),
+  colour = c("blue", NA, "red")
+)
+
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  geom_typst(
+    data = labels,
+    aes(wt, mpg, label = label, colour = colour),
+    size = 14,
+    show.legend = FALSE
+  ) +
+  theme_minimal()
+}
+\seealso{
+\code{\link[=geom_math_typst]{geom_math_typst()}}, \code{\link[=geom_math_mitex]{geom_math_mitex()}}, \code{\link[ggplot2:geom_text]{ggplot2::geom_label()}}
+}
 \keyword{datasets}

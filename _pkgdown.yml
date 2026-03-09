@@ -31,14 +31,14 @@ reference:
       - annotate_math_typst
       - annotate_math_mitex
 
-  - title: Geom Functions
-    contents:
-      - geom_typst
-      - geom_math_typst
-      - geom_math_mitex
-
   - title: Element Functions
     contents:
       - element_typst
       - element_math_typst
       - element_math_mitex
+
+  - title: Geom Functions
+    contents:
+      - geom_typst
+      - geom_math_typst
+      - geom_math_mitex

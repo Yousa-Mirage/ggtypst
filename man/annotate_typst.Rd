@@ -2,7 +2,7 @@
 % Please edit documentation in R/annotate-typst.R
 \name{annotate_typst}
 \alias{annotate_typst}
-\title{Annotate a Plot with Typst-Rendered Text}
+\title{Annotate a Plot with Typst Text}
 \usage{
 annotate_typst(
   typst_code,
@@ -13,54 +13,68 @@ annotate_typst(
   scale = 1,
   size = NULL,
   size.unit = "pt",
-  alpha = NULL,
   color = NULL,
   colour = NULL,
-  family = NULL,
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
+  angle = NULL,
   lineheight = NULL,
-  math_family = NULL,
-  angle = NULL
+  family = NULL,
+  math_family = NULL
 )
 }
 \arguments{
-\item{typst_code}{Typst source code to render.}
+\item{typst_code}{A single Typst source string to render.}
 
-\item{x, y}{Position where the annotation is placed.}
+\item{x, y}{The annotation position in data coordinates.}
 
-\item{hjust, vjust}{Horizontal and vertical justification for the annotation grob.}
+\item{hjust, vjust}{Horizontal and vertical justification for the rendered
+grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
-\item{scale}{Scaling factor applied to rendered Typst dimensions.}
+\item{scale}{A positive scaling factor applied to the rendered Typst size.}
 
 \item{size}{Optional text size.}
 
-\item{size.unit}{Unit used to interpret \code{size}. Defaults to points (\code{"pt"}).
-Use \code{"mm"} for ggplot2-style text sizes.}
+\item{size.unit}{The unit of \code{size}. Defaults to points
+(\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
+
+\item{color, colour}{Optional text color. RGB or color name are supported.}
 
 \item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
 
-\item{color}{Optional text color accepted by \code{\link[grDevices:col2rgb]{grDevices::col2rgb()}}.}
-
-\item{colour}{Alias of \code{color}.}
-
-\item{family}{Optional text font family.}
-
-\item{face}{Optional text face: \code{"plain"}, \code{"bold"}, \code{"italic"}, or
+\item{face, fontface}{Optional text face: \code{"plain"}, \code{"bold"}, \code{"italic"}, or
 \code{"bold.italic"}.}
 
-\item{fontface}{Alias of \code{face}.}
+\item{angle}{Optional text rotation angle in degrees.}
 
 \item{lineheight}{Optional line height value. May be negative.}
 
-\item{math_family}{Optional font family for math equations.}
+\item{family}{Optional text font family. The family must be available to Typst. If \code{NULL} or not found, the default
+family will be used. If you want to show specific languages or characters (e.g., Chinese, Japanese, emoji), you may need to set this.}
 
-\item{angle}{Optional text angle in degrees.}
+\item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
 }
 \value{
 A \code{ggplot2} layer.
 }
 \description{
-Compiles Typst source code into SVG, converts it to a grid grob, and adds it
-to a ggplot as a custom annotation layer.
+\code{annotate_typst()} is a more powerful replacement for \code{\link[ggplot2:annotate]{ggplot2::annotate()}} that
+renders a single Typst string and inserts that grob into a \code{ggplot2} plot.
+Use it when you want one manually positioned note, callout, or mixed text-and-math label.
+}
+\examples{
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  annotate_typst(
+    typst_code = r"(#rect(radius: 5pt)[*Fuel economy* #linebreak() $sum_(i=1)^n x_i$])",
+    x = 3.5,
+    y = 30,
+    size = 18,
+    color = "red"
+  ) +
+  theme_minimal()
+}
+\seealso{
+\code{\link[=annotate_math_typst]{annotate_math_typst()}}, \code{\link[=annotate_math_mitex]{annotate_math_mitex()}}
 }

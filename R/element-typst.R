@@ -53,61 +53,65 @@ merge_element_element_typst <- function(new, old, ...) {
   new
 }
 
-#' Theme element that renders text with Typst
+#' Render Theme Elements with Typst Text
 #'
-#' A drop-in replacement for [ggplot2::element_text()] that compiles each label
-#' through the Typst typesetting engine, enabling rich text formatting and
-#' mathematical formulas in plot titles, axis labels, tick labels, strip text,
-#' legend text, and any other position that accepts `element_text()`.
+#' `element_typst()` is a more powerful replacement for [ggplot2::element_text()] and [ggtext::element_markdown()] that
+#' renders each theme element through Typst. Use it for plot titles, subtitles,
+#' axis titles, axis text, facet strips, legend text, and other theme slots that
+#' accept text elements.
 #'
-#' By default, `size` is interpreted in points (`"pt"`). Set `size.unit = "mm"`
-#' to match ggplot2 geom text size conventions.
-#'
-#' @param family Font family name.
-#' @param face,fontface Font face (`"plain"`, `"bold"`, `"italic"`, or `"bold.italic"`).
-#' @param size Font size (default unit controlled by `size.unit`).
-#' @param colour,color Text colour.
-#' @param hjust Horizontal justification (0 = left, 0.5 = centre, 1 = right).
-#' @param vjust Vertical justification (0 = bottom, 0.5 = centre, 1 = top).
-#' @param angle Rotation angle in degrees.
-#' @param lineheight Line height value. May be negative.
-#' @param margin Margins around the text, created with [ggplot2::margin()].
-#' @param math_family Optional font family for Typst math mode.
-#' @param size.unit Unit used to interpret `size`. Either `"pt"` (default) or
-#'   `"mm"`.
+#' @param face,fontface Optional text face: `"plain"`, `"bold"`, `"italic"`, or
+#'   `"bold.italic"`.
+#' @param size Optional font size.
+#' @param size.unit The unit of `size`. Defaults to points
+#'   (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
+#' @param color,colour Optional text color. RGB or color name are supported.
+#' @param hjust,vjust Horizontal and vertical justification for the rendered
+#'   grob (`0` = bottom, `0.5` = center, `1` = top).
+#' @param angle Optional text rotation angle in degrees.
+#' @param lineheight Optional line height value. May be negative.
+#' @param family Optional text font family. The family must be available to Typst. If `NULL` or not found, the default
+#'   family will be used. If you want to show specific languages or characters (e.g., Chinese, Japanese, emoji), you may need to set this.
+#' @param math_family Optional font family for math content. The default math font is `New Computer Modern Math`. To render a math expression, you don't need to set this and even don't need to have `New Computer Modern Math` installed on your system. Typst has embedded this font by default.
+#' @param margin Optional text margins created with [ggplot2::margin()].
 #' @param debug If `TRUE`, draw a coloured rectangle behind each label for
 #'   debugging layout.
-#' @param inherit.blank If `TRUE`, `element_blank` parents suppress this element.
-#' @return A ggplot2 theme element that can be used inside a [ggplot2::theme()]
-#'   call.
+#' @param inherit.blank If `TRUE`, `element_blank()` parents suppress this
+#'   element.
+#' @return A ggplot2 theme element.
+#' @seealso [element_math_typst()], [element_math_mitex()]
 #'
 #' @examples
-#' \dontrun{
-#' library(ggplot2)
-#'
 #' ggplot(mtcars, aes(wt, mpg)) +
 #'   geom_point() +
-#'   ggtitle("$ E = m c^2 $") +
-#'   theme(plot.title = element_typst())
-#' }
+#'   labs(
+#'     title = r"(*Typst Title* #linebreak() with inline math $E = m c^2$)",
+#'     x = r"(X-axis powered by _Typst_: $hat(y) = beta_0 + beta_1 x$)"
+#'   ) +
+#'   theme_minimal() +
+#'   theme(
+#'     plot.title = element_typst(size = 18, color = "red"),
+#'     axis.title.x = element_typst(size = 14, color = "#40a2b4")
+#'   )
 #'
-#' @seealso [geom_typst()], [annotate_typst()]
 #' @export
 element_typst <- function(
-  family = NULL,
-  face = NULL,
-  fontface = NULL,
-
-  size = NULL,
-  colour = NULL,
   hjust = NULL,
   vjust = NULL,
+  # TODO: scale?
+  size = NULL,
+  size.unit = "pt",
+  color = NULL,
+  colour = NULL,
+  # TODO: alpha?
+  face = NULL,
+  fontface = NULL,
   angle = NULL,
   lineheight = NULL,
-  color = NULL,
-  margin = NULL,
+  family = NULL,
   math_family = NULL,
-  size.unit = "pt",
+
+  margin = NULL,
   debug = NULL,
   inherit.blank = FALSE
 ) {

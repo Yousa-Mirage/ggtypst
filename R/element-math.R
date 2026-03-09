@@ -13,37 +13,49 @@ element_math_typst_class <- S7::new_class(
   )
 )
 
-#' Theme element that renders Typst math
+#' Render Theme Elements with Typst Math
 #'
-#' A math-specialized variant of [element_typst()] that treats every non-blank
-#' label as Typst math content. Outer `$...$` or `$$...$$` delimiters are
-#' normalized automatically before rendering.
-#'
-#' Math theme elements only support `face = "plain"` and `face = "bold"`.
+#' `element_math_typst()` is the math-specialized variant of [element_typst()]. It
+#' treats the theme element's text as Typst math expression and then renders it as
+#' the element's visual representation.
+#' It will normalize the outer `$...$` or `$ ... $` delimiters automatically.
 #'
 #' @inheritParams element_typst
-#' @param face,fontface Math face. Only `"plain"` and `"bold"` are supported.
-#' @param inline Whether to render labels as inline math. Default `FALSE`
-#'   renders display-style math.
-#' @return A ggplot2 theme element that can be used inside a [ggplot2::theme()]
-#'   call.
+#' @param face,fontface Optional math face. Only `"plain"` and `"bold"` are supported, because math text in Typst is italic by default.
+#' @param inline Whether to render inline math. Default `FALSE` renders
+#'   display-style math.
+#' @return A ggplot2 theme element.
+#' @seealso [element_typst()], [element_math_mitex()]
+#' @examples
+#' ggplot(mtcars, aes(wt, mpg)) +
+#'   geom_point() +
+#'   labs(
+#'     title = r"("Matrix Title:" mat(0, 1; 1, 0))",
+#'     y = r"($sum_(i=1)^n c_i$)"
+#'   ) +
+#'   theme_minimal() +
+#'   theme(
+#'     plot.title = element_math_typst(size = 18, face = "bold"),
+#'     axis.title.y = element_math_typst(size = 14)
+#'   )
 #' @export
 element_math_typst <- function(
-  face = NULL,
-  fontface = NULL,
-  size = NULL,
-  colour = NULL,
   hjust = NULL,
   vjust = NULL,
+  size = NULL,
+  size.unit = "pt",
+  color = NULL,
+  colour = NULL,
+  face = NULL,
+  fontface = NULL,
   angle = NULL,
   lineheight = NULL,
-  color = NULL,
-  margin = NULL,
   math_family = NULL,
-  size.unit = "pt",
+  inline = FALSE,
+
+  margin = NULL,
   debug = NULL,
-  inherit.blank = FALSE,
-  inline = FALSE
+  inherit.blank = FALSE
 ) {
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
   colour <- resolve_arg_alias(colour, color, "colour", "color")
@@ -190,34 +202,46 @@ element_math_mitex_class <- S7::new_class(
   parent = element_math_typst_class
 )
 
-#' Theme element that renders MiTeX-converted LaTeX math
+#' Render Theme Elements with MiTeX-Converted LaTeX Math
 #'
-#' A math-specialized variant of [element_typst()] that treats every non-blank
-#' label as LaTeX math, converts it to Typst with MiTeX, and then renders the
-#' converted Typst math.
+#' @description
+#' `element_math_mitex()` is the LaTeX-input companion to [element_math_typst()].
+#' It accepts LaTeX-style math, converts it to Typst math through [MiTeX](https://github.com/mitex-rs/mitex),
+#' and renders the converted result as the element's visual representation.
+#' It will normalize the outer `$...$` or `$$...$$` delimiters automatically.
 #'
-#' Math theme elements only support `face = "plain"` and `face = "bold"`.
+#' This allows you to use LaTeX math syntax in your plot, which you may be more familiar with :).
+#'
+#' @details
+#' [MiTeX](https://github.com/mitex-rs/mitex) is a LaTeX-to-Typst converter. It should be stable and reliable for typical LaTeX math expressions. If you find any LaTeX math that MiTeX fails to convert properly, you can report an issue to `ggtypst` first.
 #'
 #' @inheritParams element_math_typst
-#' @return A ggplot2 theme element that can be used inside a [ggplot2::theme()]
-#'   call.
+#' @return A ggplot2 theme element.
+#' @seealso [element_typst()], [element_math_typst()]
+#' @examples
+#' ggplot(mtcars, aes(wt, mpg)) +
+#'   geom_point() +
+#'   labs(x = r"(\eta = \frac{mpg}{wt}, \text{written in LaTeX math})") +
+#'   theme_minimal() +
+#'   theme(axis.title.x = element_math_mitex(size = 14))
 #' @export
 element_math_mitex <- function(
-  face = NULL,
-  fontface = NULL,
-  size = NULL,
-  colour = NULL,
   hjust = NULL,
   vjust = NULL,
+  size = NULL,
+  size.unit = "pt",
+  color = NULL,
+  colour = NULL,
+  face = NULL,
+  fontface = NULL,
   angle = NULL,
   lineheight = NULL,
-  color = NULL,
-  margin = NULL,
   math_family = NULL,
-  size.unit = "pt",
+  inline = FALSE,
+
+  margin = NULL,
   debug = NULL,
-  inherit.blank = FALSE,
-  inline = FALSE
+  inherit.blank = FALSE
 ) {
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
   colour <- resolve_arg_alias(colour, color, "colour", "color")

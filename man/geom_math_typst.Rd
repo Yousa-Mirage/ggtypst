@@ -4,7 +4,7 @@
 \name{geom_math_typst}
 \alias{geom_math_typst}
 \alias{GeomMathTypst}
-\title{Typst math labels}
+\title{Plot Labels in Data with Typst Math}
 \usage{
 geom_math_typst(
   mapping = NULL,
@@ -99,11 +99,11 @@ lists which parameters it can accept.
 \item{nudge_x, nudge_y}{Horizontal and vertical nudge offsets. Supply these
 instead of \code{position} to shift labels after the default identity position.}
 
-\item{inline}{Whether to render labels as inline math. Default \code{FALSE}
-renders display-style math.}
+\item{inline}{Whether to render inline math. Default \code{FALSE} renders
+display-style math.}
 
-\item{size.unit}{Unit used to interpret the \code{size} aesthetic. Defaults to
-points (\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
+\item{size.unit}{The unit of \code{size}. Defaults to points
+(\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
 
 \item{na.rm}{If \code{FALSE}, the default, missing values are removed with
 a warning. If \code{TRUE}, missing values are silently removed.}
@@ -125,12 +125,24 @@ the default plot specification, e.g. \code{\link[ggplot2:annotation_borders]{ann
 A ggplot2 layer that can be added to a plot.
 }
 \description{
-Draw Typst math labels at data positions, similar to \code{\link[=geom_typst]{geom_typst()}}. Each
-\code{label} is treated as Typst math content; outer \verb{$...$} or \verb{$$...$$}
-delimiters are optional and will be normalized before rendering.
+\code{geom_math_typst()} is the math-specialized variant of \code{\link[=geom_typst]{geom_typst()}} that
+renders data-driven Typst math labels. Each \code{label} is treated as Typst math
+expression. It will normalize the outer \verb{$...$} or \verb{$ ... $} delimiters
+automatically.
 }
-\details{
-Static layer parameters also accept \code{fontface} as an alias of \code{face}.
-Math labels only support \code{face = "plain"} and \code{face = "bold"}.
+\examples{
+math_labels <- data.frame(
+  wt = c(2.1, 3.2, 4.8),
+  mpg = c(32, 24, 16),
+  label = c(r"(sum_(i=1)^n x_i)", r"(x^2 + y^2)", r"(integral_0^1 x dif x)")
+)
+
+ggplot(math_labels, aes(wt, mpg, label = label)) +
+  geom_point() +
+  geom_math_typst(nudge_y = 1, size = 14, show.legend = FALSE) +
+  theme_minimal()
+}
+\seealso{
+\code{\link[=geom_typst]{geom_typst()}}, \code{\link[=geom_math_mitex]{geom_math_mitex()}}, \code{\link[ggplot2:geom_text]{ggplot2::geom_label()}}
 }
 \keyword{datasets}

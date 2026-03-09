@@ -2,65 +2,77 @@
 % Please edit documentation in R/element-math.R
 \name{element_math_mitex}
 \alias{element_math_mitex}
-\title{Theme element that renders MiTeX-converted LaTeX math}
+\title{Render Theme Elements with MiTeX-Converted LaTeX Math}
 \usage{
 element_math_mitex(
-  face = NULL,
-  fontface = NULL,
-  size = NULL,
-  colour = NULL,
   hjust = NULL,
   vjust = NULL,
+  size = NULL,
+  size.unit = "pt",
+  color = NULL,
+  colour = NULL,
+  face = NULL,
+  fontface = NULL,
   angle = NULL,
   lineheight = NULL,
-  color = NULL,
-  margin = NULL,
   math_family = NULL,
-  size.unit = "pt",
+  inline = FALSE,
+  margin = NULL,
   debug = NULL,
-  inherit.blank = FALSE,
-  inline = FALSE
+  inherit.blank = FALSE
 )
 }
 \arguments{
-\item{face, fontface}{Math face. Only \code{"plain"} and \code{"bold"} are supported.}
+\item{hjust, vjust}{Horizontal and vertical justification for the rendered
+grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
-\item{size}{Font size (default unit controlled by \code{size.unit}).}
+\item{size}{Optional font size.}
 
-\item{colour, color}{Text colour.}
+\item{size.unit}{The unit of \code{size}. Defaults to points
+(\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
 
-\item{hjust}{Horizontal justification (0 = left, 0.5 = centre, 1 = right).}
+\item{color, colour}{Optional text color. RGB or color name are supported.}
 
-\item{vjust}{Vertical justification (0 = bottom, 0.5 = centre, 1 = top).}
+\item{face, fontface}{Optional math face. Only \code{"plain"} and \code{"bold"} are supported, because math text in Typst is italic by default.}
 
-\item{angle}{Rotation angle in degrees.}
+\item{angle}{Optional text rotation angle in degrees.}
 
-\item{lineheight}{Line height value. May be negative.}
+\item{lineheight}{Optional line height value. May be negative.}
 
-\item{margin}{Margins around the text, created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
+\item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
 
-\item{math_family}{Optional font family for Typst math mode.}
+\item{inline}{Whether to render inline math. Default \code{FALSE} renders
+display-style math.}
 
-\item{size.unit}{Unit used to interpret \code{size}. Either \code{"pt"} (default) or
-\code{"mm"}.}
+\item{margin}{Optional text margins created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
 
 \item{debug}{If \code{TRUE}, draw a coloured rectangle behind each label for
 debugging layout.}
 
-\item{inherit.blank}{If \code{TRUE}, \code{element_blank} parents suppress this element.}
-
-\item{inline}{Whether to render labels as inline math. Default \code{FALSE}
-renders display-style math.}
+\item{inherit.blank}{If \code{TRUE}, \code{element_blank()} parents suppress this
+element.}
 }
 \value{
-A ggplot2 theme element that can be used inside a \code{\link[ggplot2:theme]{ggplot2::theme()}}
-call.
+A ggplot2 theme element.
 }
 \description{
-A math-specialized variant of \code{\link[=element_typst]{element_typst()}} that treats every non-blank
-label as LaTeX math, converts it to Typst with MiTeX, and then renders the
-converted Typst math.
+\code{element_math_mitex()} is the LaTeX-input companion to \code{\link[=element_math_typst]{element_math_typst()}}.
+It accepts LaTeX-style math, converts it to Typst math through \href{https://github.com/mitex-rs/mitex}{MiTeX},
+and renders the converted result as the element's visual representation.
+It will normalize the outer \verb{$...$} or \verb{$$...$$} delimiters automatically.
+
+This allows you to use LaTeX math syntax in your plot, which you may be more familiar with :).
 }
 \details{
-Math theme elements only support \code{face = "plain"} and \code{face = "bold"}.
+\href{https://github.com/mitex-rs/mitex}{MiTeX} is a LaTeX-to-Typst converter. It should be stable and reliable for typical LaTeX math expressions. If you find any LaTeX math that MiTeX fails to convert properly, you can report an issue to \code{ggtypst} first.
+}
+\examples{
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  labs(x = r"(\eta = \frac{mpg}{wt}, \text{written in LaTeX math})") +
+  theme_minimal() +
+  theme(axis.title.x = element_math_mitex(size = 14))
+}
+\seealso{
+\code{\link[=element_typst]{element_typst()}}, \code{\link[=element_math_typst]{element_math_typst()}}
 }

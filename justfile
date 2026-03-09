@@ -21,7 +21,6 @@ build-check:
 
 document:
     Rscript -e "rextendr::document()"
-    Rscript -e "devtools::document()"
 
 test:
     TESTTHAT_CPUS=4 Rscript -e "devtools::test(reporter = 'summary')"

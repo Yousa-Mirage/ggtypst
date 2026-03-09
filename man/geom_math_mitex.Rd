@@ -4,7 +4,7 @@
 \name{geom_math_mitex}
 \alias{geom_math_mitex}
 \alias{GeomMathMitex}
-\title{MiTeX-converted LaTeX math labels}
+\title{Plot Labels in Data with MiTeX-Converted LaTeX Math}
 \usage{
 geom_math_mitex(
   mapping = NULL,
@@ -99,11 +99,11 @@ lists which parameters it can accept.
 \item{nudge_x, nudge_y}{Horizontal and vertical nudge offsets. Supply these
 instead of \code{position} to shift labels after the default identity position.}
 
-\item{inline}{Whether to render labels as inline math. Default \code{FALSE}
-renders display-style math.}
+\item{inline}{Whether to render inline math. Default \code{FALSE} renders
+display-style math.}
 
-\item{size.unit}{Unit used to interpret the \code{size} aesthetic. Defaults to
-points (\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
+\item{size.unit}{The unit of \code{size}. Defaults to points
+(\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
 
 \item{na.rm}{If \code{FALSE}, the default, missing values are removed with
 a warning. If \code{TRUE}, missing values are silently removed.}
@@ -125,13 +125,33 @@ the default plot specification, e.g. \code{\link[ggplot2:annotation_borders]{ann
 A ggplot2 layer that can be added to a plot.
 }
 \description{
-Draw LaTeX math labels at data positions by converting them to Typst via
-MiTeX. Each \code{label} is treated as LaTeX math content; outer \verb{$...$} or
-\verb{$$...$$} delimiters are optional and will be normalized before conversion.
-See \code{\link[=convert_latex_to_typst]{convert_latex_to_typst()}} for conversion details.
+\code{geom_math_mitex()} is the LaTeX-input companion to \code{\link[=geom_math_typst]{geom_math_typst()}} that
+renders data-driven LaTeX-style math labels by converting each \code{label} to Typst
+through \href{https://github.com/mitex-rs/mitex}{MiTeX} before rendering. It will
+normalize the outer \verb{$...$} or \verb{$$...$$} delimiters automatically.
+
+This allows you to use LaTeX math syntax in your plot, which you may be more familiar with :).
 }
 \details{
-Static layer parameters also accept \code{fontface} as an alias of \code{face}.
-Math labels only support \code{face = "plain"} and \code{face = "bold"}.
+\href{https://github.com/mitex-rs/mitex}{MiTeX} is a LaTeX-to-Typst converter. It should be stable and reliable for typical LaTeX math expressions. If you find any LaTeX math that MiTeX fails to convert properly, you can report an issue to \code{ggtypst} first.
+}
+\examples{
+math_labels <- data.frame(
+  wt = c(2.1, 3.2, 4.8),
+  mpg = c(32, 24, 16),
+  label = c(
+    r"(\sum_{i=1}^n x_i)",
+    r"(x^2 + y^2)",
+    r"(\int_0^1 x \, dx)"
+  )
+)
+
+ggplot(math_labels, aes(wt, mpg, label = label)) +
+  geom_point() +
+  geom_math_mitex(nudge_y = 1, size = 14, show.legend = FALSE) +
+  theme_minimal()
+}
+\seealso{
+\code{\link[=geom_typst]{geom_typst()}}, \code{\link[=geom_math_typst]{geom_math_typst()}}, \code{\link[ggplot2:geom_text]{ggplot2::geom_label()}}
 }
 \keyword{datasets}

@@ -3,19 +3,29 @@ NULL
 
 # geom_math_typst
 
-#' Typst math labels
+#' Plot Labels in Data with Typst Math
 #'
-#' Draw Typst math labels at data positions, similar to [geom_typst()]. Each
-#' `label` is treated as Typst math content; outer `$...$` or `$$...$$`
-#' delimiters are optional and will be normalized before rendering.
-#'
-#' Static layer parameters also accept `fontface` as an alias of `face`.
-#' Math labels only support `face = "plain"` and `face = "bold"`.
+#' `geom_math_typst()` is the math-specialized variant of [geom_typst()] that
+#' renders data-driven Typst math labels. Each `label` is treated as Typst math
+#' expression. It will normalize the outer `$...$` or `$ ... $` delimiters
+#' automatically.
 #'
 #' @inheritParams geom_typst
-#' @param inline Whether to render labels as inline math. Default `FALSE`
-#'   renders display-style math.
+#' @param inline Whether to render inline math. Default `FALSE` renders
+#'   display-style math.
 #' @return A ggplot2 layer that can be added to a plot.
+#' @seealso [geom_typst()], [geom_math_mitex()], [ggplot2::geom_label()]
+#' @examples
+#' math_labels <- data.frame(
+#'   wt = c(2.1, 3.2, 4.8),
+#'   mpg = c(32, 24, 16),
+#'   label = c(r"(sum_(i=1)^n x_i)", r"(x^2 + y^2)", r"(integral_0^1 x dif x)")
+#' )
+#'
+#' ggplot(math_labels, aes(wt, mpg, label = label)) +
+#'   geom_point() +
+#'   geom_math_typst(nudge_y = 1, size = 14, show.legend = FALSE) +
+#'   theme_minimal()
 #' @export
 geom_math_typst <- function(
   mapping = NULL,
@@ -137,20 +147,39 @@ GeomMathTypst <- ggplot2::ggproto(
 
 # geom_math_mitex
 
-#' MiTeX-converted LaTeX math labels
+#' Plot Labels in Data with MiTeX-Converted LaTeX Math
 #'
-#' Draw LaTeX math labels at data positions by converting them to Typst via
-#' MiTeX. Each `label` is treated as LaTeX math content; outer `$...$` or
-#' `$$...$$` delimiters are optional and will be normalized before conversion.
-#' See [convert_latex_to_typst()] for conversion details.
+#' @description
+#' `geom_math_mitex()` is the LaTeX-input companion to [geom_math_typst()] that
+#' renders data-driven LaTeX-style math labels by converting each `label` to Typst
+#' through [MiTeX](https://github.com/mitex-rs/mitex) before rendering. It will
+#' normalize the outer `$...$` or `$$...$$` delimiters automatically.
 #'
-#' Static layer parameters also accept `fontface` as an alias of `face`.
-#' Math labels only support `face = "plain"` and `face = "bold"`.
+#' This allows you to use LaTeX math syntax in your plot, which you may be more familiar with :).
+#'
+#' @details
+#' [MiTeX](https://github.com/mitex-rs/mitex) is a LaTeX-to-Typst converter. It should be stable and reliable for typical LaTeX math expressions. If you find any LaTeX math that MiTeX fails to convert properly, you can report an issue to `ggtypst` first.
 #'
 #' @inheritParams geom_typst
-#' @param inline Whether to render labels as inline math. Default `FALSE`
-#'   renders display-style math.
+#' @param inline Whether to render inline math. Default `FALSE` renders
+#'   display-style math.
 #' @return A ggplot2 layer that can be added to a plot.
+#' @seealso [geom_typst()], [geom_math_typst()], [ggplot2::geom_label()]
+#' @examples
+#' math_labels <- data.frame(
+#'   wt = c(2.1, 3.2, 4.8),
+#'   mpg = c(32, 24, 16),
+#'   label = c(
+#'     r"(\sum_{i=1}^n x_i)",
+#'     r"(x^2 + y^2)",
+#'     r"(\int_0^1 x \, dx)"
+#'   )
+#' )
+#'
+#' ggplot(math_labels, aes(wt, mpg, label = label)) +
+#'   geom_point() +
+#'   geom_math_mitex(nudge_y = 1, size = 14, show.legend = FALSE) +
+#'   theme_minimal()
 #' @export
 geom_math_mitex <- function(
   mapping = NULL,

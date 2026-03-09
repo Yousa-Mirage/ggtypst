@@ -1,15 +1,12 @@
-#' Typst text labels
+# TODO: colour not working, it's just a factor.
+# TODO: plot xy range will change.
+
+#' Plot Labels in Data with Typst Text
 #'
-#' Draw raw Typst labels at data positions, similar to [ggplot2::geom_text()].
-#' Each label is compiled independently with Typst and rendered as a vector grob.
-#' By default, `size` is interpreted in points (`"pt"`), not millimeters.
-#' Set `size.unit = "mm"` to match ggplot2 text size conventions.
-#'
-#' `label` can be mapped in [ggplot2::aes()] or supplied as a constant value,
-#' for example `geom_typst(label = "Hello")`, to render the same Typst label
-#' for every row in the layer.
-#'
-#' Static layer parameters also accept `fontface` as an alias of `face`.
+#' `geom_typst()` is a more powerful replacement for [ggplot2::annotate()] and
+#' [ggtext::geom_richtext()] that renders a vector of raw Typst labels at data
+#' positions. Each label is compiled independently with Typst. Parameter and
+#' aesthetic names follow the conventions of [ggplot2::geom_label()].
 #'
 #' @section Aesthetics:
 #' `geom_typst()` understands the following aesthetics (required aesthetics are
@@ -17,24 +14,48 @@
 #'
 #' - **`x`**
 #' - **`y`**
-#' - **`label`** Raw Typst source code.
-#' - `alpha`
-#' - `angle`
-#' - `colour`
-#' - `face`
-#' - `family`
+#' - **`label`** Raw Typst source code. `label` can be mapped in [ggplot2::aes()] or supplied as a constant value, for example `geom_typst(label = "Hello")`, to render the same Typst label for every row in the layer.
 #' - `hjust`
-#' - `lineheight`
-#' - `math_family`
-#' - `size`
 #' - `vjust`
+#' - `size`
+#' - `colour`
+#' - `alpha`
+#' - `face`
+#' - `angle`
+#' - `lineheight`
+#' - `family`
+#' - `math_family`
+#'
+#' To learn more about these theme arguments, see [annotate_typst()].
 #'
 #' @inheritParams ggplot2::geom_text
 #' @param nudge_x,nudge_y Horizontal and vertical nudge offsets. Supply these
 #'   instead of `position` to shift labels after the default identity position.
-#' @param size.unit Unit used to interpret the `size` aesthetic. Defaults to
-#'   points (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
+#' @param size.unit The unit of `size`. Defaults to points
+#'   (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
 #' @return A ggplot2 layer that can be added to a plot.
+#' @seealso [geom_math_typst()], [geom_math_mitex()], [ggplot2::geom_label()]
+#' @examples
+#' labels <- data.frame(
+#'   wt = c(2, 3.5, 4.5),
+#'   mpg = c(15, 30, 10),
+#'   label = c(
+#'     r"(*Toyota Corolla* 😂)",
+#'     r"(*Fiat 128*, $y = x$)",
+#'     r"(*_Maserati Bora_*)"
+#'   ),
+#'   colour = c("blue", NA, "red")
+#' )
+#'
+#' ggplot(mtcars, aes(wt, mpg)) +
+#'   geom_point() +
+#'   geom_typst(
+#'     data = labels,
+#'     aes(wt, mpg, label = label, colour = colour),
+#'     size = 14,
+#'     show.legend = FALSE
+#'   ) +
+#'   theme_minimal()
 #' @export
 geom_typst <- function(
   mapping = NULL,
@@ -113,6 +134,7 @@ GeomTypst <- ggplot2::ggproto(
   ggplot2::Geom,
   required_aes = c("x", "y", "label"),
   default_aes = ggplot2::aes(
+    #
     colour = "black",
     size = 11,
     angle = 0,

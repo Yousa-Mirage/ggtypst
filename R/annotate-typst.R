@@ -1,26 +1,40 @@
-#' Annotate a Plot with Typst-Rendered Text
+#' Annotate a Plot with Typst Text
 #'
-#' Compiles Typst source code into SVG, converts it to a grid grob, and adds it
-#' to a ggplot as a custom annotation layer.
+#' `annotate_typst()` is a more powerful replacement for [ggplot2::annotate()] that
+#' renders a single Typst string and inserts that grob into a `ggplot2` plot.
+#' Use it when you want one manually positioned note, callout, or mixed text-and-math label.
 #'
-#' @param typst_code Typst source code to render.
-#' @param x,y Position where the annotation is placed.
-#' @param hjust,vjust Horizontal and vertical justification for the annotation grob.
-#' @param scale Scaling factor applied to rendered Typst dimensions.
+#' @param typst_code A single Typst source string to render.
+#' @param x,y The annotation position in data coordinates.
+#' @param hjust,vjust Horizontal and vertical justification for the rendered
+#'   grob (`0` = bottom, `0.5` = center, `1` = top).
+#' @param scale A positive scaling factor applied to the rendered Typst size.
 #' @param size Optional text size.
-#' @param size.unit Unit used to interpret `size`. Defaults to points (`"pt"`).
-#'   Use `"mm"` for ggplot2-style text sizes.
+#' @param size.unit The unit of `size`. Defaults to points
+#'   (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
 #' @param alpha Optional alpha multiplier in `[0, 1]`.
-#' @param color Optional text color accepted by [grDevices::col2rgb()].
-#' @param colour Alias of `color`.
-#' @param family Optional text font family.
-#' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
+#' @param color,colour Optional text color. RGB or color name are supported.
+#' @param face,fontface Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
-#' @param fontface Alias of `face`.
 #' @param lineheight Optional line height value. May be negative.
-#' @param math_family Optional font family for math equations.
-#' @param angle Optional text angle in degrees.
+#' @param family Optional text font family. The family must be available to Typst. If `NULL` or not found, the default
+#'   family will be used. If you want to show specific languages or characters (e.g., Chinese, Japanese, emoji), you may need to set this.
+#' @param math_family Optional font family for math content. The default math font is `New Computer Modern Math`. To render a math expression, you don't need to set this and even don't need to have `New Computer Modern Math` installed on your system. Typst has embedded this font by default.
+#' @param angle Optional text rotation angle in degrees.
 #' @return A `ggplot2` layer.
+#' @seealso [annotate_math_typst()], [annotate_math_mitex()]
+#'
+#' @examples
+#' ggplot(mtcars, aes(wt, mpg)) +
+#'   geom_point() +
+#'   annotate_typst(
+#'     typst_code = r"(#rect(radius: 5pt)[*Fuel economy* #linebreak() $sum_(i=1)^n x_i$])",
+#'     x = 3.5,
+#'     y = 30,
+#'     size = 18,
+#'     color = "red"
+#'   ) +
+#'   theme_minimal()
 #' @export
 annotate_typst <- function(
   typst_code,
@@ -31,15 +45,15 @@ annotate_typst <- function(
   scale = 1,
   size = NULL,
   size.unit = "pt",
-  alpha = NULL,
   color = NULL,
   colour = NULL,
-  family = NULL,
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
+  angle = NULL,
   lineheight = NULL,
-  math_family = NULL,
-  angle = NULL
+  family = NULL,
+  math_family = NULL
 ) {
   typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
   x <- check_number(x, "x", allow_null = FALSE)

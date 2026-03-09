@@ -3,20 +3,31 @@ NULL
 
 #' Annotate a Plot with Typst Math
 #'
-#' Wraps `typst_code` in math delimiters and forwards to [annotate_typst()].
-#' If `typst_code` is already wrapped with outer `$...$` or `$$...$$`, the outer
-#' delimiters are removed before wrapping again.
+#' `annotate_math_typst()` is the math-specialized variant of [annotate_typst()].
+#' It treats the annotation text as Typst math expression and then renders it to a
+#' math visual representation.
+#' It will normalize the outer `$...$` or `$ ... $` delimiters automatically.
 #'
 #' @inheritParams annotate_typst
-#' @param typst_math_code Typst source code representing math content. It will be
-#'   wrapped in `$ ... $` before rendering.
-#' @param face Optional math face. Only `"plain"` and `"bold"` are supported
-#'   for math annotations.
-#' @param fontface Alias of `face`. Only `"plain"` and `"bold"` are supported
-#'   for math annotations.
-#' @param inline Whether to render as inline math. Default `FALSE` renders as
+#' @param typst_math_code A single Typst math string. Outer `$...$` or `$ ... $`
+#'   delimiters are optional.
+#' @param face,fontface Optional math face. Only `"plain"` and `"bold"` are supported, because math text in Typst is italic by default.
+#' @param inline Whether to render inline math. Default `FALSE` renders
 #'   display-style math.
 #' @return A `ggplot2` layer.
+#' @seealso [annotate_typst()], [annotate_math_mitex()]
+#'
+#' @examples
+#' ggplot(mtcars, aes(wt, mpg)) +
+#'   geom_point() +
+#'   annotate_math_typst(
+#'     typst_math_code = r"(sum_(i=1)^n x_i)",
+#'     x = 3.5,
+#'     y = 30,
+#'     size = 18,
+#'     face = "bold"
+#'   ) +
+#'   theme_minimal()
 #' @export
 annotate_math_typst <- function(
   typst_math_code,
@@ -27,14 +38,14 @@ annotate_math_typst <- function(
   scale = 1,
   size = NULL,
   size.unit = "pt",
-  alpha = NULL,
   color = NULL,
   colour = NULL,
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
+  angle = NULL,
   lineheight = NULL,
   math_family = NULL,
-  angle = NULL,
   inline = FALSE
 ) {
   params <- normalize_face_param(
@@ -65,19 +76,37 @@ annotate_math_typst <- function(
 
 #' Annotate a Plot with MiTeX-Converted LaTeX Math
 #'
-#' Converts LaTeX math input to Typst math source with MiTeX, wraps it in math delimiters,
-#' and forwards rendering to [annotate_typst()]. Details see [convert_latex_to_typst()].
+#' @description
+#' `annotate_math_mitex()` is the LaTeX-input companion to [annotate_math_typst()].
+#' It accepts LaTeX-style math, converts it to Typst math through [MiTeX](https://github.com/mitex-rs/mitex),
+#' and renders the converted result as a single annotation.
+#' It will normalize the outer `$...$` or `$$...$$` delimiters automatically.
+#'
+#' This allows you to use LaTeX math syntax in your plot, which you may be more familiar with :).
+#'
+#' @details
+#' [MiTeX](https://github.com/mitex-rs/mitex) is a LaTeX-to-Typst converter. It should be stable and reliable for typical LaTeX math expressions. If you find any LaTeX math that MiTeX fails to convert properly, you can report an issue to `ggtypst` first.
 #'
 #' @inheritParams annotate_typst
 #' @param latex_math_code A single LaTeX math string. Outer `$...$` or `$$...$$`
-#'   delimiters are optional and will be normalized.
-#' @param face Optional math face. Only `"plain"` and `"bold"` are supported
-#'   for math annotations.
-#' @param fontface Alias of `face`. Only `"plain"` and `"bold"` are supported
-#'   for math annotations.
-#' @param inline Whether to render as inline math. Default `FALSE` renders as
+#'   delimiters are optional.
+#' @param face,fontface Optional math face. Only `"plain"` and `"bold"` are supported, because math text in Typst is italic by default.
+#' @param inline Whether to render inline math. Default `FALSE` renders
 #'   display-style math.
 #' @return A `ggplot2` layer.
+#' @seealso [annotate_typst()], [annotate_math_typst()]
+#'
+#' @examples
+#' ggplot(mtcars, aes(wt, mpg)) +
+#'   geom_point() +
+#'   annotate_math_mitex(
+#'     latex_math_code = r"(\eta = \frac{mpg}{wt}, \text{written in LaTeX math})",
+#'     x = 3.5,
+#'     y = 30,
+#'     size = 18,
+#'     face = "bold"
+#'   ) +
+#'   theme_minimal()
 #' @export
 annotate_math_mitex <- function(
   latex_math_code,
@@ -88,14 +117,14 @@ annotate_math_mitex <- function(
   scale = 1,
   size = NULL,
   size.unit = "pt",
-  alpha = NULL,
   color = NULL,
   colour = NULL,
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
+  angle = NULL,
   lineheight = NULL,
   math_family = NULL,
-  angle = NULL,
   inline = FALSE
 ) {
   params <- normalize_face_param(

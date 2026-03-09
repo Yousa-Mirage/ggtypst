@@ -13,58 +13,69 @@ annotate_math_typst(
   scale = 1,
   size = NULL,
   size.unit = "pt",
-  alpha = NULL,
   color = NULL,
   colour = NULL,
+  alpha = NULL,
   face = NULL,
   fontface = NULL,
+  angle = NULL,
   lineheight = NULL,
   math_family = NULL,
-  angle = NULL,
   inline = FALSE
 )
 }
 \arguments{
-\item{typst_math_code}{Typst source code representing math content. It will be
-wrapped in \verb{$ ... $} before rendering.}
+\item{typst_math_code}{A single Typst math string. Outer \verb{$...$} or \verb{$ ... $}
+delimiters are optional.}
 
-\item{x, y}{Position where the annotation is placed.}
+\item{x, y}{The annotation position in data coordinates.}
 
-\item{hjust, vjust}{Horizontal and vertical justification for the annotation grob.}
+\item{hjust, vjust}{Horizontal and vertical justification for the rendered
+grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
-\item{scale}{Scaling factor applied to rendered Typst dimensions.}
+\item{scale}{A positive scaling factor applied to the rendered Typst size.}
 
 \item{size}{Optional text size.}
 
-\item{size.unit}{Unit used to interpret \code{size}. Defaults to points (\code{"pt"}).
-Use \code{"mm"} for ggplot2-style text sizes.}
+\item{size.unit}{The unit of \code{size}. Defaults to points
+(\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
+
+\item{color, colour}{Optional text color. RGB or color name are supported.}
 
 \item{alpha}{Optional alpha multiplier in \verb{[0, 1]}.}
 
-\item{color}{Optional text color accepted by \code{\link[grDevices:col2rgb]{grDevices::col2rgb()}}.}
+\item{face, fontface}{Optional math face. Only \code{"plain"} and \code{"bold"} are supported, because math text in Typst is italic by default.}
 
-\item{colour}{Alias of \code{color}.}
-
-\item{face}{Optional math face. Only \code{"plain"} and \code{"bold"} are supported
-for math annotations.}
-
-\item{fontface}{Alias of \code{face}. Only \code{"plain"} and \code{"bold"} are supported
-for math annotations.}
+\item{angle}{Optional text rotation angle in degrees.}
 
 \item{lineheight}{Optional line height value. May be negative.}
 
-\item{math_family}{Optional font family for math equations.}
+\item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
 
-\item{angle}{Optional text angle in degrees.}
-
-\item{inline}{Whether to render as inline math. Default \code{FALSE} renders as
+\item{inline}{Whether to render inline math. Default \code{FALSE} renders
 display-style math.}
 }
 \value{
 A \code{ggplot2} layer.
 }
 \description{
-Wraps \code{typst_code} in math delimiters and forwards to \code{\link[=annotate_typst]{annotate_typst()}}.
-If \code{typst_code} is already wrapped with outer \verb{$...$} or \verb{$$...$$}, the outer
-delimiters are removed before wrapping again.
+\code{annotate_math_typst()} is the math-specialized variant of \code{\link[=annotate_typst]{annotate_typst()}}.
+It treats the annotation text as Typst math expression and then renders it to a
+math visual representation.
+It will normalize the outer \verb{$...$} or \verb{$ ... $} delimiters automatically.
+}
+\examples{
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  annotate_math_typst(
+    typst_math_code = r"(sum_(i=1)^n x_i)",
+    x = 3.5,
+    y = 30,
+    size = 18,
+    face = "bold"
+  ) +
+  theme_minimal()
+}
+\seealso{
+\code{\link[=annotate_typst]{annotate_typst()}}, \code{\link[=annotate_math_mitex]{annotate_math_mitex()}}
 }
