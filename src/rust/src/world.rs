@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::{Arc, LazyLock};
 
 use typst::diag::{FileError, FileResult};
@@ -21,6 +22,16 @@ fn virtual_typst_file(path: &str) -> Option<&'static str> {
         "/specs/prelude.typ" => Some(MITEX_PRELUDE_TYP),
         "/specs/latex/standard.typ" => Some(MITEX_STANDARD_TYP),
         _ => None,
+    }
+}
+
+fn normalize_virtual_path(path: &Path) -> String {
+    let normalized = path.to_string_lossy().replace('\\', "/");
+
+    if normalized.starts_with('/') {
+        normalized
+    } else {
+        format!("/{normalized}")
     }
 }
 
@@ -51,7 +62,9 @@ impl World for InMemoryWorld {
             Ok(self.source.clone())
         } else {
             let p = id.vpath().as_rooted_path().to_path_buf();
-            if let Some(contents) = virtual_typst_file(&p.to_string_lossy()) {
+            let normalized = normalize_virtual_path(&p);
+
+            if let Some(contents) = virtual_typst_file(&normalized) {
                 Ok(Source::new(id, contents.to_string()))
             } else {
                 Err(FileError::NotFound(p))
@@ -64,7 +77,9 @@ impl World for InMemoryWorld {
             Ok(self.bytes.clone())
         } else {
             let p = id.vpath().as_rooted_path().to_path_buf();
-            if let Some(contents) = virtual_typst_file(&p.to_string_lossy()) {
+            let normalized = normalize_virtual_path(&p);
+
+            if let Some(contents) = virtual_typst_file(&normalized) {
                 Ok(Bytes::from_string(contents))
             } else {
                 Err(FileError::NotFound(p))
@@ -96,5 +111,28 @@ impl InMemoryWorld {
             book,
             fonts,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn normalize_virtual_path_accepts_unix_style_paths() {
+        let normalized = normalize_virtual_path(Path::new("/specs/mod.typ"));
+        assert_eq!(normalized, "/specs/mod.typ");
+    }
+
+    #[test]
+    fn normalize_virtual_path_accepts_windows_style_paths() {
+        let normalized = normalize_virtual_path(Path::new(r"\specs\mod.typ"));
+        assert_eq!(normalized, "/specs/mod.typ");
+    }
+
+    #[test]
+    fn virtual_typst_file_matches_normalized_windows_path() {
+        let normalized = normalize_virtual_path(Path::new(r"\specs\latex\standard.typ"));
+        assert!(virtual_typst_file(&normalized).is_some());
     }
 }
