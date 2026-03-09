@@ -1,6 +1,7 @@
 Acknowledgements
 FFI
 MiTeX
+OpenCode
 Typst
 behaviour
 callout
@@ -12,6 +13,7 @@ geom's
 geoms
 ggplot
 ggproto
+md
 mitex
 rustup
 toolchain

@@ -17,12 +17,17 @@ home:
 
 navbar:
   structure:
-    left: [home, get-started, reference, news]
+    left: [home, get-started, articles, reference, news]
     right: [search, github]
   components:
     get-started:
       text: Get Started
       href: articles/get-started.html
+    articles:
+      text: Articles
+      menu:
+        - text: The ggtypst SKILL.md for Agents
+          href: articles/ggtypst-skill.html
 
 reference:
   - title: Annotate Functions
