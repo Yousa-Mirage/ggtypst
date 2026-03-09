@@ -25,3 +25,7 @@
 ^[^/]+\\.xml$
 ^Rplots\.pdf$
 ^README\.Rmd$
+^\.pre-commit-config\.yaml$
+^_pkgdown\.yml$
+^pkgdown($|/)
+^ggtypst-skill($|/)

@@ -1,5 +1,5 @@
 test_that("annotate_math_typst visual stability and delimiter normalization", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   huge_typst_math_code <- r"(
     cal(F)(s) = integral_(-oo)^(+oo) ( sum_(n=1)^oo ((-1)^(n-1) x^(2n)) / ((2n)!) ) / ( root(3, lim_(k->oo) product_(j=1)^k (1 - 1/p_j^2) + (alpha^2)/(beta^3) ) ) e^(-2 pi i s x) dif x + mat(
@@ -148,7 +148,7 @@ test_that("annotate_math_typst supports inline rendering mode", {
 })
 
 test_that("annotate_math_typst visual display vs inline", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point(size = 1.1, alpha = 0.35, colour = "grey45") +

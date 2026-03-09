@@ -132,7 +132,7 @@ test_that("geom_math_mitex reports static label conversion errors", {
 })
 
 test_that("geom_math_mitex visual delimiter normalization", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   df <- data.frame(
     x = c(1.9, 3.4, 5.0),
@@ -157,7 +157,7 @@ test_that("geom_math_mitex visual delimiter normalization", {
 })
 
 test_that("geom_math_mitex visual display vs inline with facets", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   df <- data.frame(
     x = c(2.1, 3.0, 3.9, 2.1, 3.0, 3.9),

@@ -1,3 +1,6 @@
+#' @import ggplot2
+NULL
+
 .onLoad <- function(libname, pkgname) {
   # Register the S7 merge method at load time because ggplot2 owns the generic.
   merge_element_generic <- utils::getFromNamespace("merge_element", "ggplot2")

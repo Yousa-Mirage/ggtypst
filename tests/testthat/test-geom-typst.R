@@ -188,7 +188,7 @@ test_that("geom_typst reports row and label context for render failures", {
 })
 
 test_that("geom_typst visual stability with mapped style coverage", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   df <- data.frame(
     x = c(1.9, 2.3, 3.4, 4.8, 5.2),
@@ -233,9 +233,9 @@ test_that("geom_typst visual stability with mapped style coverage", {
 })
 
 test_that("geom_typst system fonts visual check (local only)", {
-  skip_if_not_installed("vdiffr")
-  testthat::skip_on_ci()
-  testthat::skip_on_cran()
+  skip_if_no_vdiffr()
+  skip_on_ci()
+  skip_on_cran()
 
   arial <- suppressWarnings(typst_svg(build_typst_source("probe", family = "Arial")))
   courier <- suppressWarnings(typst_svg(build_typst_source("probe", family = "Courier New")))
@@ -263,7 +263,7 @@ test_that("geom_typst system fonts visual check (local only)", {
 })
 
 test_that("geom_typst visual size.unit pt and mm agree", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   df <- data.frame(
     x = c(2.1, 4.7),
@@ -296,7 +296,7 @@ test_that("geom_typst visual size.unit pt and mm agree", {
 })
 
 test_that("geom_typst visual: multiline lineheight", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   df <- data.frame(
     x = c(2.1, 4.9),
@@ -318,7 +318,7 @@ test_that("geom_typst visual: multiline lineheight", {
 })
 
 test_that("geom_typst visual inward outward just with facets and legend", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   make_anchor_panel <- function(labels, just, colour, group, panel) {
     data.frame(

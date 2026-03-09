@@ -219,7 +219,7 @@ test_that("element_grob.element_typst anchors rotated grobs by rotated justifica
 # Visual regression tests
 
 test_that("element_typst visual: plot title", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point() +
@@ -230,7 +230,7 @@ test_that("element_typst visual: plot title", {
 })
 
 test_that("element_typst visual: bold axis label", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point() +
@@ -241,7 +241,7 @@ test_that("element_typst visual: bold axis label", {
 })
 
 test_that("element_typst visual: rotated axis text", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(factor(cyl), mpg)) +
     geom_boxplot() +
@@ -251,7 +251,7 @@ test_that("element_typst visual: rotated axis text", {
 })
 
 test_that("element_typst visual: margin handling", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point() +
@@ -267,7 +267,7 @@ test_that("element_typst visual: margin handling", {
 })
 
 test_that("element_typst visual: facet strip", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point() +
@@ -278,7 +278,7 @@ test_that("element_typst visual: facet strip", {
 })
 
 test_that("element_typst visual: subtitle caption debug size-unit", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point(colour = "grey35", alpha = 0.8, size = 1.6) +
@@ -298,7 +298,7 @@ test_that("element_typst visual: subtitle caption debug size-unit", {
 })
 
 test_that("element_typst visual: axis title y and legend text", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
     geom_point(size = 2) +
@@ -323,7 +323,7 @@ test_that("element_typst visual: axis title y and legend text", {
 })
 
 test_that("element_typst visual: inherit blank on x title", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point(colour = "grey35", alpha = 0.8, size = 1.6) +
@@ -339,7 +339,7 @@ test_that("element_typst visual: inherit blank on x title", {
 })
 
 test_that("element_typst visual: facet strip x and y", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point(colour = "grey35", alpha = 0.75, size = 1.4) +
@@ -355,7 +355,7 @@ test_that("element_typst visual: facet strip x and y", {
 })
 
 test_that("element_typst visual: multiline lineheight", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point(colour = "grey35", alpha = 0.8, size = 1.6) +

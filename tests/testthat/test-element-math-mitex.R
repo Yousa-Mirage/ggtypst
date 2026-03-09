@@ -133,7 +133,7 @@ test_that("element_grob.element_math_mitex reports conversion errors", {
 # Visual regression tests
 
 test_that("element_math_mitex visual", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point() +

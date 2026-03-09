@@ -1,5 +1,5 @@
 test_that("annotate_typst visual stability with default Typst fonts", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point(size = 1.2, alpha = 0.45, colour = "grey40") +
@@ -56,9 +56,9 @@ test_that("annotate_typst visual stability with default Typst fonts", {
 })
 
 test_that("annotate_typst system fonts visual check (local only)", {
-  skip_if_not_installed("vdiffr")
-  testthat::skip_on_ci()
-  testthat::skip_on_cran()
+  skip_if_no_vdiffr()
+  skip_on_ci()
+  skip_on_cran()
 
   arial <- suppressWarnings(typst_svg(build_typst_source("probe", family = "Arial")))
   courier <- suppressWarnings(typst_svg(build_typst_source("probe", family = "Courier New")))
@@ -188,7 +188,7 @@ test_that("annotate_typst rejects duplicate alias arguments", {
 })
 
 test_that("annotate_typst visual: multiline lineheight", {
-  skip_if_not_installed("vdiffr")
+  skip_if_no_vdiffr()
 
   p <- ggplot(mtcars, aes(wt, mpg)) +
     geom_point(size = 1.2, alpha = 0.45, colour = "grey40") +

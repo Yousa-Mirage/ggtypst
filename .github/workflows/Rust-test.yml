@@ -31,6 +31,9 @@ jobs:
         with:
           use-public-rspm: true
 
+      - uses: r-lib/actions/setup-rtools@v2
+        if: runner.os == 'Windows'
+
       - name: Install Rust toolchain (Unix)
         if: runner.os != 'Windows'
         uses: dtolnay/rust-toolchain@stable
@@ -39,12 +42,17 @@ jobs:
         if: runner.os == 'Windows'
         uses: dtolnay/rust-toolchain@stable
         with:
-          targets: x86_64-pc-windows-gnu
+          toolchain: stable-x86_64-pc-windows-gnu
 
       - name: Cache Rust build artifacts
         uses: Swatinem/rust-cache@v2
         with:
           workspaces: src/rust -> target
 
-      - name: Run cargo test
+      - name: Run cargo test (Unix)
+        if: runner.os != 'Windows'
         run: cargo test --manifest-path src/rust/Cargo.toml
+
+      - name: Run cargo test (Windows GNU)
+        if: runner.os == 'Windows'
+        run: cargo test --manifest-path src/rust/Cargo.toml --target x86_64-pc-windows-gnu
