@@ -44,10 +44,10 @@ build_icon_plot <- function() {
   ggplot2::ggplot() +
     ggplot2::annotate(
       "segment",
-      x = 2.1,
+      x = 2.2,
       xend = 8.5,
-      y = 1.1,
-      yend = 1.1,
+      y = 1.2,
+      yend = 1.2,
       colour = "#FFFFFF",
       linewidth = 1.2,
       lineend = "round",
@@ -56,10 +56,10 @@ build_icon_plot <- function() {
     ) +
     ggplot2::annotate(
       "segment",
-      x = 2.1,
+      x = 2.2,
       xend = 2.2,
-      y = 1.1,
-      yend = 7.5,
+      y = 1.2,
+      yend = 7.55,
       colour = "#FFFFFF",
       linewidth = 1.2,
       lineend = "round",
