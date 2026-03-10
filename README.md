@@ -1,5 +1,5 @@
 
-# ggtypst
+# ggtypst <img src="man/figures/logo.png" align="right" height="150" alt="ggtypst logo" />
 
 **`ggtypst`** brings Typst-powered high-quality text and math rendering
 to `ggplot2`. Without requiring a separate local Typst or LaTeX setup,
