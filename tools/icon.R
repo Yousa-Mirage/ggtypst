@@ -1,4 +1,4 @@
-required_packages <- c("ggplot2", "ggtypst", "grid", "hexSticker", "rsvg", "pkgdown", "cli", "sysfonts")
+required_packages <- c("ggplot2", "ggtypst", "grid", "hexSticker", "rsvg", "pkgdown", "cli", "sysfonts", "png")
 missing_packages <- required_packages[!vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)]
 
 if (length(missing_packages) > 0) {
@@ -42,6 +42,31 @@ make_typst_logo_raster <- function(fill = "#FFFFFF", width = 420, height = 420) 
   on.exit(unlink(tmp), add = TRUE)
 
   rsvg::rsvg_nativeraster(tmp, width = width, height = height)
+}
+
+crop_transparent_png <- function(path, padding = 0L) {
+  img <- png::readPNG(path)
+
+  if (length(dim(img)) < 3 || dim(img)[3] < 4) {
+    return(invisible(path))
+  }
+
+  alpha <- img[,, 4]
+  occupied <- which(alpha > 0, arr.ind = TRUE)
+
+  if (nrow(occupied) == 0) {
+    return(invisible(path))
+  }
+
+  row_min <- max(1L, min(occupied[, 1]) - padding)
+  row_max <- min(dim(img)[1], max(occupied[, 1]) + padding)
+  col_min <- max(1L, min(occupied[, 2]) - padding)
+  col_max <- min(dim(img)[2], max(occupied[, 2]) + padding)
+
+  cropped <- img[row_min:row_max, col_min:col_max, , drop = FALSE]
+  png::writePNG(cropped, target = path)
+
+  invisible(path)
 }
 
 build_icon_plot <- function() {
@@ -141,6 +166,8 @@ build_icon_assets <- function() {
     filename = logo_output_path,
     dpi = 600
   )
+
+  crop_transparent_png(logo_output_path, padding = 1L)
 
   pkgdown::build_favicons(overwrite = TRUE)
 

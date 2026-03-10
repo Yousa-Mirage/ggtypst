@@ -3,10 +3,6 @@
   background-color: #fff !important;
 }
 
-.navbar .container {
-  align-items: center;
-}
-
 .page-header {
   min-height: 1rem !important;
 }
@@ -55,25 +51,7 @@ pre {
   align-items: center;
   gap: 0.65rem;
   font-size: var(--bs-nav-link-font-size);
-  color: #6c757d;
-}
-
-.navbar-brand::before {
-  content: "";
-  width: 32px;
-  height: 32px;
-  flex: 0 0 32px;
-  background-image: url("../../logo.png");
-  background-repeat: no-repeat;
-  background-position: center;
-  background-size: contain;
-}
-
-.navbar-nav,
-.navbar-nav .nav-link,
-.nav-text {
-  display: flex;
-  align-items: center;
+  color: #172431;
 }
 
 h1,
@@ -117,6 +95,10 @@ aside .h2 {
 
 ul {
   margin-bottom: 1rem !important;
+}
+
+.navbar-nav {
+  margin-bottom: 0 !important;
 }
 
 p {
