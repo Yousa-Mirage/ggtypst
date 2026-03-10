@@ -28,7 +28,7 @@ navbar:
       menu:
         - text: The Benchmark Performance
           href: articles/benchmark.html
-        - text: The ggtypst SKILL.md for Agents
+        - text: The SKILL.md for Agents
           href: articles/ggtypst-skill.html
 
 reference:

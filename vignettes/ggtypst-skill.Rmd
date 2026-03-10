@@ -1,13 +1,13 @@
 ---
-title: "The ggtypst SKILL.md for Agents"
+title: "The SKILL.md for Agents"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{The ggtypst SKILL.md for Agents}
+  %\VignetteIndexEntry{The SKILL.md for Agents}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-The `ggtypst` repository includes a reusable AI skill in
+`ggtypst` repository includes a reusable AI skill in
 `ggtypst-skill/SKILL.md`. This skill is a lightweight instruction file that
 helps an AI coding tool answer questions about the package and generate correct
 `ggtypst` examples.
