@@ -32,3 +32,6 @@ site:
 
 update-wordlist:
     Rscript -e "spelling::update_wordlist(confirm = FALSE)"
+
+icon:
+    @Rscript "pkgdown/generate-icon.R"
