@@ -105,6 +105,13 @@ build_icon_plot <- function() {
 
 build_icon_assets <- function() {
   plot <- build_icon_plot()
+  bg_gradient <- grid::linearGradient(
+    colours = c("#5ddaa7", "#4c99ba", "#229dad"),
+    x1 = grid::unit(0, "npc"),
+    y1 = grid::unit(1, "npc"), # 起点：左上角
+    x2 = grid::unit(1, "npc"),
+    y2 = grid::unit(0, "npc") # 终点：右下角
+  )
 
   hexSticker::sticker(
     subplot = plot,
@@ -119,7 +126,8 @@ build_icon_assets <- function() {
     p_size = 34,
     p_family = "New Computer Modern Math",
     p_fontface = "bold",
-    h_fill = "#239DAD",
+    # h_fill = "#239DAD",
+    h_fill = bg_gradient,
     h_color = "#FFFFFF",
     h_size = 1.8,
     spotlight = FALSE,
