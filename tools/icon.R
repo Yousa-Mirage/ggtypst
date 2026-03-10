@@ -1,4 +1,4 @@
-required_packages <- c("ggplot2", "ggtypst", "grid", "hexSticker", "jpeg", "rsvg", "pkgdown", "cli", "sysfonts")
+required_packages <- c("ggplot2", "ggtypst", "grid", "hexSticker", "rsvg", "pkgdown", "cli", "sysfonts")
 missing_packages <- required_packages[!vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)]
 
 if (length(missing_packages) > 0) {
@@ -7,6 +7,8 @@ if (length(missing_packages) > 0) {
     call. = FALSE
   )
 }
+
+options(device = function(...) grDevices::pdf(file = nullfile(), ...))
 
 font_regular <- path.expand("~/.local/share/fonts/NewCMMath-Regular.otf")
 font_bold <- path.expand("~/.local/share/fonts/NewCMMath-Bold.otf")
@@ -17,18 +19,22 @@ if (file.exists(font_regular) && file.exists(font_bold)) {
     regular = font_regular,
     bold = font_bold
   )
+} else {
+  cli::cli_alert_warning(
+    "Custom fonts not found. Please install 'New Computer Modern Math' and place the .otf files in '~/.local/share/fonts/'."
+  )
 }
 
 pkgdown_dir <- "pkgdown"
 favicon_dir <- file.path(pkgdown_dir, "favicon")
 logo_output_path <- file.path("man", "figures", "logo.png")
-typst_svg_path <- file.path(pkgdown_dir, "typst.svg")
+typst_icon_path <- file.path(pkgdown_dir, "typst.svg")
 
 dir.create(dirname(logo_output_path), recursive = TRUE, showWarnings = FALSE)
 dir.create(favicon_dir, recursive = TRUE, showWarnings = FALSE)
 
 make_typst_logo_raster <- function(fill = "#FFFFFF", width = 420, height = 420) {
-  svg <- paste(readLines(typst_svg_path, warn = FALSE), collapse = "")
+  svg <- paste(readLines(typst_icon_path, warn = FALSE), collapse = "")
   svg <- sub("<path ", sprintf("<path fill='%s' ", fill), svg, fixed = TRUE)
 
   tmp <- tempfile(fileext = ".svg")
@@ -105,12 +111,13 @@ build_icon_plot <- function() {
 
 build_icon_assets <- function() {
   plot <- build_icon_plot()
+
   bg_gradient <- grid::linearGradient(
     colours = c("#5ddaa7", "#4c99ba", "#229dad"),
     x1 = grid::unit(0, "npc"),
-    y1 = grid::unit(1, "npc"), # 起点：左上角
+    y1 = grid::unit(1, "npc"),
     x2 = grid::unit(1, "npc"),
-    y2 = grid::unit(0, "npc") # 终点：右下角
+    y2 = grid::unit(0, "npc")
   )
 
   hexSticker::sticker(
@@ -126,7 +133,6 @@ build_icon_assets <- function() {
     p_size = 34,
     p_family = "New Computer Modern Math",
     p_fontface = "bold",
-    # h_fill = "#239DAD",
     h_fill = bg_gradient,
     h_color = "#FFFFFF",
     h_size = 1.8,

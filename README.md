@@ -108,5 +108,6 @@ instructions.
 - [MiTeX](https://github.com/mitex-rs/mitex) for LaTeX-to-Typst math
   conversion
 
-Thanks to the Typst and MiTeX maintainers and contributors for building
-the underlying tooling that makes this package possible.
+The icon of `ggtypst` is made by
+[`hexSticker`](https://github.com/GuangchuangYu/hexSticker), designed by
+[Yousa Mirage (myself)](https://github.com/Yousa-Mirage).

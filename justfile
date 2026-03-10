@@ -34,4 +34,4 @@ update-wordlist:
     Rscript -e "spelling::update_wordlist(confirm = FALSE)"
 
 icon:
-    @Rscript "tools/generate-icon.R"
+    @Rscript "tools/icon.R"
