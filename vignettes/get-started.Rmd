@@ -28,21 +28,21 @@ library(ggtypst)
 
 ---
 
-Imagine for these demands: you have a scientific plot, and now you want to:
+Consider these scenarios: you have a scientific plot, and now you want to:
 
 - show your title with multiple styles, for example, the first word is red and the rest is blue
 - add some special characters like Greek letters in your axis titles
-- add a complex math expression with high quality as annotates in the plot
+- add high-quality complex math expressions as annotations in the plot
 - use the corresponding regression equation as the title of each facet
 
-How do you want to implement these demands?
+How would you achieve this?
 
 - Base `ggplot2` text helpers are great for ordinary labels, but scientific and
 technical plots often need more than plain strings.
 - You can use `expression()` in base R to add math. But its syntax is not natural and its functionality is limited.
 - The package [`latex2exp`](https://www.stefanom.io/latex2exp/) helps you convert LaTeX math expressions to R expressions. But its functionality is also limited by `expression()`.
 - The package [`ggtext`](https://github.com/wilkelab/ggtext) allows you to use Markdown and HTML tags to style your text. But it doesn't support complex styles and math.
-- [`tikzDevice`](https://github.com/daqana/tikzDevice)/[`ggtikz`](https://github.com/osthomas/ggtikz) allows you to use LaTeX. But it is too complex to use and must rely on external TeX toolchains which is very heavy.
+- [`tikzDevice`](https://github.com/daqana/tikzDevice)/[`ggtikz`](https://github.com/osthomas/ggtikz) allows you to use LaTeX. But it is too complex to use and must rely on external TeX toolchains, which are very heavy.
 - ...
 
 So is there a simple, lightweight, easy-to-use solution? Yes, that's why `ggtypst` is here!
@@ -52,11 +52,12 @@ So is there a simple, lightweight, easy-to-use solution? Yes, that's why `ggtyps
 [Typst](https://typst.app) is a modern markup language and typesetting engine written
 in Rust. You can write source text such as `*bold*`, `_italic_`, `#linebreak()`,
 or `$ sum_(i=1)^n x_i $`, and Typst turns it into polished rendered output.
-It is fast, simple but powerful, solving the pain point perfactly and elegantly.
+It is fast, simple but powerful, solving these pain points perfectly and elegantly.
 
-`ggtypst` uses Typst's Rust engine as rendering backend and offers a series of functions to fit `ggplot2` workflow. With `ggtypst`, you don't need to leave your `ggplot2`
-workflow, don't need to rely on external LaTeX or Typst, and can solve all the above
-demands easily.
+`ggtypst` uses Typst's Rust engine as the rendering backend and offers a series of
+functions to fit `ggplot2` workflow. With `ggtypst`, you don't need to leave your
+`ggplot2` workflow, don't need to rely on external LaTeX or Typst, and can easily solve
+all the above use cases.
 
 <details>
 <summary>Click to see the code</summary>
@@ -141,7 +142,7 @@ ggplot(mtcars, aes(wt, mpg)) +
 
 ## Installation
 
-You can install from GitHub for now:
+You can install `ggtypst` from GitHub for now:
 
 ```{r install, eval = FALSE}
 install.packages("remotes")
@@ -149,10 +150,12 @@ remotes::install_github("Yousa-Mirage/ggtypst")
 ```
 
 Because `ggtypst` builds a Typst backend in Rust, you need `rustc` and
-`cargo` on your system to compile it if you install from GitHub. And specially if you
-are on Windows, you must use the `x86_64-pc-windows-gnu` toolchain.
+`cargo` on your system to compile it if you install from GitHub. Particularly on
+Windows, you must use the `x86_64-pc-windows-gnu` toolchain.
 
-I'm preparing for release on R-universe and R-multiverse. After that, you can install without compiling locally. Anytime you don't need a separate local Typst or LaTeX installation to use `ggtypst`.
+A release is being prepared for R-universe and R-multiverse. Once available, you can
+install `ggtypst` without compiling locally. Regardless of how you install it, you
+don't need a separate local Typst installation to use `ggtypst`.
 
 ## First plot
 
@@ -182,14 +185,14 @@ ggplot(mtcars, aes(wt, mpg)) +
 
 This shows the core usage of the package:
 
-1. First, We use `annotate_typst()` to add a Typst label containing text and inline math.
+1. First, we use `annotate_typst()` to add a Typst label containing text and inline math.
     - `* ... *` marks bold text.
     - `#linebreak()` inserts a line break.
     - `$...$` marks inline math.
     - We specified the plot location, text size and color by other arguments.
 2. Then, we want to render the title and axis titles with Typst.
     - We write a common title, and then render it with Typst through `element_typst()`.
-    - We want to use a math as the y-axis title, so we write the Typst math code source in `labs()` and then use `element_math_typst()` to render it.
+    - We want to use a math expression as the y-axis title, so we write the Typst math source code in `labs()` and then use `element_math_typst()` to render it.
 
 ## When to use annotate, geom, and element
 
@@ -237,7 +240,7 @@ annotate_typst(
   y = 2
 ) +
 annotate_typst(
-  # In below line, "Red text" is styled with `fill: red`, "default text" is styled with italic, and `+` is with default style.
+  # In the line below, "Red text" is styled with `fill: red`, "default text" is styled with italic, and `+` is with default style.
   typst_code = r"(#text(fill: "red")[Red text] + _default text_)",
   x = 3,
   y = 3
@@ -260,21 +263,21 @@ annotate_math_typst(
 ```
 
 `$ ... $` or `$...$` will be automatically added around your math code to make sure it
-is rendered as math expressions. The difference is, `$ ... $`, which is default, means
+is rendered as a math expression. The difference is, `$ ... $`, which is default, means
 display math, while `$...$` means inline math. You can use the `inline` argument to
 control which to use.
 
 Of course, you can also use `annotate_typst()` and write your math code in `$ ... $` or
 `$...$`. `*_math_typst()` are just more convenient wrappers.
 
-One more important benefit from Typst is that, you don't need to have a math font
+One more important benefit of Typst is that you don't need to have a math font
 installed on your system to render math expressions. Typst has embedded the
 `New Computer Modern Math` font in binary, so you can render math anywhere and anytime.
 
 ### MiTeX-backed LaTeX math
 
 You can use `annotate_math_mitex()`, `geom_math_mitex()`, or `element_math_mitex()` if
-you are more familar with LaTeX math syntax or when your input is already in LaTeX.
+you are more familiar with LaTeX math syntax or when your input is already in LaTeX.
 `ggtypst` converts LaTeX math into Typst math by [MiTeX](https://github.com/mitex-rs/mitex)
 in the Rust backend. According to their documentation, this conversion is stable and
 supports a wide range of LaTeX math syntax.
@@ -291,7 +294,7 @@ annotate_math_mitex(
 
 `annotate_*()` is the easiest place to start because it behaves like a normal
 manual annotation layer. Use this function family when you just want to add one
-richtext note or math equation at a specific position.
+rich text note or math equation at a specific position.
 
 ```{r annotate-example}
 ggplot(mtcars, aes(wt, mpg)) +
@@ -359,14 +362,13 @@ ggplot(mtcars, aes(wt, mpg)) +
   theme_minimal(base_size = 12)
 ```
 
-But be careful that you should not use `geom_typst()` to render more than 50 label rows.
-Because it will not only slow down rendering, but also make your plot hard to read. For
-more details about the performance, see [the benchmark result](https://yousa-mirage.github.io/ggtypst/articles/benchmark.html).
+However, be careful not to use geom_typst() to render more than 50 label rows, as it will not only slow down rendering but also make your plot hard to read. For more
+details on performance, see [the benchmark result](https://yousa-mirage.github.io/ggtypst/articles/benchmark.html).
 
 ## `element_*()`: Typst in theme elements
 
-`element_*()` is used to render theme elements text with Typst. By `element_*()`, you
-can place richtext, special characters, and math equations in your plot titles,
+`element_*()` is used to render the text of theme elements with Typst. By `element_*()`,
+you can place rich text, special characters, and math equations in your plot titles,
 subtitles, axis titles, legend text, and facet strips.
 
 *Imagine that your `ggplot2` title is a math matrix, while each facet label is the special regression equation!*
@@ -394,7 +396,7 @@ ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
 
 ## Next steps
 
-After this article, the most useful places to continue are:
+From here, you can explore:
 
 - the [function reference](https://yousa-mirage.github.io/ggtypst/reference/index.html) for `annotate_*()`, `geom_*()`, and `element_*()`
 - the [contributing guide](https://yousa-mirage.github.io/ggtypst/CONTRIBUTING.html) if you want to understand the R/Rust architecture

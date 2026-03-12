@@ -22,7 +22,7 @@ equations directly to your `ggplot2` plots through three public API families:
 - `element_*()` for Typst-rendered theme text
 
 `ggtypst` supports both native Typst math and **LaTeX-style math**
-thanks to [MiTeX](https://github.com/mitex-rs/mitex). Just choose one math style you are
+thanks to [MiTeX](https://github.com/mitex-rs/mitex). Just choose the math style you are
 more familiar with. 
 
 ℹ️ *For showcases, please see [Showcase](#showcase) below.*
@@ -34,14 +34,14 @@ that strength inside `ggplot2` without asking you to leave the plotting pipeline
 
 - ✍️ Write raw Typst markup directly inside `ggplot2`
 - ⚙️ Render high-quality equations without installing Typst or LaTeX separately
-- 📊 Plot rich titles, axis, facets, and legends with Typst contents
-- 🎨 Customize text size, colors, angles, faces, and families freelyilies freely
-- 🔁 Choose native Typst math or LaTeX-style math, depends on your wish
+- 📊 Plot rich titles, axis, facets, and legends with Typst content
+- 🎨 Customize text size, colors, angles, faces, and families freely
+- 🔁 Choose native Typst math or LaTeX-style math, depending on your preference
 - 🧩 Keep the familiar `ggplot2` layout system and theme semantics
 
 ## Installation
 
-You can install from GitHub for now:
+You can install `ggtypst` from GitHub for now:
 
 ```{r install, eval = FALSE}
 install.packages("remotes")
@@ -49,21 +49,23 @@ remotes::install_github("Yousa-Mirage/ggtypst")
 ```
 
 Because `ggtypst` builds a Typst backend in Rust, you need `rustc` and
-`cargo` on your system to compile it if you install from GitHub. And specially if you
-are on Windows, you must use the `x86_64-pc-windows-gnu` toolchain.
+`cargo` on your system to compile it if you install from GitHub. Particularly on
+Windows, you must use the `x86_64-pc-windows-gnu` toolchain.
 
-I'm preparing for release on R-universe and R-multiverse. If so, you can install without compiling locally. Anytime you don't need a separate local Typst or LaTeX installation to use `ggtypst`.
+A release is being prepared for R-universe and R-multiverse. Once available, you can
+install `ggtypst` without compiling locally. Regardless of how you install it, you
+don't need a separate local Typst installation to use `ggtypst`.
 
 ## Get Started
 
-Please read [Get Started](https://yousa-mirage.github.io/ggtypst/articles/get-started.html) to get a detailed guide for
-`ggtypst`. There you will see some instructions and examples about how to
-use `ggtypst` to plot rich contents.
+Please read [Get Started](https://yousa-mirage.github.io/ggtypst/articles/get-started.html) to get a detailed guide to
+`ggtypst`. There you will find instructions and examples on how to
+use `ggtypst` to plot rich content.
 
 ## Showcase
 
 With `ggtypst`, you can easily make publication-ready scientific figures with excellent
-rich texts and math equations. There are three plots as showcases about the three main
+rich text and math equations. Below are three example plots showcasing the three main
 workflows: annotations, data-driven labels, and Typst-powered theme elements.
 
 ### Annotation: Just add something
@@ -90,10 +92,10 @@ You can even render a matrix as the title!
 
 ## Contributing
 
-If you found any bugs or errors about `ggtypst`, you can report it on [GitHub Issues](https://github.com/yousa-mirage/ggtypst/issues/).
-Remember to attach an image and the reproduction code to show the issue clearly.
+If you find any bugs or errors in `ggtypst`, you can report them on [GitHub Issues](https://github.com/yousa-mirage/ggtypst/issues/).
+Remember to attach an image and reproduction code to show the issue clearly.
 
-If you want to make contributions, please take a look at the [contributing guide](https://yousa-mirage.github.io/ggtypst/CONTRIBUTING.html) for instructions.
+If you would like to contribute, please take a look at the [contributing guide](https://yousa-mirage.github.io/ggtypst/CONTRIBUTING.html) for instructions.
 
 ## Acknowledgements
 
@@ -102,5 +104,5 @@ If you want to make contributions, please take a look at the [contributing guide
 - [Typst](https://github.com/typst/typst) for the rendering engine and typography system
 - [MiTeX](https://github.com/mitex-rs/mitex) for LaTeX-to-Typst math conversion
 
-The icon of `ggtypst` is made by [`hexSticker`](https://github.com/GuangchuangYu/hexSticker), designed by
-[Yousa Mirage (myself)](https://github.com/Yousa-Mirage).
+The `ggtypst` icon was made with [`hexSticker`](https://github.com/GuangchuangYu/hexSticker) and designed by
+[Yousa Mirage](https://github.com/Yousa-Mirage). 
