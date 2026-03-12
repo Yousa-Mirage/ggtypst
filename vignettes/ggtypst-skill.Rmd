@@ -1,34 +1,34 @@
 ---
-title: "The SKILL.md for Agents"
+title: "SKILL.md for Agents"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{The SKILL.md for Agents}
+  %\VignetteIndexEntry{SKILL.md for Agents}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
-`ggtypst` repository includes a reusable AI skill in
+The `ggtypst` repository includes a reusable AI skill located at
 `ggtypst-skill/SKILL.md`. This skill is a lightweight instruction file that
 helps an AI coding tool answer questions about the package and generate correct
 `ggtypst` examples.
 
 ## What it is
-The skill, which is a package-specific guide for AI tools, is meant for users who
-want an AI assistant to be more accurate when working with `ggtypst`.
+
+The skill is a package-specific guide for AI tools, designed to help users get more accurate assistance when working with `ggtypst`.
 
 Instead of starting from a blank prompt, an AI assistant can load this skill and
-immediately understand the main `ggtypst` usage. It helps the assistant:
+immediately understand the main usage patterns of `ggtypst`. It helps the assistant:
 
 - recommend the right function for a plotting task
 - write package-aware plot code
 - explain installation and raw-string usage correctly
-- describe common gotchas such as `size.unit`, `inline`, and math face limits
+- describe common pitfalls such as `size.unit`, `inline`, and math face limits
 
 ## What it contains
 
 The current skill file contains:
 
-- a short trigger description for AI tools
+- a short description to help AI tools recognize the skill
 - a quick mental model of how `ggtypst` works
 - guidance for installation and package setup
 - examples for `annotate_*()`, `geom_*()`, and `element_*()`
@@ -44,8 +44,8 @@ npx skills add Yousa-Mirage/ggtypst
 ```
 
 [`npx skills`](https://github.com/vercel-labs/skills) will find the `ggtypst` skill
-and add the skill into your AI tools automatically, such as [Claude Code](https://github.com/anthropics/claude-code),
+and add the skill to your AI tools automatically, such as [Claude Code](https://github.com/anthropics/claude-code),
 [Codex](https://github.com/openai/codex), [GitHub Copilot](https://github.com/copilot), [OpenCode](https://opencode.ai/) or others.
 
-After that, your AI agent tool should be able to load the `ggtypst` skill
+After that, your AI tools should be able to load the `ggtypst` skill
 and use it as package-specific context when answering questions or generating code.
