@@ -4,6 +4,7 @@ GC
 LTO
 MiTeX
 OpenCode
+RStudio
 Typst
 Typst's
 Yousa
@@ -12,7 +13,6 @@ callout
 callouts
 coloured
 colours
-freelyilies
 geom's
 geoms
 ggplot
@@ -20,9 +20,10 @@ ggproto
 md
 mitex
 overbrace
-rustup
 toolchain
+toolchains
 transpilation
+typst
 underbrace
 unmapped
 ℹ️
