@@ -14,7 +14,7 @@ plots through three public API families:
 thanks to [MiTeX](https://github.com/mitex-rs/mitex). Just choose one
 math style you are more familiar with.
 
-ℹ️*For showcases, please see [Showcase](#showcase) below.*
+ℹ️ *For showcases, please see [Showcase](#showcase) below.*
 
 ## Highlights
 
@@ -34,27 +34,29 @@ pipeline.
 
 ## Installation
 
-For now, install `ggtypst` from GitHub with `remotes::install_github()`:
+You can install from GitHub for now:
 
 ``` r
 install.packages("remotes")
 remotes::install_github("Yousa-Mirage/ggtypst")
 ```
 
-`ggtypst` builds a Rust backend during installation, so you need an
-available Rust toolchain with `rustc` on your system. You can install
-Rust easily through [rustup](https://rust-lang.org/tools/install/).
+Because `ggtypst` builds a Typst backend in Rust, you need `rustc` and
+`cargo` on your system to compile it if you install from GitHub. And
+specially if you are on Windows, you must use the
+`x86_64-pc-windows-gnu` toolchain.
 
-Binary/package distribution through r-universe and r-multiverse is
-planned for later.
+I’m preparing for release on R-universe and R-multiverse. If so, you can
+install without compiling locally. Anytime you don’t need a separate
+local Typst or LaTeX installation to use `ggtypst`.
 
 ## Get Started
 
 Please read [Get
 Started](https://yousa-mirage.github.io/ggtypst/articles/get-started.html)
 to get a detailed guide for `ggtypst`. There you will see some
-instructions and examples about how to use `ggtypst` in `ggplot2` to
-plot rich contents.
+instructions and examples about how to use `ggtypst` to plot rich
+contents.
 
 ## Showcase
 
