@@ -95,6 +95,7 @@ ggplot(mtcars, aes(wt, mpg)) +
     plot.title = element_typst(size = 16, face = "bold"),
     axis.title.x = element_typst(size = 12, colour = "#102A43"),
     axis.title.y = element_typst(size = 12, colour = "#102A43"),
+    axis.text = element_typst(size = 11, colour = "#102A43"),
     strip.text = element_math_typst(size = 12, face = "bold"),
     plot.caption = element_typst(size = 9, color = "grey50", face = "italic")
   )
@@ -134,7 +135,8 @@ ggplot(mtcars, aes(wt, mpg)) +
   theme(
     plot.title = element_typst(size = 16, face = "bold"),
     axis.title.x = element_typst(size = 12, colour = "#102A43"),
-    axis.title.y = element_typst(size = 12, colour = "#102A43"),
+    axis.title.y = element_typst(size = 12, colour = "#102A43"),,
+    axis.text = element_typst(size = 11, colour = "#102A43"),
     strip.text = element_math_typst(size = 12, face = "bold"),
     plot.caption = element_typst(size = 9, color = "grey50", face = "italic")
   )
