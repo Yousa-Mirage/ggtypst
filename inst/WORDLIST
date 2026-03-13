@@ -20,6 +20,7 @@ ggproto
 md
 mitex
 overbrace
+prebuilt
 toolchain
 toolchains
 transpilation
