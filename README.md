@@ -34,22 +34,26 @@ pipeline.
 
 ## Installation
 
-You can install `ggtypst` from GitHub for now:
+Install `ggtypst` from R-universe first so you can use the prebuilt
+package and avoid compiling Rust locally:
+
+``` r
+install.packages("ggtypst", repos = "https://yousa-mirage.r-universe.dev")
+```
+
+If you need the latest development version from GitHub, you can
+install it from source:
 
 ``` r
 install.packages("remotes")
 remotes::install_github("Yousa-Mirage/ggtypst")
 ```
 
-Because `ggtypst` builds a Typst backend in Rust, you need `rustc` and
-`cargo` on your system to compile it if you install from GitHub.
-Particularly on Windows, you must use the `x86_64-pc-windows-gnu`
-toolchain.
-
-A release is being prepared for R-universe and R-multiverse. Once
-available, you can install `ggtypst` without compiling locally.
-Regardless of how you install it, you don’t need a separate local Typst
-installation to use `ggtypst`.
+Because the GitHub installation builds the Typst backend in Rust, you
+need `rustc` and `cargo` on your system to compile it. Particularly on
+Windows, you must use the `x86_64-pc-windows-gnu` toolchain. Regardless
+of how you install `ggtypst`, you don’t need a separate local Typst or
+LaTeX installation to use it.
 
 ## Get Started
 
