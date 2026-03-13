@@ -34,7 +34,7 @@ one-off annotations.
 | RAM | 32 GB |
 | OS | Arch Linux |
 | R | 4.5.2 |
-| ggtypst | 0.0.0.9000 |
+| ggtypst | 0.1.0 |
 | Rust | 1.89.0+ (release build with LTO) |
 
 All timings were collected with base R `proc.time()` in manual loops after a

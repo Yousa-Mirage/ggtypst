@@ -1,11 +1,13 @@
 Package: ggtypst
 Title: Render High-Quality Text and Formulas in 'ggplot2' by Typst
-Version: 0.0.0.9000
+Version: 0.1.0
 Authors@R:
     person(given = "Hao",
            family = "Cheng",
            role = c("aut", "cre", "cph"),
            email = "Yousa-Mirage@foxmail.com")
+Author: Hao Cheng [aut, cre, cph]
+Maintainer: Hao Cheng <Yousa-Mirage@foxmail.com>
 Description: Provides a seamless integration of the 'Typst' typesetting engine 
     into 'ggplot2'. It allows users to render complex mathematical formulas, 
     equations, and rich text directly in plot annotations, axis labels, 

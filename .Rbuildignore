@@ -1,6 +1,7 @@
 ^src/\.cargo($|/)
 ^src/rust/vendor($|/)
 ^src/rust/target($|/)
+^src/[^/]+\.(o|so|dll)$
 ^src/Makevars$
 ^src/Makevars\.win$
 ^LICENSE\.md$

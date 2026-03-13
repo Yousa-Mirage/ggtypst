@@ -1,25 +1,24 @@
-# ggtypst 0.0.0.9000
+# ggtypst 0.1.0
 
-## New features
+This is the first public release of `ggtypst`.
 
-- Added `geom_typst()` for data-driven Typst text rendering in `ggplot2`.
-- Added `annotate_typst()` for one-off Typst annotations.
-- Added `element_typst()` for Typst-based theme elements rendering.
-- Added MiTeX-backed LaTeX-to-Typst conversion support for annotations, geoms,
-  and theme elements.
-- Added math-specific annotation helpers:
+## Features
+
+- Added `annotate_typst()`, `geom_typst()`, and `element_typst()` for Typst-based
+  text rendering in `ggplot2` annotations, data layers, and theme elements.
+- Added native Typst math helpers:
   - `annotate_math_typst()`
-  - `annotate_math_mitex()`
-- Added math-specific geoms:
   - `geom_math_typst()`
-  - `geom_math_mitex()`
-- Added math-specific theme elements:
   - `element_math_typst()`
+- Added MiTeX-backed LaTeX math helpers:
+  - `annotate_math_mitex()`
+  - `geom_math_mitex()`
   - `element_math_mitex()`
-- Supported `size`, `face`, `color`, `angle`, `alpha`, `lineheight`, `family`, `mathfamily` 
-  arguments for these plot functions.
+- Added support for styling arguments including `size`, `face`, `colour`/`color`,
+  `angle`, `alpha`, `lineheight`, `family`, and `mathfamily` across the public
+  plotting helpers.
 
-## Testing and maintenance
+## Quality
 
-- Added broad `testthat` and `vdiffr` coverage for annotate, geom, element
-  rendering paths and other components.
+- Added `testthat` and `vdiffr` coverage for annotation, geom, and theme-element
+  rendering paths, along with supporting package components.
