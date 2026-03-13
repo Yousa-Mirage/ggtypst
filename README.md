@@ -1,6 +1,19 @@
 
 # ggtypst <img src="man/figures/logo.png" align="right" height="175" alt="ggtypst logo" />
 
+<div align="center">
+
+[![GitHub
+stars](https://img.shields.io/github/stars/Yousa-Mirage/ggtypst?style=social)](https://github.com/Yousa-Mirage/ggtypst/stargazers)
+[![License:
+MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Ask
+DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yousa-Mirage/ggtypst)
+[![r-universe
+version](https://yousa-mirage.r-universe.dev/ggtypst/badges/version)](https://yousa-mirage.r-universe.dev/ggtypst)
+
+</div>
+
 **`ggtypst`** brings Typst-powered high-quality text and math rendering
 to `ggplot2`. Without requiring a separate local Typst or LaTeX setup,
 you can add rich text and math equations directly to your `ggplot2`
@@ -41,8 +54,8 @@ package and avoid compiling Rust locally:
 install.packages("ggtypst", repos = "https://yousa-mirage.r-universe.dev")
 ```
 
-If you need the latest development version from GitHub, you can
-install it from source:
+If you need the latest development version from GitHub, you can install
+it from source:
 
 ``` r
 install.packages("remotes")
