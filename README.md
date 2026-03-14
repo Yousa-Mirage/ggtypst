@@ -11,6 +11,7 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yousa-Mirage/ggtypst)
 [![r-universe
 version](https://yousa-mirage.r-universe.dev/ggtypst/badges/version)](https://yousa-mirage.r-universe.dev/ggtypst)
+[![extendr](https://img.shields.io/badge/extendr-%5E0.8.1-276DC2)](https://extendr.github.io/extendr/extendr_api/)
 
 </div>
 
