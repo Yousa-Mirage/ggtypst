@@ -35,6 +35,7 @@ Imports:
     rlang,
     rsvg
 Suggests: 
+    ggtext,
     knitr,
     pkgdown,
     rmarkdown,

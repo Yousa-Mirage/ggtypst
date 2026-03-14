@@ -16,6 +16,15 @@
 library(ggplot2)
 library(ggtypst)
 
+if (!requireNamespace("ggtext", quietly = TRUE)) {
+  stop(
+    "The benchmark script requires the 'ggtext' package for styled-text comparisons.",
+    call. = FALSE
+  )
+}
+
+suppressPackageStartupMessages(library(ggtext))
+
 build_typst_source_internal <- utils::getFromNamespace("build_typst_source", "ggtypst")
 typst_svg_internal <- utils::getFromNamespace("typst_svg", "ggtypst")
 convert_latex_to_typst_internal <- utils::getFromNamespace("convert_latex_to_typst", "ggtypst")
@@ -99,6 +108,18 @@ render_plot <- function(p) {
   invisible(NULL)
 }
 
+zero_pt <- grid::unit(rep(0, 4), "pt")
+
+ggtext_layer_args <- function() {
+  list(
+    fill = NA,
+    label.color = NA,
+    label.padding = zero_pt,
+    label.margin = zero_pt,
+    label.r = grid::unit(0, "pt")
+  )
+}
+
 # ── Typst code specimens ────────────────────────────────────────────────────
 
 typst_plain_short <- "Hello"
@@ -126,6 +147,10 @@ latex_simple <- r"(\frac{1}{2} + \sqrt{3})"
 latex_complex <- r"(
   \mathcal{F}(s) = \int_{-\infty}^{+\infty} \frac{\sum_{n=1}^{\infty} \frac{(-1)^{n-1} x^{2n}}{(2n)!}}{\sqrt[3]{\lim_{k \to \infty} \prod_{j=1}^{k} \left(1 - \frac{1}{p_j^2}\right) + \frac{\alpha^2}{\beta^3}}} e^{-2 \pi i s x} \,\mathrm{d}x + \begin{pmatrix} \sum_{i=1}^{n} i^3 = \left( \frac{n(n+1)}{2} \right)^2 & \underbrace{a_1 + a_2 + \cdots + a_k}_{\text{Total: } k \text{ terms}} \\ \begin{cases} \frac{\int_{0}^{x} e^{-t^2} \,\mathrm{d}t}{\sqrt{\pi} + \sum_{m=1}^{M} \frac{1}{m}} & \text{if } x > 0 \\ \begin{pmatrix} \alpha \\ \frac{\beta + \gamma}{\delta} \\ \zeta \end{pmatrix} & \text{otherwise} \end{cases} & \overbrace{\prod_{p \text{ prime}} (1 - p^{-s})^{-1}}^{\zeta(s)} \end{pmatrix}
 )"
+
+typst_styled_compare <- r"(*Bold* _italic_ plain text)"
+
+ggtext_styled_compare <- "<b>Bold</b> <i>italic</i> plain text"
 
 # ── Warmup ──────────────────────────────────────────────────────────────────
 
@@ -389,6 +414,218 @@ for (n in row_counts) {
   }
   s <- summarise_times(times)
   out(fmt_row(label, s))
+  cat(sprintf("%s\n", fmt_time(s$median)))
+}
+
+out("")
+
+# ── 2D: ggtypst vs ggtext (styled text only) ───────────────────────────────
+
+out("\u2500\u2500 2D: ggtypst vs ggtext (styled text only) \u2500\u2500")
+out("")
+out("  These comparisons use equivalent bold/italic rich text content.")
+out("  ggtext layers disable background, outline, and padding to focus on text rendering cost.")
+out("")
+
+styled_df <- function(n) {
+  set.seed(42)
+  data.frame(
+    x = runif(n, 2, 5),
+    y = runif(n, 12, 33),
+    typst_label = rep(typst_styled_compare, n),
+    ggtext_label = rep(ggtext_styled_compare, n)
+  )
+}
+
+annotate_positions <- data.frame(
+  x = c(2.0, 2.7, 3.4, 4.1, 4.8),
+  y = c(33, 28, 23, 18, 13)
+)
+
+p_annotate_typst_text <- base_plot +
+  annotate_typst(
+    typst_code = typst_styled_compare,
+    x = 3.5,
+    y = 30,
+    size = 4,
+    size.unit = "mm"
+  )
+
+p_annotate_ggtext_text <- do.call(
+  ggplot2::annotate,
+  c(
+    list(
+      geom = "richtext",
+      x = 3.5,
+      y = 30,
+      label = ggtext_styled_compare,
+      size = 4
+    ),
+    ggtext_layer_args()
+  )
+) |>
+  (function(layer) base_plot + layer)()
+
+p_annotate_typst_text_5 <- Reduce(
+  f = `+`,
+  x = lapply(seq_len(nrow(annotate_positions)), function(i) {
+    annotate_typst(
+      typst_code = typst_styled_compare,
+      x = annotate_positions$x[i],
+      y = annotate_positions$y[i],
+      size = 4,
+      size.unit = "mm"
+    )
+  }),
+  init = base_plot
+)
+
+p_annotate_ggtext_text_5 <- Reduce(
+  f = `+`,
+  x = lapply(seq_len(nrow(annotate_positions)), function(i) {
+    do.call(
+      ggplot2::annotate,
+      c(
+        list(
+          geom = "richtext",
+          x = annotate_positions$x[i],
+          y = annotate_positions$y[i],
+          label = ggtext_styled_compare,
+          size = 4
+        ),
+        ggtext_layer_args()
+      )
+    )
+  }),
+  init = base_plot
+)
+
+styled_df_1 <- styled_df(1)
+styled_df_10 <- styled_df(10)
+styled_df_50 <- styled_df(50)
+
+p_geom_typst_text_1 <- base_plot +
+  geom_typst(
+    aes(x, y, label = typst_label),
+    data = styled_df_1,
+    size = 4,
+    size.unit = "mm"
+  )
+
+p_geom_ggtext_text_1 <- do.call(
+  ggtext::geom_richtext,
+  c(
+    list(
+      mapping = aes(x, y, label = ggtext_label),
+      data = styled_df_1,
+      size = 4
+    ),
+    ggtext_layer_args()
+  )
+) |>
+  (function(layer) base_plot + layer)()
+
+p_geom_typst_text_10 <- base_plot +
+  geom_typst(
+    aes(x, y, label = typst_label),
+    data = styled_df_10,
+    size = 4,
+    size.unit = "mm"
+  )
+
+p_geom_ggtext_text_10 <- do.call(
+  ggtext::geom_richtext,
+  c(
+    list(
+      mapping = aes(x, y, label = ggtext_label),
+      data = styled_df_10,
+      size = 4
+    ),
+    ggtext_layer_args()
+  )
+) |>
+  (function(layer) base_plot + layer)()
+
+p_geom_typst_text_50 <- base_plot +
+  geom_typst(
+    aes(x, y, label = typst_label),
+    data = styled_df_50,
+    size = 4,
+    size.unit = "mm"
+  )
+
+p_geom_ggtext_text_50 <- do.call(
+  ggtext::geom_richtext,
+  c(
+    list(
+      mapping = aes(x, y, label = ggtext_label),
+      data = styled_df_50,
+      size = 4
+    ),
+    ggtext_layer_args()
+  )
+) |>
+  (function(layer) base_plot + layer)()
+
+out("\u2500\u2500 2D-1: Annotate comparison \u2500\u2500")
+out("")
+out("  Equivalent styled text: Typst '*Bold* _italic_ plain text' vs HTML '<b>Bold</b> <i>italic</i> plain text'")
+out("")
+out(header_line())
+out(divider())
+
+cases_2d_annotate <- list(
+  list(label = "base plot", p = base_plot),
+  list(label = "ggtypst annotate (1)", p = p_annotate_typst_text),
+  list(label = "ggtext annotate (1)", p = p_annotate_ggtext_text),
+  list(label = "ggtypst annotate (5)", p = p_annotate_typst_text_5),
+  list(label = "ggtext annotate (5)", p = p_annotate_ggtext_text_5)
+)
+
+for (case in cases_2d_annotate) {
+  cat(sprintf("  %-25s ... ", case$label))
+  times <- numeric(N_PLOT)
+  for (i in seq_len(N_PLOT)) {
+    gc(verbose = FALSE, full = TRUE)
+    t0 <- proc.time()[["elapsed"]]
+    render_plot(case$p)
+    t1 <- proc.time()[["elapsed"]]
+    times[i] <- t1 - t0
+  }
+  s <- summarise_times(times)
+  out(fmt_row(case$label, s))
+  cat(sprintf("%s\n", fmt_time(s$median)))
+}
+
+out("")
+out("\u2500\u2500 2D-2: Geom comparison \u2500\u2500")
+out("")
+out("  Equivalent styled text repeated across rows with no label box styling on ggtext layers.")
+out("")
+out(header_line())
+out(divider())
+
+cases_2d_geom <- list(
+  list(label = "ggtypst geom (1)", p = p_geom_typst_text_1),
+  list(label = "ggtext geom (1)", p = p_geom_ggtext_text_1),
+  list(label = "ggtypst geom (10)", p = p_geom_typst_text_10),
+  list(label = "ggtext geom (10)", p = p_geom_ggtext_text_10),
+  list(label = "ggtypst geom (50)", p = p_geom_typst_text_50),
+  list(label = "ggtext geom (50)", p = p_geom_ggtext_text_50)
+)
+
+for (case in cases_2d_geom) {
+  cat(sprintf("  %-25s ... ", case$label))
+  times <- numeric(N_PLOT)
+  for (i in seq_len(N_PLOT)) {
+    gc(verbose = FALSE, full = TRUE)
+    t0 <- proc.time()[["elapsed"]]
+    render_plot(case$p)
+    t1 <- proc.time()[["elapsed"]]
+    times[i] <- t1 - t0
+  }
+  s <- summarise_times(times)
+  out(fmt_row(case$label, s))
   cat(sprintf("%s\n", fmt_time(s$median)))
 }
 

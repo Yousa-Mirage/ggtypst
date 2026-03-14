@@ -1,7 +1,7 @@
 ══════════════════════════════════════════════════════════════════════════════
   ggtypst Benchmark Results
-  Date: 2026-03-09
-  R 4.5.2 | ggtypst 0.1.0 | x86_64-pc-linux-gnu
+  Date: 2026-03-14
+  R 4.5.3 | ggtypst 0.1.0 | x86_64-pc-linux-gnu
 ══════════════════════════════════════════════════════════════════════════════
 
 ── Layer 1: Typst Rendering (Rust FFI) ──
@@ -11,13 +11,13 @@
 
   expression                  median        min        max         sd    n_itr
 ──────────────────────────────────────────────────────────────────────────────
-  plain_short                  2.0ms   1000.0µs      2.0ms   449.8µs       30
-  plain_styled                 2.0ms      2.0ms      3.0ms   345.7µs       30
-  math_simple                  2.0ms      2.0ms      4.0ms   484.2µs       30
-  math_moderate                2.0ms      2.0ms      3.0ms   345.7µs       30
-  math_complex                 5.0ms      4.0ms      7.0ms   746.6µs       30
-  mitex_simple                 6.0ms      5.0ms     15.0ms      1.8ms       30
-  mitex_complex                8.0ms      8.0ms     10.0ms   621.5µs       30
+  plain_short                  2.0ms   1000.0µs      4.0ms   571.3µs       30
+  plain_styled                 2.0ms      2.0ms      4.0ms   504.0µs       30
+  math_simple                  2.0ms      2.0ms      9.0ms      1.3ms       30
+  math_moderate                2.0ms      2.0ms      3.0ms   182.6µs       30
+  math_complex                 5.0ms      4.0ms      6.0ms   691.5µs       30
+  mitex_simple                 5.0ms      4.0ms     13.0ms      1.5ms       30
+  mitex_complex                8.0ms      7.0ms     10.0ms   850.3µs       30
 
 ── Layer 2: Full Plot Performance (End-to-End) ──
 
@@ -30,13 +30,13 @@
 
   expression                  median        min        max         sd    n_itr
 ──────────────────────────────────────────────────────────────────────────────
-  base plot                   56.0ms     51.0ms     82.0ms      7.8ms       15
-  annotate (1 item)           64.0ms     59.0ms     72.0ms      3.3ms       15
-  annotate (5 items)         124.0ms    111.0ms    142.0ms      7.0ms       15
-  geom (1 row)               173.0ms    167.0ms    245.0ms     18.8ms       15
-  geom (10 rows)               1.19s      1.13s      1.28s     47.6ms       15
-  geom (50 rows)               5.64s      5.38s      5.96s    194.8ms       15
-  element (title)            171.0ms    158.0ms    180.0ms      6.5ms       15
+  base plot                   56.0ms     51.0ms     85.0ms      8.4ms       15
+  annotate (1 item)           62.0ms     57.0ms     69.0ms      3.0ms       15
+  annotate (5 items)         118.0ms    111.0ms    123.0ms      3.7ms       15
+  geom (1 row)               162.0ms    159.0ms    181.0ms      6.9ms       15
+  geom (10 rows)               1.12s      1.10s      1.22s     32.1ms       15
+  geom (50 rows)               5.52s      5.38s      5.62s     66.3ms       15
+  element (title)            167.0ms    160.0ms    181.0ms      5.1ms       15
 
 ── 2B: Content Complexity (annotate_typst) ──
 
@@ -44,11 +44,11 @@
 
   expression                  median        min        max         sd    n_itr
 ──────────────────────────────────────────────────────────────────────────────
-  text_only                   66.0ms     63.0ms     72.0ms      2.7ms       15
-  text_styled                 66.0ms     62.0ms     90.0ms      7.0ms       15
-  math_inline                 66.0ms     63.0ms     73.0ms      3.6ms       15
-  math_display                68.0ms     63.0ms     76.0ms      3.5ms       15
-  math_massive               168.0ms    158.0ms    179.0ms      6.3ms       15
+  text_only                   68.0ms     62.0ms     76.0ms      4.3ms       15
+  text_styled                 72.0ms     66.0ms     79.0ms      3.6ms       15
+  math_inline                 68.0ms     66.0ms     73.0ms      2.1ms       15
+  math_display                68.0ms     63.0ms     72.0ms      2.5ms       15
+  math_massive               173.0ms    160.0ms    188.0ms      7.3ms       15
 
 ── 2C: Geom Row Scaling (geom_typst) ──
 
@@ -56,8 +56,39 @@
 
   expression                  median        min        max         sd    n_itr
 ──────────────────────────────────────────────────────────────────────────────
-  n = 1                      185.0ms    174.0ms    263.0ms     21.1ms       15
-  n = 5                      684.0ms    655.0ms    706.0ms     14.4ms       15
-  n = 10                       1.39s      1.32s      1.49s     54.1ms       15
-  n = 25                       3.35s      3.16s      3.50s    107.3ms       15
-  n = 50                       7.05s      6.51s      7.67s    326.5ms       15
+  n = 1                      187.0ms    178.0ms    194.0ms      4.9ms       15
+  n = 5                      691.0ms    668.0ms    757.0ms     20.6ms       15
+  n = 10                       1.33s      1.28s      1.44s     39.1ms       15
+  n = 25                       3.28s      3.13s      3.40s     81.0ms       15
+  n = 50                       6.46s      6.33s      6.76s    135.9ms       15
+
+── 2D: ggtypst vs ggtext (styled text only) ──
+
+  These comparisons use equivalent bold/italic rich text content.
+  ggtext layers disable background, outline, and padding to focus on text rendering cost.
+
+── 2D-1: Annotate comparison ──
+
+  Equivalent styled text: Typst '*Bold* _italic_ plain text' vs HTML '<b>Bold</b> <i>italic</i> plain text'
+
+  expression                  median        min        max         sd    n_itr
+──────────────────────────────────────────────────────────────────────────────
+  base plot                   54.0ms     51.0ms     62.0ms      2.7ms       15
+  ggtypst annotate (1)        68.0ms     62.0ms     74.0ms      3.2ms       15
+  ggtext annotate (1)         79.0ms     76.0ms    144.0ms     16.9ms       15
+  ggtypst annotate (5)       172.0ms    130.0ms      5.45s      1.36s       15
+  ggtext annotate (5)        199.0ms    172.0ms    309.0ms     52.0ms       15
+
+── 2D-2: Geom comparison ──
+
+  Equivalent styled text repeated across rows with no label box styling on ggtext layers.
+
+  expression                  median        min        max         sd    n_itr
+──────────────────────────────────────────────────────────────────────────────
+  ggtypst geom (1)           318.0ms    308.0ms    412.0ms     25.4ms       15
+  ggtext geom (1)             65.0ms     63.0ms     70.0ms      2.2ms       15
+  ggtypst geom (10)            2.72s      2.67s      2.89s     61.7ms       15
+  ggtext geom (10)           111.0ms    107.0ms    119.0ms      3.2ms       15
+  ggtypst geom (50)           13.59s     12.30s     15.88s    855.6ms       15
+  ggtext geom (50)           334.0ms    320.0ms    437.0ms     27.9ms       15
+
