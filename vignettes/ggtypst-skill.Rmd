@@ -7,17 +7,17 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-The `ggtypst` repository includes a reusable AI skill located at
-`ggtypst-skill/SKILL.md`. This skill is a lightweight instruction file that
-helps an AI coding tool answer questions about the package and generate correct
-`ggtypst` examples.
+The `ggtypst` repository includes a reusable AI skill located at `ggtypst-skill/SKILL.md`. This skill is a lightweight
+instruction file that helps an AI coding tool answer questions about the package and generate correct `ggtypst`
+examples.
 
 ## What it is
 
-The skill is a package-specific guide for AI tools, designed to help users get more accurate assistance when working with `ggtypst`.
+The skill is a package-specific guide for AI tools, designed to help users get more accurate assistance when working
+with `ggtypst`.
 
-Instead of starting from a blank prompt, an AI assistant can load this skill and
-immediately understand the main usage patterns of `ggtypst`. It helps the assistant:
+Instead of starting from a blank prompt, an AI assistant can load this skill and immediately understand the main usage
+patterns of `ggtypst`. It helps the assistant:
 
 - recommend the right function for a plotting task
 - write package-aware plot code
@@ -43,9 +43,10 @@ You can import the skill with `npx skills`. Run the command in your terminal:
 npx skills add Yousa-Mirage/ggtypst
 ```
 
-[`npx skills`](https://github.com/vercel-labs/skills) will find the `ggtypst` skill
-and add the skill to your AI tools automatically, such as [Claude Code](https://github.com/anthropics/claude-code),
-[Codex](https://github.com/openai/codex), [GitHub Copilot](https://github.com/copilot), [OpenCode](https://opencode.ai/) or others.
+[`npx skills`](https://github.com/vercel-labs/skills) will find the `ggtypst` skill and add the skill to your AI tools
+automatically, such as [Claude Code](https://github.com/anthropics/claude-code),
+[Codex](https://github.com/openai/codex), [GitHub Copilot](https://github.com/copilot), [OpenCode](https://opencode.ai/)
+or others.
 
-After that, your AI tools should be able to load the `ggtypst` skill
-and use it as package-specific context when answering questions or generating code.
+After that, your AI tools should be able to load the `ggtypst` skill and use it as package-specific context when
+answering questions or generating code.

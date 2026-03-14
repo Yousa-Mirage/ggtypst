@@ -7,168 +7,154 @@ vignette: >
   %\VignetteEncoding{UTF-8}
 ---
 
-```{r setup, include = FALSE}
+```{r}
+#| label: setup
+#| include: false
 knitr::opts_chunk$set(
   collapse = TRUE,
   comment = "#>"
 )
 ```
 
-`ggtypst` compiles Typst source to SVG through a Rust backend and then imports
-the SVG into `ggplot2` as a grid grob. This article presents benchmark results
-obtained by running `tools/benchmark.R`, so you can estimate how long rendering
+`ggtypst` compiles Typst source to SVG through a Rust backend and then imports the SVG into `ggplot2` as a grid grob.
+This article presents benchmark results obtained by running `tools/benchmark.R`, so you can estimate how long rendering
 will take in your own workflows.
 
-In summary, pure Typst rendering is fast, but full plot rendering is much more
-expensive than the Typst compilation step alone on this machine. Rendering many
-Typst objects in a single plot therefore becomes noticeably slower than rendering
+In summary, pure Typst rendering is fast, but full plot rendering is much more expensive than the Typst compilation step
+alone on this machine. Rendering many Typst objects in a single plot therefore becomes noticeably slower than rendering
 one-off annotations.
 
 ℹ️ **In actual use, avoid rendering more than about 50 Typst objects in a single plot.**
 
 ## Test Environment
 
-| Item | Value |
-| ------ | ------- |
-| CPU | Intel Core i9-12900H |
-| RAM | 32 GB |
-| OS | Arch Linux |
-| R | 4.5.2 |
-| ggtypst | 0.1.0 |
-| Rust | 1.89.0+ (release build with LTO) |
+| Item    | Value                            |
+| ------- | -------------------------------- |
+| CPU     | Intel Core i9-12900H             |
+| RAM     | 32 GB                            |
+| OS      | Arch Linux                       |
+| R       | 4.5.2                            |
+| ggtypst | 0.1.0                            |
+| Rust    | 1.89.0+ (release build with LTO) |
 
-All timings were collected with base R `proc.time()` in manual loops after a
-3-iteration warmup that forces Rust font loading and runtime initialization.
-A full GC was run before each iteration.
+All timings were collected with base R `proc.time()` in manual loops after a 3-iteration warmup that forces Rust font
+loading and runtime initialization. A full GC was run before each iteration.
 
 ## Layer 1: Typst Rendering
 
-This layer measures only `build_typst_source()` + `typst_svg()` — the Typst
-source generation and Rust compilation step — without any `ggplot2` overhead or
-SVG-to-grob import.
+This layer measures only `build_typst_source()` + `typst_svg()` — the Typst source generation and Rust compilation step
+— without any `ggplot2` overhead or SVG-to-grob import.
 
 ### Results
 
-| Expression | Median | Min | Max |
-| :----------- | -------: | ----: | ----: |
-| `plain_short` — `"Hello"` | 2.0 ms | 1.0 ms | 2.0 ms |
-| `plain_styled` — `"*bold* _italic_ ..."` | 2.0 ms | 1.0 ms | 3.0 ms |
-| `math_simple` — `$sum_(i=1)^n ...$` | 2.0 ms | 2.0 ms | 3.0 ms |
-| `math_moderate` — `$integral_0^1 ...$` | 2.0 ms | 1.0 ms | 3.0 ms |
-| `math_complex` — Fourier integral with matrices | 5.0 ms | 4.0 ms | 6.0 ms |
-| `mitex_simple` — `\frac{1}{2} + \sqrt{3}` | 5.0 ms | 4.0 ms | 15.0 ms |
-| `mitex_complex` — Fourier integral (LaTeX) | 8.0 ms | 7.0 ms | 10.0 ms |
+| Expression                                      | Median | Min    | Max     |
+| :---------------------------------------------- | -----: | -----: | ------: |
+| `plain_short` — `"Hello"`                       | 2.0 ms | 1.0 ms |  2.0 ms |
+| `plain_styled` — `"*bold* _italic_ ..."`        | 2.0 ms | 1.0 ms |  3.0 ms |
+| `math_simple` — `$sum_(i=1)^n ...$`             | 2.0 ms | 2.0 ms |  3.0 ms |
+| `math_moderate` — `$integral_0^1 ...$`          | 2.0 ms | 1.0 ms |  3.0 ms |
+| `math_complex` — Fourier integral with matrices | 5.0 ms | 4.0 ms |  6.0 ms |
+| `mitex_simple` — `\frac{1}{2} + \sqrt{3}`       | 5.0 ms | 4.0 ms | 15.0 ms |
+| `mitex_complex` — Fourier integral (LaTeX)      | 8.0 ms | 7.0 ms | 10.0 ms |
 
 ### Analysis
 
-The Rust compilation engine is **fast**. Plain text and simple math all render
-in about 2 ms. Even the most complex Typst math expression — a display-style
-Fourier integral with nested matrices, cases, underbrace, and overbrace — only
+The Rust compilation engine is **fast**. Plain text and simple math all render in about 2 ms. Even the most complex
+Typst math expression — a display-style Fourier integral with nested matrices, cases, underbrace, and overbrace — only
 takes about 5 ms.
 
-The **MiTeX conversion** (LaTeX → Typst) adds a visible overhead. The simple
-MiTeX case takes about 6 ms (3 times that of a plain Typst compile), and the
-complex one takes about 8 ms. The extra cost comes from the LaTeX-to-Typst
+The **MiTeX conversion** (LaTeX → Typst) adds a visible overhead. The simple MiTeX case takes about 6 ms (3 times that
+of a plain Typst compile), and the complex one takes about 8 ms. The extra cost comes from the LaTeX-to-Typst
 transpilation step followed by Typst's `eval()` call inside a module scope.
 
-**Key takeaway**: Typst compilation itself is not the bottleneck. Even the
-heaviest expression compiles in well under 10 ms.
+**Key takeaway**: Typst compilation itself is not the bottleneck. Even the heaviest expression compiles in well under 10
+ms.
 
 ## Layer 2: Full Plot Performance
 
-This layer measures build-and-draw time from already assembled `ggplot`
-objects: Typst compilation, SVG import, and grid drawing to a null PDF device.
+This layer measures build-and-draw time from already assembled `ggplot` objects: Typst compilation, SVG import, and grid
+drawing to a null PDF device.
 
 ### 2A: API Type Comparison
 
 All tests use the same math content: `sum_(i=1)^n x_i`.
 
-| Expression | Median | Min | Max |
-| :----------- | -------: | ----: | ----: |
-| `base plot` | 56 ms | 51 ms | 82 ms |
-| `annotate` (1 item) | 64 ms | 59 ms | 72 ms |
+| Expression           | Median | Min    | Max    |
+| :------------------- | -----: | -----: | -----: |
+| `base plot`          |  56 ms |  51 ms |  82 ms |
+| `annotate` (1 item)  |  64 ms |  59 ms |  72 ms |
 | `annotate` (5 items) | 124 ms | 111 ms | 142 ms |
-| `geom` (1 row) | 173 ms | 167 ms | 245 ms |
-| `geom` (10 rows) | 1.19 s | 1.13 s | 1.28 s |
-| `geom` (50 rows) | 5.64 s | 5.38 s | 5.96 s |
-| `element` (title) | 171 ms | 158 ms | 180 ms |
+| `geom` (1 row)       | 173 ms | 167 ms | 245 ms |
+| `geom` (10 rows)     | 1.19 s | 1.13 s | 1.28 s |
+| `geom` (50 rows)     | 5.64 s | 5.38 s | 5.96 s |
+| `element` (title)    | 171 ms | 158 ms | 180 ms |
 
-A base `ggplot2` scatter plot with no `ggtypst` content takes about **56 ms** to
-render. A single `annotate_math_typst()` call increases that to
-about **64 ms**, so the additional cost for one small annotation is modest.
+A base `ggplot2` scatter plot with no `ggtypst` content takes about **56 ms** to render. A single
+`annotate_math_typst()` call increases that to about **64 ms**, so the additional cost for one small annotation is
+modest.
 
-With **5 annotations** on one plot (a mix of `annotate_typst()`,
-`annotate_math_typst()`, and `annotate_math_mitex()`), the total comes to
-**124 ms**. That is still cheaper than a large data-driven label layer,
-because the plot-level overhead is shared across only a handful of objects.
+With **5 annotations** on one plot (a mix of `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`),
+the total comes to **124 ms**. That is still cheaper than a large data-driven label layer, because the plot-level
+overhead is shared across only a handful of objects.
 
-`geom_math_typst()` with a single row takes about **173 ms**, much slower than
-the annotate path. Relative to the 56 ms base plot, a single geom row adds a
-little over 100 ms of extra work. As row count grows, the timings increase
-roughly linearly.
+`geom_math_typst()` with a single row takes about **173 ms**, much slower than the annotate path. Relative to the 56 ms
+base plot, a single geom row adds a little over 100 ms of extra work. As row count grows, the timings increase roughly
+linearly.
 
-`element_math_typst()` applied to `plot.title` takes about **171 ms**. Relative
-to the base plot, a Typst-rendered title has roughly the same overhead as one
-geom row.
+`element_math_typst()` applied to `plot.title` takes about **171 ms**. Relative to the base plot, a Typst-rendered title
+has roughly the same overhead as one geom row.
 
 ### 2B: Content Complexity
 
 All tests use `annotate_typst()` at a fixed position.
 
-| Expression | Content | Median |
-| :----------- | :-------- | -------: |
-| `text_only` | `"Hello from ggtypst"` | 66 ms |
-| `text_styled` | `"*bold* _italic_ #text(fill: red)[colored]"` | 66 ms |
-| `math_inline` | `"Result: $x^2 + y^2 = r^2$"` | 66 ms |
-| `math_display` | `"$integral_0^1 frac(...)$"` | 68 ms |
-| `math_massive` | Fourier integral with matrices | 168 ms |
+| Expression     | Content                                       | Median |
+| :------------- | :-------------------------------------------- | -----: |
+| `text_only`    | `"Hello from ggtypst"`                        |  66 ms |
+| `text_styled`  | `"*bold* _italic_ #text(fill: red)[colored]"` |  66 ms |
+| `math_inline`  | `"Result: $x^2 + y^2 = r^2$"`                 |  66 ms |
+| `math_display` | `"$integral_0^1 frac(...)$"`                  |  68 ms |
+| `math_massive` | Fourier integral with matrices                | 168 ms |
 
-For simple to moderate content, the full plot time stays in the **66–68 ms**
-range, only a little above the **56 ms** base-plot baseline. That supports the
-same broad conclusion as Layer 1: for small labels, pure Typst compilation is
-not the dominant part of end-to-end plotting time.
+For simple to moderate content, the full plot time stays in the **66–68 ms** range, only a little above the **56 ms**
+base-plot baseline. That supports the same broad conclusion as Layer 1: for small labels, pure Typst compilation is not
+the dominant part of end-to-end plotting time.
 
-The massive formula (**168 ms**) is about 2.5 times that of the simple cases.
-This benchmark does not isolate which downstream step is responsible, but it
-shows that very large expressions incur substantially more end-to-end cost than
+The massive formula (**168 ms**) is about 2.5 times that of the simple cases. This benchmark does not isolate which
+downstream step is responsible, but it shows that very large expressions incur substantially more end-to-end cost than
 ordinary text or small formulas. In most use cases, this is acceptable.
 
 ### 2C: Geom Row Scaling
 
 All rows use the same label: `"*Point* #linebreak() text"`.
 
-| Rows (n) | Median | Per-Row Cost |
-| ---------: | -------: | -------------: |
-| 1 | 185 ms | 129 ms above baseline |
-| 5 | 684 ms | ~126 ms per row above baseline |
-| 10 | 1.39 s | ~133 ms per row above baseline |
-| 25 | 3.35 s | ~132 ms per row above baseline |
-| 50 | 7.05 s | ~140 ms per row above baseline |
+| Rows (n) | Median | Per-Row Cost                   |
+| -------: | -----: | -----------------------------: |
+|        1 | 185 ms |          129 ms above baseline |
+|        5 | 684 ms | ~126 ms per row above baseline |
+|       10 | 1.39 s | ~133 ms per row above baseline |
+|       25 | 3.35 s | ~132 ms per row above baseline |
+|       50 | 7.05 s | ~140 ms per row above baseline |
 
-The scaling is close to **linear**. After subtracting the **56 ms** base-plot
-baseline, each additional row contributes roughly **125–140 ms** on this
-machine. That is much larger than the 2–8 ms pure Typst rendering times from
-Layer 1, so the dominant cost in large `geom_typst()` layers lies somewhere in
-the rest of the plotting pipeline rather than in Typst compilation alone.
+The scaling is close to **linear**. After subtracting the **56 ms** base-plot baseline, each additional row contributes
+roughly **125–140 ms** on this machine. That is much larger than the 2–8 ms pure Typst rendering times from Layer 1, so
+the dominant cost in large `geom_typst()` layers lies somewhere in the rest of the plotting pipeline rather than in
+Typst compilation alone.
 
 ## Practical Guidelines
 
-1. **`annotate_*()` for one-off labels**: At ~64 ms per call, annotations are
-   effectively instant in interactive use.
+1. **`annotate_*()`for one-off labels**: At \~64 ms per call, annotations are effectively instant in interactive use.
 
-2. **`geom_*()` scales roughly linearly**: After subtracting the base plot,
-   each row costs about 125–140 ms. For 10 rows expect about 1.4 s; for 50 rows
-   expect about 7 s. Use `geom_typst()` for small data layers (< 20 rows) and
-   consider regular `geom_text()` or `geom_label()` for larger datasets. In general,
-   avoid over-labeling a single plot to maintain readability and visual clarity.
+2. **`geom_*()`scales roughly linearly**: After subtracting the base plot, each row costs about 125–140 ms. For 10 rows
+   expect about 1.4 s; for 50 rows expect about 7 s. Use `geom_typst()` for small data layers (< 20 rows) and consider
+   regular `geom_text()` or `geom_label()` for larger datasets. In general, avoid over-labeling a single plot to
+   maintain readability and visual clarity.
 
-3. **`element_*()` is fine for a few theme labels**: A single Typst-rendered
-   title took about 171 ms here, so titles, subtitles, and axis titles are
-   reasonable uses. This benchmark does not evaluate dense tick-label or
-   facet-heavy cases, but in examples and showcases they look fine. `ggtypst`
-   will not noticeably slow down your scientific research :).
+3. **`element_*()`is fine for a few theme labels**: A single Typst-rendered title took about 171 ms here, so titles,
+   subtitles, and axis titles are reasonable uses. This benchmark does not evaluate dense tick-label or facet-heavy
+   cases, but in examples and showcases they look fine. `ggtypst` will not noticeably slow down your scientific research
+   :).
 
-4. **Content complexity and LaTeX → Typst conversion usually have little impact**:
-   For simple content the end-to-end cost changes very little, and the pure
-   Typst/MiTeX step stays in the 2–8 ms range. Only very large expressions show
-   a major increase in full plotting time.
+4. **Content complexity and LaTeX → Typst conversion usually have little impact**: For simple content the end-to-end
+   cost changes very little, and the pure Typst/MiTeX step stays in the 2–8 ms range. Only very large expressions show a
+   major increase in full plotting time.

@@ -6,11 +6,9 @@ output: github_document
 
 Thanks for your interest in contributing to `ggtypst`.
 
-`ggtypst` is an R package with a Rust backend. It renders Typst text and math
-to SVG, then inserts that output into `ggplot2` as annotations, geoms, and
-theme elements. Most contributions touch both the R package layer and the Rust
-rendering layer, so a good change usually starts with understanding how those
-two halves fit together.
+`ggtypst` is an R package with a Rust backend. It renders Typst text and math to SVG, then inserts that output into
+`ggplot2` as annotations, geoms, and theme elements. Most contributions touch both the R package layer and the Rust
+rendering layer, so a good change usually starts with understanding how those two halves fit together.
 
 ## Development setup
 
@@ -18,31 +16,31 @@ You will need:
 
 - R >= 4.2
 - Rust >= 1.89 with `cargo` and `rustc`, better with `rust-analyzer`
-- [`Air`](https://posit-dev.github.io/air/) for formatting R code and [`Jarl`](https://jarl.etiennebacher.com/) for checking R code
+- [`Air`](https://posit-dev.github.io/air/) for formatting R code and [`Jarl`](https://jarl.etiennebacher.com/) for
+  checking R code
 - Recommended development packages such as `devtools`, `pkgdown`, `testthat`, and `vdiffr`
 - Optional: [`just`](https://github.com/casey/just) to run development commands in `justfile`
-- Optional: [`pre-commit`](https://pre-commit.com/) or [`prek`](https://prek.j178.dev/) to run some checks on staged files before committing
+- Optional: [`pre-commit`](https://pre-commit.com/) or [`prek`](https://prek.j178.dev/) to run some checks on staged
+  files before committing
 
-Install package dependencies in your usual R environment, then use the project
-root as your working directory.
+Install package dependencies in your usual R environment, then use the project root as your working directory.
 
 ## Build model
 
-`ggtypst` is not a pure R package. The package builds a Rust `staticlib` under
-`src/rust/`, then links that library into the R package through [`extendr`](https://extendr.rs/).
+`ggtypst` is not a pure R package. The package builds a Rust `staticlib` under `src/rust/`, then links that library into
+the R package through [`extendr`](https://extendr.rs/).
 
 At a high level, the pipeline is:
 
 1. R user-facing functions collect arguments and normalize them into Typst source code strings.
    - For LaTeX math code, we use [`mitex`](https://github.com/mitex-rs/mitex) to translate it into Typst.
 2. `extendr` forwards the Typst source code into Rust.
-3. Rust compiles Typst source in an in-memory world, renders the first page to
-   SVG, and returns dimensions plus diagnostics.
+3. Rust compiles Typst source in an in-memory world, renders the first page to SVG, and returns dimensions plus
+   diagnostics.
 4. R converts the SVG into grobs and plugs those grobs into `ggplot2`.
 
-That split is the key architectural idea of the package: R owns user-facing API
-design and `ggplot2` integration; Rust owns rendering, Typst world setup, and
-diagnostics emitted by the Typst compiler.
+That split is the key architectural idea of the package: R owns user-facing API design and `ggplot2` integration; Rust
+owns rendering, Typst world setup, and diagnostics emitted by the Typst compiler.
 
 ## Repository layout
 
@@ -69,16 +67,17 @@ Other R files include:
 - `diagnostic.R`: formats Rust/Typst diagnostics into structured `cli` warnings and errors.
 - `typst-svg.R`: thin R wrapper around the Rust SVG renderer entrypoint.
 - `grob.R`: converts rendered SVG bytes into measured grid grobs of `ggplot2`.
-- `helper.R`: shared validators, alias resolution, face normalization, unit conversion, and small utility helpers. Prefer reusing those helpers instead of open-coding validation.
+- `helper.R`: shared validators, alias resolution, face normalization, unit conversion, and small utility helpers.
+  Prefer reusing those helpers instead of open-coding validation.
 - `mitex.R`: converts LaTeX math input to Typst source code with the embedded MiTeX scope.
-- `extendr-wrappers.R`: generated `.Call()` wrappers for the Rust entrypoints; auto generated when running `rextendr::document()` or `just document`, never edit by hand.
-- `zzz.R`: performs runtime registration that cannot be expressed statically,
-  especially for `ggplot2` generics that are owned outside this package.
+- `extendr-wrappers.R`: generated `.Call()` wrappers for the Rust entrypoints; auto generated when running
+  `rextendr::document()` or `just document`, never edit by hand.
+- `zzz.R`: performs runtime registration that cannot be expressed statically, especially for `ggplot2` generics that are
+  owned outside this package.
 
 ### Rust layer
 
-The Rust crate lives in `src/rust/` and currently exposes two exported entry
-points:
+The Rust crate lives in `src/rust/` and currently exposes two exported entry points:
 
 - `rs_typst_svg()` compiles Typst and returns SVG output plus diagnostics
 - `rs_convert_latex_to_typst()` converts LaTeX-style input through MiTeX
@@ -91,8 +90,8 @@ Important modules include:
 - `error.rs`: translates Rust-side failures into structured R errors
 - `fonts.rs`: loads and caches embedded/system fonts for Typst rendering
 
-The three embedded Typst files under `src/rust/specs/`, which are from MiTeX's repository,
-provide the MiTeX scope used when evaluating LaTeX-style formulas in Typst.
+The three embedded Typst files under `src/rust/specs/`, which are from MiTeX's repository, provide the MiTeX scope used
+when evaluating LaTeX-style formulas in Typst.
 
 ## Auto-generated files
 
@@ -131,9 +130,8 @@ Before submitting a PR, you should make sure that:
 2. Run `just site` if README, CONTRIBUTING, or vignettes changed
 3. Keep commits focused on one logical change
 
-Please follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/)
-for PR titles, meaning that your PR titles must start with "feat:", "fix:",
-or another appropriate name (see the linked documentation). For example:
+Please follow [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) for PR titles, meaning that your PR
+titles must start with "feat:", "fix:", or another appropriate name (see the linked documentation). For example:
 
 - `feat`: A new feature.
 - `fix`: A bug fix.
@@ -142,6 +140,5 @@ or another appropriate name (see the linked documentation). For example:
 - `chore`: Changes to the build process or auxiliary tools and libraries.
 - `refactor`: A code change that neither fixes a bug nor adds a feature.
 
-If you are unsure how to begin, you are welcome to open an issue or draft PR
-with your proposed approach first. That is especially helpful for changes that
-touch public API behavior, rendering semantics, or the Rust/R interface.
+If you are unsure how to begin, you are welcome to open an issue or draft PR with your proposed approach first. That is
+especially helpful for changes that touch public API behavior, rendering semantics, or the Rust/R interface.

@@ -47,15 +47,35 @@ pipeline.
 
 ## Installation
 
+### Install from pre-compile binary
+
 Install `ggtypst` from R-universe first so you can use the prebuilt
-package and avoid compiling Rust locally:
+package and avoid compiling Rust locally. On **Windows** and **macOS**,
+you can run:
 
 ``` r
 install.packages("ggtypst", repos = "https://yousa-mirage.r-universe.dev")
 ```
 
-If you need the latest development version from GitHub, you can install
-it from source:
+On **Ubuntu 24.04**, you should run:
+
+``` r
+linux_binary_repo <- function(universe){
+  sprintf(
+    "https://%s.r-universe.dev/bin/linux/noble-%s/%s/",
+    universe,
+    R.version$arch,
+    substr(getRversion(), 1, 3)
+  )
+}
+
+install.packages("ggtypst", repos = linux_binary_repo("yousa-mirage"))
+```
+
+### Install from source code
+
+If you are on other Linux platforms, or you need the latest development
+version, you can install it from source:
 
 ``` r
 install.packages("remotes")
@@ -64,9 +84,10 @@ remotes::install_github("Yousa-Mirage/ggtypst")
 
 Because the GitHub installation builds the Typst backend in Rust, you
 need `rustc` and `cargo` on your system to compile it. Particularly on
-Windows, you must use the `x86_64-pc-windows-gnu` toolchain. Regardless
-of how you install `ggtypst`, you don’t need a separate local Typst or
-LaTeX installation to use it.
+Windows, you must use the `x86_64-pc-windows-gnu` toolchain.
+
+Regardless of how you install `ggtypst`, you don’t need a separate local
+Typst or LaTeX installation to use it.
 
 ## Get Started
 

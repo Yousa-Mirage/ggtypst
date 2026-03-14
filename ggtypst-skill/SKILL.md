@@ -5,8 +5,8 @@ description: Explain and use the ggtypst R package for Typst-powered text and ma
 
 # ggtypst Skill
 
-Use this skill to help users understand and use `ggtypst`, an R package that
-renders Typst text and math inside `ggplot2`.
+Use this skill to help users understand and use `ggtypst`, an R package that renders Typst text and math inside
+`ggplot2`.
 
 ## Orient quickly
 
@@ -188,7 +188,8 @@ Prefer these sources when answering deeper questions:
 - `README.Rmd` for high-level package positioning and showcase examples
 - `vignettes/get-started.Rmd` for onboarding and usage patterns
 - `.github/CONTRIBUTING.Rmd` for architecture and development workflow
-- `R/annotate-typst.R`, `R/annotate-math.R`, `R/geom-typst.R`, `R/geom-math.R`, `R/element-typst.R`, `R/element-math.R` for API details
+- `R/annotate-typst.R`, `R/annotate-math.R`, `R/geom-typst.R`, `R/geom-math.R`, `R/element-typst.R`, `R/element-math.R`
+  for API details
 - `R/helper.R` for validation and alias behavior
 - `R/mitex.R` for LaTeX-to-Typst conversion behavior
 - `src/rust/src/world.rs` and `src/rust/src/render.rs` for rendering internals
