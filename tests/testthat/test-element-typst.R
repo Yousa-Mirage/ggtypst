@@ -321,6 +321,16 @@ test_that("element_typst visual: subtitle caption debug size-unit", {
 
 test_that("element_typst visual: axis title y and legend text", {
   skip_if_no_vdiffr()
+  skip_on_ci()
+  skip_on_cran()
+
+  noto_cjk <- suppressWarnings(
+    typst_svg(build_typst_source("probe 中文 ℃", family = "Noto Sans CJK SC"))
+  )
+
+  if (length(noto_cjk$warnings) > 0) {
+    skip("Required system font is not available: Noto Sans CJK SC")
+  }
 
   p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
     geom_point(size = 2) +
@@ -336,7 +346,11 @@ test_that("element_typst visual: axis title y and legend text", {
     theme_minimal(base_size = 11) +
     theme(
       axis.title.x = element_typst(size = 14, colour = "#7287FD"),
-      axis.title.y = element_typst(size = 14, face = "bold"),
+      axis.title.y = element_typst(
+        size = 14,
+        face = "bold",
+        family = "Noto Sans CJK SC"
+      ),
       legend.title = element_typst(size = 11, colour = "#D20F39"),
       legend.text = element_typst(size = 10)
     )
