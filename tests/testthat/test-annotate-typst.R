@@ -115,6 +115,17 @@ test_that("annotate_typst validates placement arguments before rendering", {
   expect_snapshot(annotate_typst("[", x = 3, y = 25, vjust = Inf), error = TRUE)
 })
 
+test_that("annotate_typst requires optional arguments after x and y to be named", {
+  expect_snapshot(
+    annotate_typst("A", 3, 25, 0, 1),
+    error = TRUE
+  )
+  expect_snapshot(
+    annotate_typst("A", x = 3, y = 25, famliy = "Arial"),
+    error = TRUE
+  )
+})
+
 test_that("annotate_typst converts size according to size.unit", {
   layer_pt <- annotate_typst(
     "scale",

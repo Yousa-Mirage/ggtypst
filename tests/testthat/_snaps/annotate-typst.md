@@ -22,6 +22,28 @@
       Error in `check_number()`:
       ! `vjust` must be a single finite number.
 
+# annotate_typst requires optional arguments after x and y to be named
+
+    Code
+      annotate_typst("A", 3, 25, 0, 1)
+    Condition
+      Error in `annotate_typst()`:
+      ! `...` must be empty.
+      x Problematic arguments:
+      * ..1 = 0
+      * ..2 = 1
+      i Did you forget to name an argument?
+
+---
+
+    Code
+      annotate_typst("A", x = 3, y = 25, famliy = "Arial")
+    Condition
+      Error in `annotate_typst()`:
+      ! `...` must be empty.
+      x Problematic argument:
+      * famliy = "Arial"
+
 # annotate_typst validates face
 
     Code

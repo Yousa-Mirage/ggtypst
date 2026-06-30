@@ -117,6 +117,17 @@ test_that("annotate_math_typst validates math-only face", {
   )
 })
 
+test_that("annotate_math_typst requires trailing optional arguments to be named", {
+  expect_snapshot(
+    annotate_math_typst("x^2", 2, 20, TRUE),
+    error = TRUE
+  )
+  expect_snapshot(
+    annotate_math_typst("x^2", x = 2, y = 20, inlne = TRUE),
+    error = TRUE
+  )
+})
+
 test_that("annotate_math_typst supports inline rendering mode", {
   layer_display <- annotate_math_typst(
     typst_math_code = r"(frac(1, 2))",

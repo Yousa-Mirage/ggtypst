@@ -8,6 +8,7 @@ annotate_math_mitex(
   latex_math_code,
   x,
   y,
+  ...,
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
@@ -29,6 +30,9 @@ annotate_math_mitex(
 delimiters are optional.}
 
 \item{x, y}{The annotation position in data coordinates.}
+
+\item{...}{Must be empty. This reserves the argument position after the
+required inputs so all following optional arguments must be named.}
 
 \item{hjust, vjust}{Horizontal and vertical justification for the rendered
 grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}

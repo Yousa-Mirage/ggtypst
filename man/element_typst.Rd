@@ -51,7 +51,7 @@ family will be used. If you want to show specific languages or characters (e.g.,
 
 \item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
 
-\item{margin}{Optional text margins created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
+\item{margin}{Optional text margins created with \code{\link[ggplot2:margin]{ggplot2::margin()}}.}
 
 \item{debug}{If \code{TRUE}, draw a coloured rectangle behind each label for
 debugging layout.}
@@ -63,7 +63,7 @@ element.}
 A ggplot2 theme element.
 }
 \description{
-\code{element_typst()} is a more powerful replacement for \code{\link[ggplot2:element]{ggplot2::element_text()}} and \code{\link[ggtext:element_markdown]{ggtext::element_markdown()}} that
+\code{element_typst()} is a more powerful replacement for \code{\link[ggplot2:element_text]{ggplot2::element_text()}} and \code{\link[ggtext:element_markdown]{ggtext::element_markdown()}} that
 renders each theme element through Typst. Use it for plot titles, subtitles,
 axis titles, axis text, facet strips, legend text, and other theme slots that
 accept text elements.

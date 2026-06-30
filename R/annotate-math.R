@@ -33,6 +33,7 @@ annotate_math_typst <- function(
   typst_math_code,
   x,
   y,
+  ...,
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
@@ -48,6 +49,8 @@ annotate_math_typst <- function(
   math_family = NULL,
   inline = FALSE
 ) {
+  rlang::check_dots_empty()
+
   params <- normalize_face_param(
     list(face = face, fontface = fontface),
     fn = "annotate_math_typst",
@@ -112,6 +115,7 @@ annotate_math_mitex <- function(
   latex_math_code,
   x,
   y,
+  ...,
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
@@ -127,6 +131,8 @@ annotate_math_mitex <- function(
   math_family = NULL,
   inline = FALSE
 ) {
+  rlang::check_dots_empty()
+
   params <- normalize_face_param(
     list(face = face, fontface = fontface),
     fn = "annotate_math_mitex",

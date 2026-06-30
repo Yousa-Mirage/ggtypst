@@ -50,7 +50,7 @@ grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 \item{inline}{Whether to render inline math. Default \code{FALSE} renders
 display-style math.}
 
-\item{margin}{Optional text margins created with \code{\link[ggplot2:element]{ggplot2::margin()}}.}
+\item{margin}{Optional text margins created with \code{\link[ggplot2:margin]{ggplot2::margin()}}.}
 
 \item{debug}{If \code{TRUE}, draw a coloured rectangle behind each label for
 debugging layout.}

@@ -6,6 +6,8 @@
 #'
 #' @param typst_code A single Typst source string to render.
 #' @param x,y The annotation position in data coordinates.
+#' @param ... Must be empty. This reserves the argument position after the
+#'   required inputs so all following optional arguments must be named.
 #' @param hjust,vjust Horizontal and vertical justification for the rendered
 #'   grob (`0` = bottom, `0.5` = center, `1` = top).
 #' @param scale A positive scaling factor applied to the rendered Typst size.
@@ -40,6 +42,7 @@ annotate_typst <- function(
   typst_code,
   x,
   y,
+  ...,
   hjust = 0.5,
   vjust = 0.5,
   scale = 1,
@@ -55,6 +58,8 @@ annotate_typst <- function(
   family = NULL,
   math_family = NULL
 ) {
+  rlang::check_dots_empty()
+
   typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
   x <- check_number(x, "x", allow_null = FALSE)
   y <- check_number(y, "y", allow_null = FALSE)

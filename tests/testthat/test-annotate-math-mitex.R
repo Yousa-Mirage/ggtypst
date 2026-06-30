@@ -110,6 +110,17 @@ test_that("annotate_math_mitex validates math-only face", {
   )
 })
 
+test_that("annotate_math_mitex requires trailing optional arguments to be named", {
+  expect_snapshot(
+    annotate_math_mitex(r"(\frac{1}{2})", 2, 20, TRUE),
+    error = TRUE
+  )
+  expect_snapshot(
+    annotate_math_mitex(r"(\frac{1}{2})", x = 2, y = 20, inlne = TRUE),
+    error = TRUE
+  )
+})
+
 test_that("annotate_math_mitex supports inline rendering mode", {
   layer_display <- annotate_math_mitex(
     latex_math_code = r"(\frac{1}{2})",
