@@ -13,7 +13,11 @@ impl From<&SourceDiagnostic> for RenderDiagnostic {
         Self {
             severity: diagnostic.severity,
             message: diagnostic.message.to_string(),
-            hints: diagnostic.hints.iter().map(ToString::to_string).collect(),
+            hints: diagnostic
+                .hints
+                .iter()
+                .map(|hint| hint.v.to_string())
+                .collect(),
         }
     }
 }

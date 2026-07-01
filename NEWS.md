@@ -3,6 +3,7 @@
 - `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()` now
   require optional arguments after `x` and `y` to be named, so misplaced
   positional inputs and misspelled argument names fail fast.
+- (DOING) Improved the performance of insert contents.
 
 # ggtypst 0.1.0
 

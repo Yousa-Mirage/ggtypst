@@ -1,15 +1,14 @@
 use std::sync::{Arc, LazyLock};
-use typst_kit::fonts::Fonts;
+use typst_kit::fonts::FontStore;
 
-static FONTS: LazyLock<Arc<Fonts>> = LazyLock::new(|| {
-    let fonts = typst_kit::fonts::FontSearcher::new()
-        .include_embedded_fonts(true)
-        .include_system_fonts(true)
-        .search();
+static FONTS: LazyLock<Arc<FontStore>> = LazyLock::new(|| {
+    let mut fonts = FontStore::new();
+    fonts.extend(typst_kit::fonts::embedded());
+    fonts.extend(typst_kit::fonts::system());
     Arc::new(fonts)
 });
 
-pub fn get_fonts() -> Arc<Fonts> {
+pub fn get_fonts() -> Arc<FontStore> {
     FONTS.clone()
 }
 

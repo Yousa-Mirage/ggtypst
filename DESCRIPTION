@@ -1,6 +1,6 @@
 Package: ggtypst
 Title: Render High-Quality Text and Formulas in 'ggplot2' by Typst
-Version: 0.1.0
+Version: 0.1.1
 Authors@R:
     person(given = "Hao",
            family = "Cheng",
@@ -19,7 +19,7 @@ BugReports: https://github.com/Yousa-Mirage/ggtypst/issues
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-Config/rextendr/version: 0.4.2
+Config/rextendr/version: 0.5.0
 Config/Needs/website: pkgdown, pkgload
 SystemRequirements: Cargo (Rust's package manager), rustc >= 1.89.0
 Depends: 

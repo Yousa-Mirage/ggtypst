@@ -2,12 +2,12 @@ use std::path::Path;
 use std::sync::{Arc, LazyLock};
 
 use typst::diag::{FileError, FileResult};
-use typst::foundations::{Bytes, Datetime};
-use typst::syntax::{FileId, Source, VirtualPath};
+use typst::foundations::{Bytes, Datetime, Duration};
+use typst::syntax::{FileId, RootedPath, Source, VirtualPath, VirtualRoot};
 use typst::text::{Font, FontBook};
 use typst::utils::LazyHash;
 use typst::{Library, LibraryExt, World};
-use typst_kit::fonts::Fonts;
+use typst_kit::fonts::FontStore;
 
 const MITEX_MOD_TYP: &str = include_str!("../specs/mod.typ");
 const MITEX_PRELUDE_TYP: &str = include_str!("../specs/prelude.typ");
@@ -41,7 +41,7 @@ pub struct InMemoryWorld {
     bytes: Bytes,
     library: &'static LazyHash<Library>,
     book: LazyHash<FontBook>,
-    fonts: Arc<Fonts>,
+    fonts: Arc<FontStore>,
 }
 
 impl World for InMemoryWorld {
@@ -61,7 +61,7 @@ impl World for InMemoryWorld {
         if id == self.main {
             Ok(self.source.clone())
         } else {
-            let p = id.vpath().as_rooted_path().to_path_buf();
+            let p = Path::new(id.vpath().get_with_slash()).to_path_buf();
             let normalized = normalize_virtual_path(&p);
 
             if let Some(contents) = virtual_typst_file(&normalized) {
@@ -76,7 +76,7 @@ impl World for InMemoryWorld {
         if id == self.main {
             Ok(self.bytes.clone())
         } else {
-            let p = id.vpath().as_rooted_path().to_path_buf();
+            let p = Path::new(id.vpath().get_with_slash()).to_path_buf();
             let normalized = normalize_virtual_path(&p);
 
             if let Some(contents) = virtual_typst_file(&normalized) {
@@ -88,20 +88,23 @@ impl World for InMemoryWorld {
     }
 
     fn font(&self, index: usize) -> Option<Font> {
-        self.fonts.fonts.get(index)?.get()
+        self.fonts.font(index)
     }
 
-    fn today(&self, _offset: Option<i64>) -> Option<Datetime> {
+    fn today(&self, _offset: Option<Duration>) -> Option<Datetime> {
         None
     }
 }
 
 impl InMemoryWorld {
-    pub fn new(typst_code: String, fonts: Arc<Fonts>) -> Self {
-        let main = FileId::new_fake(VirtualPath::new("<ggtypst>"));
+    pub fn new(typst_code: String, fonts: Arc<FontStore>) -> Self {
+        let Ok(main_path) = VirtualPath::new("ggtypst.typ") else {
+            unreachable!("static virtual path should be valid");
+        };
+        let main = RootedPath::new(VirtualRoot::Project, main_path).intern();
         let source = Source::new(main, typst_code.clone());
         let bytes = Bytes::from_string(typst_code);
-        let book = LazyHash::new(fonts.book.clone());
+        let book = fonts.book().clone();
 
         Self {
             main,

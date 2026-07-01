@@ -1,9 +1,10 @@
-use extendr_api::prelude::{list, List};
+use extendr_api::prelude::{List, list};
 use typst::compile;
 use typst::diag::Warned;
-use typst::layout::{FrameItem, PagedDocument};
+use typst::layout::FrameItem;
+use typst_layout::PagedDocument;
 
-use crate::error::{diagnostics_to_r_list, RenderDiagnostic, RenderError};
+use crate::error::{RenderDiagnostic, RenderError, diagnostics_to_r_list};
 use crate::world::InMemoryWorld;
 
 #[derive(Debug)]
@@ -35,13 +36,16 @@ impl InMemoryWorld {
             diagnostics: diagnostics.iter().map(RenderDiagnostic::from).collect(),
         })?;
 
-        let first_page = output.pages.first().ok_or(RenderError::NoPagesGenerated)?;
+        let first_page = output
+            .pages()
+            .first()
+            .ok_or(RenderError::NoPagesGenerated)?;
 
         if !has_visual_content(&first_page.frame) {
             return Err(RenderError::EmptySvg);
         }
 
-        let svg = typst_svg::svg(first_page).into_bytes();
+        let svg = typst_svg::svg(first_page, &typst_svg::SvgOptions::default()).into_bytes();
         let width_pt = first_page.frame.width().to_pt();
         let height_pt = first_page.frame.height().to_pt();
 
