@@ -94,8 +94,14 @@ vector_typst_grob <- function(
 
   # grImport2 only reads Cairo-generated SVG, so re-render it with rsvg. Pass
   # the whole-point canvas size explicitly so rsvg neither truncates nor
-  # rescales the drawing.
-  canonical_svg <- rsvg::rsvg_svg(rendered$svg, width = canvas_width, height = canvas_height)
+  # rescales the drawing. It is oversampled by an integer factor (so the size
+  # stays exact) because grImport2 flattens curves with a fixed number of
+  # segments per canvas unit: at 1:1 glyph outlines look faceted when zoomed.
+  canonical_svg <- rsvg::rsvg_svg(
+    rendered$svg,
+    width = canvas_width * 8L,
+    height = canvas_height * 8L
+  )
 
   # TODO: Replace tempfile-based SVG import with an in-memory pipeline.
   path <- tempfile(fileext = ".svg")

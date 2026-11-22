@@ -40,6 +40,30 @@ test_that("Typst output is drawn at its exact size", {
   expect_pt_equal(ink$bottom - ink$top, 20)
 })
 
+test_that("curved outlines are flattened finely enough to look smooth", {
+  skip_if_not_installed("svglite")
+
+  grob <- typst_test_grob("#circle(radius: 10pt, fill: black)")
+
+  s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
+  grid::grid.newpage()
+  grid::grid.draw(grob)
+  grDevices::dev.off()
+
+  svg <- as.character(s())
+  outline <- regmatches(svg, regexpr("<polygon points='[^']+'", svg))
+  nums <- as.numeric(unlist(regmatches(outline, gregexpr("-?[0-9]+(\\.[0-9]+)?", outline))))
+  xs <- nums[c(TRUE, FALSE)]
+  ys <- nums[c(FALSE, TRUE)]
+
+  # Largest angle between consecutive outline vertices, seen from the centre.
+  # Without oversampling grImport2 leaves ~10 degree facets on this circle.
+  angles <- sort(atan2(ys - mean(range(ys)), xs - mean(range(xs))))
+  max_step <- max(diff(c(angles, angles[1] + 2 * pi))) * 180 / pi
+
+  expect_lt(max_step, 6)
+})
+
 test_that("single-line and multi-line labels render glyphs at the same size", {
   skip_if_not_installed("svglite")
 
