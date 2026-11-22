@@ -12,6 +12,8 @@ NULL
 
 rs_typst_svg <- function(typst_code) .Call(wrap__rs_typst_svg, typst_code)
 
+rs_typst_font_data <- function(store_index) .Call(wrap__rs_typst_font_data, store_index)
+
 rs_convert_latex_to_typst <- function(latex_code) .Call(wrap__rs_convert_latex_to_typst, latex_code)
 
 

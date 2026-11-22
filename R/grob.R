@@ -65,7 +65,7 @@ positioned_typst_grob <- function(
 #' relative to the layout box, like grid text, and is translated here to the
 #' canvas.
 #'
-#' @param rendered A rendered Typst result from [typst_svg()].
+#' @param rendered A rendered Typst result from `typst_svg()`.
 #' @param x,y Position passed to [grImport2::pictureGrob()].
 #' @param default.units Grid units for numeric `x` and `y`.
 #' @param scale Scaling factor applied to rendered dimensions.

@@ -5,6 +5,7 @@ mod error;
 mod fonts;
 mod mitex;
 mod render;
+mod scene;
 mod world;
 
 #[extendr]
@@ -16,6 +17,15 @@ fn rs_typst_svg(typst_code: &str) -> List {
         Ok(rendered_svg) => rendered_svg.into_r_list(),
         Err(err) => err.to_typst_error(),
     }
+}
+
+// Data of an embedded font, to write it to a file that devices can load.
+#[extendr]
+fn rs_typst_font_data(store_index: i32) -> Robj {
+    usize::try_from(store_index)
+        .ok()
+        .and_then(scene::font_data)
+        .map_or_else(|| ().into_robj(), |data| Raw::from_bytes(&data).into_robj())
 }
 
 #[extendr]
@@ -32,5 +42,6 @@ fn rs_convert_latex_to_typst(latex_code: &str) -> Robj {
 extendr_module! {
     mod ggtypst;
     fn rs_typst_svg;
+    fn rs_typst_font_data;
     fn rs_convert_latex_to_typst;
 }

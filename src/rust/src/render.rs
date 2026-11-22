@@ -6,6 +6,7 @@ use typst_layout::PagedDocument;
 
 use crate::bounds::{Bounds, ink_bounds, max_descent_pt};
 use crate::error::{RenderDiagnostic, RenderError, diagnostics_to_r_list};
+use crate::scene::{Scene, extract_scene};
 use crate::world::InMemoryWorld;
 
 #[derive(Debug)]
@@ -24,6 +25,8 @@ pub struct RenderedSvg {
     /// Largest font descender on the page, in points: how far descenders may
     /// reach below the last baseline, which is the bottom of the layout box.
     pub descent_pt: f64,
+    /// What the page draws, for drawing it with grid instead of from the SVG.
+    pub scene: Scene,
     pub warnings: Vec<RenderDiagnostic>,
 }
 
@@ -38,6 +41,7 @@ impl RenderedSvg {
             offset_x_pt = self.offset_x_pt,
             offset_y_pt = self.offset_y_pt,
             descent_pt = self.descent_pt,
+            scene = self.scene.into_r_list(),
             warnings = diagnostics_to_r_list(&self.warnings)
         )
     }
@@ -106,6 +110,7 @@ impl InMemoryWorld {
             offset_x_pt,
             offset_y_pt,
             descent_pt: max_descent_pt(&first_page.frame),
+            scene: extract_scene(&first_page.frame),
             warnings,
         })
     }
