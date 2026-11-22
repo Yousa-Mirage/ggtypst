@@ -15,6 +15,9 @@
 - The lines of multi-line labels are now aligned left, center, or right
   according to `hjust` in annotations, geoms, and theme elements, as with
   `ggplot2` text. Alignment set in the Typst code itself still takes precedence.
+- Labels are now justified by their content: Typst's page margin no longer
+  shifts text away from its anchor, so `hjust = 0` and `hjust = 1` line up
+  exactly with `ggplot2` text.
 
 # ggtypst 0.1.0
 

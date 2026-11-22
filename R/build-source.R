@@ -108,7 +108,7 @@ build_typst_source <- function(
   }
 
   preamble_set <- c(
-    r"(#set page(width: auto, height: auto, margin: 0.1em, fill: none))",
+    r"(#set page(width: auto, height: auto, margin: 0pt, fill: none))",
     r"(#set text(top-edge: "bounds", bottom-edge: "bounds"))"
   )
 

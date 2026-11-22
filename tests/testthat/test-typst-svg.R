@@ -14,15 +14,19 @@ test_that("typst_svg returns raw svg and size", {
   expect_true(grepl("</svg>\\s*$", svg_txt))
 })
 
-test_that("typst_svg pads the svg canvas to whole points", {
-  res <- typst_svg(build_typst_source("Hello"))
+test_that("typst_svg sizes the svg canvas to the page and any overhanging ink", {
+  # Upright text stays inside its layout box: the canvas is the page, rounded
+  # up to whole points.
+  res <- typst_svg(build_typst_source("Hello", size = 12))
+  expect_identical(res$offset_x_pt, 0)
+  expect_identical(res$offset_y_pt, 0)
+  expect_identical(res$canvas_width_pt, ceiling(res$width_pt))
+  expect_identical(res$canvas_height_pt, ceiling(res$height_pt))
 
-  for (side in c("width", "height")) {
-    canvas <- res[[paste0("canvas_", side, "_pt")]]
-    layout <- res[[paste0(side, "_pt")]]
-
-    expect_identical(canvas, ceiling(layout))
-  }
+  # An italic f overhangs its advance box on both sides.
+  res <- typst_svg(build_typst_source('#text(style: "italic")[f]', size = 40))
+  expect_gt(res$offset_x_pt, 0)
+  expect_gt(res$canvas_width_pt, res$offset_x_pt + res$width_pt)
 })
 
 test_that("typst_svg reports EmptySvg for empty-like Typst input", {

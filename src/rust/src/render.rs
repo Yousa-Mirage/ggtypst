@@ -1,21 +1,26 @@
 use extendr_api::prelude::{List, list};
 use typst::compile;
 use typst::diag::Warned;
-use typst::layout::{Abs, FrameItem, Size};
+use typst::layout::{Abs, FrameItem, Point, Size};
 use typst_layout::PagedDocument;
 
+use crate::bounds::{Bounds, ink_bounds};
 use crate::error::{RenderDiagnostic, RenderError, diagnostics_to_r_list};
 use crate::world::InMemoryWorld;
 
 #[derive(Debug)]
 pub struct RenderedSvg {
     pub svg: Vec<u8>,
-    /// Size of the Typst page (the layout box), in points.
+    /// Size of the Typst page, which is the layout box of the content, in points.
     pub width_pt: f64,
     pub height_pt: f64,
-    /// Size of the SVG canvas: the page padded up to whole points.
+    /// Size of the SVG canvas: the page extended to every bit of ink drawn
+    /// outside it, then rounded up to whole points.
     pub canvas_width_pt: f64,
     pub canvas_height_pt: f64,
+    /// Position of the page's top-left corner on the canvas, in points.
+    pub offset_x_pt: f64,
+    pub offset_y_pt: f64,
     pub warnings: Vec<RenderDiagnostic>,
 }
 
@@ -27,6 +32,8 @@ impl RenderedSvg {
             height_pt = self.height_pt,
             canvas_width_pt = self.canvas_width_pt,
             canvas_height_pt = self.canvas_height_pt,
+            offset_x_pt = self.offset_x_pt,
+            offset_y_pt = self.offset_y_pt,
             warnings = diagnostics_to_r_list(&self.warnings)
         )
     }
@@ -54,14 +61,31 @@ impl InMemoryWorld {
         let width_pt = first_page.frame.width().to_pt();
         let height_pt = first_page.frame.height().to_pt();
 
+        // The page has no margin, so it is exactly the content's layout box,
+        // which labels are justified against. Ink can still extend past it
+        // (italic overhangs, descender tails, moved or rotated content), so
+        // the canvas covers the page and all of the ink.
+        let page_bounds = Bounds {
+            min_x: 0.0,
+            min_y: 0.0,
+            max_x: width_pt,
+            max_y: height_pt,
+        };
+        let canvas =
+            ink_bounds(&first_page.frame).map_or(page_bounds, |ink| ink.union(page_bounds));
+        let offset_x_pt = -canvas.min_x;
+        let offset_y_pt = -canvas.min_y;
+
         // SVG importers such as librsvg size their canvas in whole units and
-        // rescale fractional-size documents to fit. Padding the page (right
-        // and bottom, content stays anchored top-left) to whole points keeps
-        // the drawing at exactly 1:1 through that pipeline.
-        let canvas_width_pt = width_pt.ceil();
-        let canvas_height_pt = height_pt.ceil();
+        // rescale fractional-size documents to fit. Rounding the canvas up to
+        // whole points (extra space on the right and bottom) keeps the drawing
+        // at exactly 1:1 through that pipeline.
+        let canvas_width_pt = canvas.width().ceil();
+        let canvas_height_pt = canvas.height().ceil();
 
         let mut page = first_page.clone();
+        page.frame
+            .translate(Point::new(Abs::pt(offset_x_pt), Abs::pt(offset_y_pt)));
         page.frame.set_size(Size::new(
             Abs::pt(canvas_width_pt),
             Abs::pt(canvas_height_pt),
@@ -75,6 +99,8 @@ impl InMemoryWorld {
             height_pt,
             canvas_width_pt,
             canvas_height_pt,
+            offset_x_pt,
+            offset_y_pt,
             warnings,
         })
     }
@@ -147,38 +173,49 @@ mod tests {
     }
 
     #[test]
-    fn test_compile_to_svg_pads_canvas_to_whole_points() {
+    fn test_compile_to_svg_canvas_hugs_the_page_when_no_ink_overhangs() {
         let source = concat!(
-            "#set page(width: auto, height: auto, margin: 0.1em, fill: none)\n",
-            "Hello"
+            "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
+            "#box(width: 20.5pt, height: 10.25pt, fill: black)"
         );
         let Ok(rendered) = compile_source(source) else {
-            panic!("visible text should render successfully");
+            panic!("a box should render successfully");
         };
 
-        for (canvas, layout) in [
-            (rendered.canvas_width_pt, rendered.width_pt),
-            (rendered.canvas_height_pt, rendered.height_pt),
-        ] {
-            assert_eq!(canvas, canvas.trunc(), "canvas must be whole points");
-            assert!(canvas >= layout && canvas - layout < 1.0);
-        }
+        assert_eq!(rendered.offset_x_pt, 0.0);
+        assert_eq!(rendered.offset_y_pt, 0.0);
+        assert_eq!(rendered.canvas_width_pt, 21.0);
+        assert_eq!(rendered.canvas_height_pt, rendered.height_pt.ceil());
 
         let svg = String::from_utf8_lossy(&rendered.svg);
-        let expected = format!(
-            "viewBox=\"0 0 {} {}\"",
-            rendered.canvas_width_pt, rendered.canvas_height_pt
-        );
         assert!(
-            svg.contains(&expected),
-            "svg header should use the padded canvas ({expected})"
+            svg.contains("viewBox=\"0 0 21 "),
+            "svg header should use the canvas"
         );
+    }
+
+    #[test]
+    fn test_compile_to_svg_canvas_covers_overhanging_ink() {
+        let source = concat!(
+            "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
+            "#set text(size: 40pt)\n",
+            "#text(style: \"italic\")[f]"
+        );
+        let Ok(rendered) = compile_source(source) else {
+            panic!("italic text should render successfully");
+        };
+
+        // The italic f overhangs its advance box on both sides.
+        assert!(rendered.offset_x_pt > 0.0, "{rendered:?}");
+        assert!(rendered.canvas_width_pt > rendered.offset_x_pt + rendered.width_pt);
+        assert_eq!(rendered.canvas_width_pt, rendered.canvas_width_pt.trunc());
+        assert_eq!(rendered.canvas_height_pt, rendered.canvas_height_pt.trunc());
     }
 
     #[test]
     fn test_compile_to_svg_returns_empty_svg_error_for_default_preamble_set() {
         let source = concat!(
-            "#set page(width: auto, height: auto, margin: 0.1em, fill: none)\n",
+            "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
             "#set text(top-edge: \"bounds\", bottom-edge: \"bounds\")"
         );
         let result = compile_source(source);

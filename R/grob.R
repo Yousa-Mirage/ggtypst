@@ -57,10 +57,13 @@ positioned_typst_grob <- function(
 #' Imports the rendered SVG through `grImport2` and returns a `pictureGrob`
 #' drawn at exactly 1:1 (times `scale`) with Typst's point coordinates.
 #'
-#' The Rust renderer pads the SVG canvas to whole points on the right and
-#' bottom, so the canvas is slightly larger than the Typst layout box
-#' (`width_pt` x `height_pt`). Justification is given relative to the layout
-#' box and is translated here to the padded canvas.
+#' The Typst page has no margin, so it is exactly the content's layout box
+#' (`width_pt` x `height_pt`). The Rust renderer extends the SVG canvas to
+#' cover any ink drawn outside it (italic overhangs, descender tails, moved or
+#' rotated content) and rounds the canvas up to whole points; the layout box
+#' sits at (`offset_x_pt`, `offset_y_pt`) on it. Justification is given
+#' relative to the layout box, like grid text, and is translated here to the
+#' canvas.
 #'
 #' @param rendered A rendered Typst result from [typst_svg()].
 #' @param x,y Position passed to [grImport2::pictureGrob()].
@@ -86,11 +89,15 @@ vector_typst_grob <- function(
   height <- rendered$height_pt
   canvas_width <- rendered$canvas_width_pt
   canvas_height <- rendered$canvas_height_pt
+  offset_x <- rendered$offset_x_pt
+  offset_y <- rendered$offset_y_pt
 
-  # The layout box sits at the top-left of the canvas: padding is on the right
-  # and at the bottom (grid's vjust counts from the bottom).
-  canvas_hjust <- just$hjust * width / canvas_width
-  canvas_vjust <- (canvas_height - height + just$vjust * height) / canvas_height
+  # The layout box sits on the canvas with its top-left corner at
+  # (offset_x, offset_y), measured from the canvas's top-left. Express the
+  # anchor (hjust, vjust) of the layout box as a fraction of the canvas; grid's
+  # vjust counts from the bottom.
+  canvas_hjust <- (offset_x + just$hjust * width) / canvas_width
+  canvas_vjust <- (canvas_height - offset_y - height + just$vjust * height) / canvas_height
 
   # grImport2 only reads Cairo-generated SVG, so re-render it with rsvg. Pass
   # the whole-point canvas size explicitly so rsvg neither truncates nor

@@ -237,13 +237,16 @@ test_that("element_grob.element_typst anchors rotated grobs by rotated justifica
   just <- grob$children[[1]]$vp[[1]]$justification
 
   # Rotated justification is c(0, 0.5) on the Typst layout box; the picture
-  # viewport spans the canvas, which is padded at the right and bottom.
-  rendered <- typst_svg(build_typst_source("Test", size = 12, angle = 90))
-  canvas_vjust <- with(
+  # viewport spans the canvas, which pads the layout box.
+  rendered <- typst_svg(build_typst_source("Test", size = 12, angle = 90, hjust = 0.5))
+  canvas_just <- with(
     rendered,
-    (canvas_height_pt - height_pt + 0.5 * height_pt) / canvas_height_pt
+    c(
+      offset_x_pt / canvas_width_pt,
+      (canvas_height_pt - offset_y_pt - 0.5 * height_pt) / canvas_height_pt
+    )
   )
-  expect_equal(unname(just), c(0, canvas_vjust))
+  expect_equal(unname(just), canvas_just)
 })
 
 test_that("element_typst places text at hjust within the whole cell", {
@@ -256,10 +259,9 @@ test_that("element_typst places text at hjust within the whole cell", {
       ink_extent()
   }
 
-  # The device is 288pt wide. The box sits inside Typst's 0.1em page margin.
-  page_margin <- 1
-  expect_pt_equal(ink_at(0, margin_y = TRUE)$left, page_margin)
-  expect_pt_equal(ink_at(1, margin_y = TRUE)$right, 288 - page_margin)
+  # The device is 288pt wide.
+  expect_pt_equal(ink_at(0, margin_y = TRUE)$left, 0)
+  expect_pt_equal(ink_at(1, margin_y = TRUE)$right, 288)
   centre <- ink_at(0.5, margin_y = TRUE)
   expect_pt_equal((centre$left + centre$right) / 2, 144)
 
@@ -267,9 +269,9 @@ test_that("element_typst places text at hjust within the whole cell", {
   # ggplot2 margins are in TeX points (1/72.27 in), svglite in 1/72 in.
   gap <- 15 * 72 / 72.27
   left <- ink_at(0, margin_x = TRUE, margin = margin(l = 15))
-  expect_pt_equal(left$left, gap + page_margin)
+  expect_pt_equal(left$left, gap)
   right <- ink_at(1, margin_x = TRUE, margin = margin(r = 15))
-  expect_pt_equal(right$right, 288 - gap - page_margin)
+  expect_pt_equal(right$right, 288 - gap)
 })
 
 # Visual regression tests

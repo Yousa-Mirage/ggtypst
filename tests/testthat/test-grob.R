@@ -99,6 +99,18 @@ test_that("lines of multi-line labels are aligned by hjust in every API", {
   }
 })
 
+test_that("ink overhanging the layout box is drawn, not clipped", {
+  skip_if_not_installed("svglite")
+
+  rendered <- typst_svg(build_typst_source('#text(style: "italic")[f]', size = 40))
+  ink <- ink_extent(positioned_typst_grob(rendered, hjust = 0, vjust = 0.5))
+
+  # With hjust = 0 the layout box starts at the device centre (144pt); the
+  # italic f reaches past it on the left and beyond its advance on the right.
+  expect_lt(ink$left, 144 - 1)
+  expect_gt(ink$right, 144 + rendered$width_pt + 1)
+})
+
 test_that("justification is relative to the Typst layout box, not the padded canvas", {
   skip_if_not_installed("svglite")
 

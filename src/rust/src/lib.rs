@@ -1,5 +1,6 @@
 use extendr_api::prelude::*;
 
+mod bounds;
 mod error;
 mod fonts;
 mod mitex;
