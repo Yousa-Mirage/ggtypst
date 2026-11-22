@@ -20,22 +20,12 @@ test_that("Typst output is drawn at its exact size", {
 test_that("curved outlines are flattened finely enough to look smooth", {
   skip_if_not_installed("svglite")
 
-  grob <- typst_test_grob("#circle(radius: 10pt, fill: black)")
-
-  s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
-  grid::grid.newpage()
-  grid::grid.draw(grob)
-  grDevices::dev.off()
-
-  svg <- as.character(s())
-  outline <- regmatches(svg, regexpr("<polygon points='[^']+'", svg))
-  nums <- as.numeric(unlist(regmatches(outline, gregexpr("-?[0-9]+(\\.[0-9]+)?", outline))))
-  xs <- nums[c(TRUE, FALSE)]
-  ys <- nums[c(FALSE, TRUE)]
+  outline <- drawn_subpaths(typst_test_grob("#circle(radius: 10pt, fill: black)"))[[1]]
+  expect_gt(nrow(outline), 16)
 
   # Largest angle between consecutive outline vertices, seen from the centre.
-  # Without oversampling grImport2 leaves ~10 degree facets on this circle.
-  angles <- sort(atan2(ys - mean(range(ys)), xs - mean(range(xs))))
+  centre <- colMeans(apply(outline, 2, range))
+  angles <- sort(atan2(outline[, 2] - centre[2], outline[, 1] - centre[1]))
   max_step <- max(diff(c(angles, angles[1] + 2 * pi))) * 180 / pi
 
   expect_lt(max_step, 6)
@@ -61,21 +51,7 @@ test_that("lines of multi-line labels are aligned by hjust in every API", {
   )
 
   line_edges <- function(grob) {
-    s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
-    grid::grid.newpage()
-    grid::grid.draw(grob)
-    grDevices::dev.off()
-    svg <- as.character(s())
-    polys <- regmatches(svg, gregexpr("<polygon points='[^']+'", svg))[[1]]
-    t(vapply(
-      polys,
-      function(p) {
-        v <- as.numeric(regmatches(p, gregexpr("-?[0-9]+(\\.[0-9]+)?", p))[[1]])
-        range(v[c(TRUE, FALSE)])
-      },
-      numeric(2),
-      USE.NAMES = FALSE
-    ))
+    t(vapply(drawn_subpaths(grob), function(m) range(m[, 1]), numeric(2)))
   }
 
   apis <- list(
@@ -129,18 +105,7 @@ test_that("baselines are 1.2 * lineheight font sizes apart", {
   line_bottoms <- function(lineheight, prefix = "") {
     code <- paste0(prefix, "H #linebreak() H")
     rendered <- typst_svg(build_typst_source(code, size = 10, lineheight = lineheight))
-    s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
-    grid::grid.newpage()
-    grid::grid.draw(positioned_typst_grob(rendered))
-    grDevices::dev.off()
-    svg <- as.character(s())
-    polys <- regmatches(svg, gregexpr("<polygon points='[^']+'", svg))[[1]]
-    vapply(
-      polys,
-      function(p) max(as.numeric(regmatches(p, gregexpr("-?[0-9]+(\\.[0-9]+)?", p))[[1]])[c(FALSE, TRUE)]),
-      numeric(1),
-      USE.NAMES = FALSE
-    )
+    vapply(drawn_subpaths(positioned_typst_grob(rendered)), function(m) max(m[, 2]), numeric(1))
   }
 
   for (lineheight in c(1.2, 0.9, 0.5)) {

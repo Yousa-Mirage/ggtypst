@@ -73,3 +73,24 @@ ink_extent <- function(grob) {
 expect_pt_equal <- function(object, expected, tolerance = 0.02) {
   expect_lt(abs(object - expected), tolerance)
 }
+
+# Draw a grob on an svglite device and return the points of every drawn
+# subpath (each polygon, polyline, or `M` segment of a path) as a two-column
+# matrix in device points (svg y axis points down).
+drawn_subpaths <- function(grob) {
+  s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
+  grid::grid.newpage()
+  grid::grid.draw(grob)
+  grDevices::dev.off()
+  svg <- as.character(s())
+
+  to_matrix <- function(txt) {
+    v <- as.numeric(regmatches(txt, gregexpr("-?[0-9]+(\\.[0-9]+)?", txt))[[1]])
+    matrix(v, ncol = 2, byrow = TRUE)
+  }
+  points <- regmatches(svg, gregexpr("<(polygon|polyline) points='[^']+'", svg))[[1]]
+  paths <- regmatches(svg, gregexpr("<path d='[^']+'", svg))[[1]]
+  subpaths <- unlist(lapply(paths, function(p) strsplit(sub("^<path d='", "", p), "(?=M)", perl = TRUE)[[1]]))
+  subpaths <- subpaths[grepl("[0-9]", subpaths)]
+  lapply(c(points, subpaths), to_matrix)
+}

@@ -52,8 +52,181 @@ positioned_typst_grob <- function(
   out
 }
 
-#' Import Typst SVG output as a vector grob
+#' Draw rendered Typst output as a grob
 #'
+#' The Typst page has no margin, so it is exactly the content's layout box
+#' (`width_pt` x `height_pt`), and justification is relative to it, like grid
+#' text. The page is drawn from its scene (glyph outlines and shapes as grid
+#' paths) when the scene can describe everything on it, and otherwise from its
+#' SVG.
+#'
+#' @param rendered A rendered Typst result from `typst_svg()`.
+#' @param x,y Position of the anchor.
+#' @param default.units Grid units for numeric `x` and `y`.
+#' @param scale Scaling factor applied to rendered dimensions.
+#' @param hjust,vjust Horizontal and vertical justification values.
+#' @param angle Rotation angle in ggplot2/grid semantics.
+#' @return A grob.
+#' @noRd
+vector_typst_grob <- function(
+  rendered,
+  x = 0.5,
+  y = 0.5,
+  default.units = "npc",
+  scale = 1,
+  hjust,
+  vjust,
+  angle = NULL
+) {
+  draw <- if (isTRUE(rendered$scene$path_ok)) scene_typst_grob else svg_typst_grob
+  draw(
+    rendered = rendered,
+    x = x,
+    y = y,
+    default.units = default.units,
+    scale = scale,
+    hjust = hjust,
+    vjust = vjust,
+    angle = angle
+  )
+}
+
+#' Draw a Typst scene with grid paths
+#'
+#' The layout box becomes a viewport whose native coordinates are Typst's
+#' points with y pointing down, so scene coordinates are used as they are. Ink
+#' outside the box (overhangs, descenders) is drawn, not clipped.
+#'
+#' @inheritParams vector_typst_grob
+#' @return A `gTree` of class `"typst_scene_grob"`.
+#' @noRd
+scene_typst_grob <- function(
+  rendered,
+  x = 0.5,
+  y = 0.5,
+  default.units = "npc",
+  scale = 1,
+  hjust,
+  vjust,
+  angle = NULL
+) {
+  just <- rotate_just(angle = angle, hjust = hjust, vjust = vjust)
+  width <- rendered$width_pt
+  height <- rendered$height_pt
+
+  if (!grid::is.unit(x)) {
+    x <- grid::unit(x, default.units)
+  }
+  if (!grid::is.unit(y)) {
+    y <- grid::unit(y, default.units)
+  }
+
+  vp <- grid::viewport(
+    x = x,
+    y = y,
+    width = grid::unit(width * scale, "bigpts"),
+    height = grid::unit(height * scale, "bigpts"),
+    just = c(just$hjust, just$vjust),
+    xscale = c(0, width),
+    yscale = c(height, 0)
+  )
+
+  grid::gTree(
+    children = scene_path_grobs(rendered$scene, scale),
+    vp = vp,
+    cl = "typst_scene_grob"
+  )
+}
+
+#' Grid grobs drawing a scene's glyph outlines and shapes
+#'
+#' @param scene The `scene` of a rendered Typst result.
+#' @param scale Scaling factor, applied to line widths (coordinates are scaled
+#'   by the viewport).
+#' @return A `gList`.
+#' @noRd
+scene_path_grobs <- function(scene, scale = 1) {
+  grobs <- list()
+
+  outlines <- scene$outlines
+  if (length(outlines$x) > 0) {
+    # One path per glyph (`pathId`), made of its contours (`id`).
+    glyphs <- scene$glyphs
+    owners <- unique(outlines$owner)
+    grobs <- c(
+      grobs,
+      list(grid::pathGrob(
+        x = outlines$x,
+        y = outlines$y,
+        id = outlines$sub,
+        pathId = outlines$owner,
+        rule = "winding",
+        default.units = "native",
+        gp = grid::gpar(
+          fill = glyphs$fill[owners],
+          col = na_if_empty(glyphs$stroke[owners]),
+          lwd = pt_to_lwd(glyphs$stroke_width[owners] * scale)
+        )
+      ))
+    )
+  }
+
+  shapes <- scene$shapes
+  points <- scene$shape_points
+  for (i in seq_along(shapes$fill)) {
+    keep <- points$owner == i
+    if (!any(keep)) {
+      next
+    }
+    gp <- grid::gpar(
+      fill = na_if_empty(shapes$fill[i]),
+      col = na_if_empty(shapes$stroke[i]),
+      lwd = pt_to_lwd(shapes$stroke_width[i] * scale),
+      lineend = shapes$lineend[i],
+      linejoin = shapes$linejoin[i]
+    )
+    filled <- shapes$closed[i] == 1L || nzchar(shapes$fill[i])
+    grobs <- c(
+      grobs,
+      list(
+        if (filled) {
+          grid::pathGrob(
+            x = points$x[keep],
+            y = points$y[keep],
+            id = points$sub[keep],
+            rule = shapes$rule[i],
+            default.units = "native",
+            gp = gp
+          )
+        } else {
+          grid::polylineGrob(
+            x = points$x[keep],
+            y = points$y[keep],
+            id = points$sub[keep],
+            default.units = "native",
+            gp = gp
+          )
+        }
+      )
+    )
+  }
+
+  do.call(grid::gList, grobs)
+}
+
+# Line width in grid's units (1/96 in) from Typst points (1/72 in).
+pt_to_lwd <- function(pt) {
+  pt * 96 / 72
+}
+
+na_if_empty <- function(x) {
+  x[!nzchar(x)] <- NA_character_
+  x
+}
+
+#' Import Typst SVG output as a picture grob
+#'
+#' Fallback for pages the scene cannot describe (see `vector_typst_grob()`).
 #' Imports the rendered SVG through `grImport2` and returns a `pictureGrob`
 #' drawn at exactly 1:1 (times `scale`) with Typst's point coordinates.
 #'
@@ -73,7 +246,7 @@ positioned_typst_grob <- function(
 #' @param angle Rotation angle in ggplot2/grid semantics.
 #' @return A `grImport2` picture grob.
 #' @noRd
-vector_typst_grob <- function(
+svg_typst_grob <- function(
   rendered,
   x = 0.5,
   y = 0.5,

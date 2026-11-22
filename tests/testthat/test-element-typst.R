@@ -234,19 +234,10 @@ test_that("element_grob.element_typst anchors rotated grobs by rotated justifica
   grob <- element_typst(size = 12, angle = 90, vjust = 1) |>
     element_grob(label = "Test")
 
-  just <- grob$children[[1]]$vp[[1]]$justification
+  just <- grob$children[[1]]$vp$justification
 
-  # Rotated justification is c(0, 0.5) on the Typst layout box; the picture
-  # viewport spans the canvas, which pads the layout box.
-  rendered <- typst_svg(build_typst_source("Test", size = 12, angle = 90, hjust = 0.5))
-  canvas_just <- with(
-    rendered,
-    c(
-      offset_x_pt / canvas_width_pt,
-      (canvas_height_pt - offset_y_pt - 0.5 * height_pt) / canvas_height_pt
-    )
-  )
-  expect_equal(unname(just), canvas_just)
+  # Rotated justification, on the Typst layout box.
+  expect_equal(unname(just), c(0, 0.5))
 })
 
 test_that("element_typst places text at hjust within the whole cell", {
