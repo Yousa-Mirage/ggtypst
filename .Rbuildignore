@@ -19,6 +19,7 @@
 ^\docs($|/)
 
 ^AGENTS\.md$
+^CLAUDE\.md$
 ^cran-comments\.md$
 ^air\.toml$
 ^\\.\\.Rcheck$

@@ -32,6 +32,7 @@ dev.typ
 
 # Agent
 AGENTS.md
+CLAUDE.md
 
 # vendor
 src/vendor/
