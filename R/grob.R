@@ -91,11 +91,13 @@ vector_typst_grob <- function(
   )
 }
 
-#' Draw a Typst scene with grid paths
+#' Draw a Typst scene with grid
 #'
 #' The layout box becomes a viewport whose native coordinates are Typst's
 #' points with y pointing down, so scene coordinates are used as they are. Ink
-#' outside the box (overhangs, descenders) is drawn, not clipped.
+#' outside the box (overhangs, descenders) is drawn, not clipped. The grob's
+#' content is built when it is drawn (see `makeContent.typst_scene_grob()`),
+#' so it can draw text as native glyphs or as outlines to suit the device.
 #'
 #' @inheritParams vector_typst_grob
 #' @return A `gTree` of class `"typst_scene_grob"`.
@@ -132,10 +134,127 @@ scene_typst_grob <- function(
   )
 
   grid::gTree(
-    children = scene_path_grobs(rendered$scene, scale),
+    scene = rendered$scene,
+    scale = scale,
+    width_pt = width,
+    height_pt = height,
     vp = vp,
     cl = "typst_scene_grob"
   )
+}
+
+#' @noRd
+#' @importFrom grid makeContent
+#' @export
+makeContent.typst_scene_grob <- function(x) {
+  children <- switch(
+    typst_render_mode(x$scene),
+    glyph = scene_glyph_grobs(x$scene, x$scale, x$width_pt, x$height_pt),
+    path = scene_path_grobs(x$scene, x$scale)
+  )
+  grid::setChildren(x, children)
+}
+
+#' Choose how to draw a scene's text: `"glyph"` or `"path"`
+#'
+#' Follows `getOption("ggtypst.renderer")`. Native glyphs need R 4.3 or later
+#' and a scene that glyphs can express (no stroked or skewed text, ...);
+#' otherwise text is drawn as outlines.
+#'
+#' @param scene The `scene` of a rendered Typst result.
+#' @return `"glyph"` or `"path"`.
+#' @noRd
+typst_render_mode <- function(scene) {
+  renderer <- getOption("ggtypst.renderer", "path")
+  if (!is.character(renderer) || length(renderer) != 1L || !renderer %in% c("glyph", "path")) {
+    cli::cli_abort(c(
+      "Option {.code ggtypst.renderer} must be {.val glyph} or {.val path}.",
+      "x" = "It is {.val {renderer}}."
+    ))
+  }
+  if (renderer == "glyph" && glyphs_supported() && isTRUE(scene$glyph_ok)) "glyph" else "path"
+}
+
+# Native glyph rendering (grDevices::glyphInfo(), grid::glyphGrob()) arrived
+# in R 4.3.
+glyphs_supported <- function() {
+  getRversion() >= "4.3.0"
+}
+
+#' Grid grobs drawing a scene's text as native glyphs, and its shapes
+#'
+#' @param scene The `scene` of a rendered Typst result.
+#' @param scale Scaling factor applied to the rendered output.
+#' @param width,height Size of the layout box in points.
+#' @return A `gList`.
+#' @noRd
+scene_glyph_grobs <- function(scene, scale, width, height) {
+  glyphs <- scene$glyphs
+  shapes <- scene_shape_grobs(scene, scale)
+  if (length(glyphs$id) == 0L) {
+    return(do.call(grid::gList, shapes))
+  }
+
+  fonts <- scene$fonts
+  files <- typst_font_files(fonts)
+  font_list <- do.call(
+    grDevices::glyphFontList,
+    lapply(seq_along(files), function(i) {
+      grDevices::glyphFont(files[i], fonts$collection_index[i], fonts$family[i], fonts$weight[i], fonts$style[i])
+    })
+  )
+
+  # Glyph positions are in points from the layout box's bottom-left corner.
+  info <- grDevices::glyphInfo(
+    id = glyphs$id,
+    x = glyphs$x * scale,
+    y = (height - glyphs$y) * scale,
+    font = glyphs$font,
+    size = glyphs$size * scale,
+    fontList = font_list,
+    width = width * scale,
+    height = height * scale,
+    hAnchor = grDevices::glyphAnchor(0, "left"),
+    vAnchor = grDevices::glyphAnchor(0, "bottom"),
+    col = glyphs$fill,
+    rot = glyphs$rot
+  )
+  text <- grid::glyphGrob(info, x = 0, y = 0, hjust = 0, vjust = 0, default.units = "npc")
+
+  do.call(grid::gList, c(list(text), shapes))
+}
+
+#' Files of the fonts a scene's glyphs use
+#'
+#' System fonts are used where they are. Fonts embedded in ggtypst (Typst's
+#' default fonts) are written once per session to
+#' `getOption("ggtypst.font_cache")`, a directory under [tempdir()] by
+#' default, so graphics devices can load them.
+#'
+#' @param fonts The `fonts` table of a scene.
+#' @return A character vector of font file paths.
+#' @noRd
+typst_font_files <- function(fonts) {
+  files <- fonts$path
+  embedded <- which(!nzchar(files))
+  if (length(embedded) == 0L) {
+    return(files)
+  }
+
+  dir <- getOption("ggtypst.font_cache", file.path(tempdir(), "ggtypst-fonts"))
+  dir.create(dir, recursive = TRUE, showWarnings = FALSE)
+  for (i in embedded) {
+    file <- file.path(dir, paste0(fonts$cache_key[i], ".otf"))
+    if (!file.exists(file)) {
+      # Write to a temporary name first so a concurrent reader never sees a
+      # partial file.
+      partial <- tempfile(tmpdir = dir)
+      writeBin(rs_typst_font_data(fonts$store_index[i]), partial)
+      file.rename(partial, file)
+    }
+    files[i] <- file
+  }
+  files
 }
 
 #' Grid grobs drawing a scene's glyph outlines and shapes
@@ -146,37 +265,41 @@ scene_typst_grob <- function(
 #' @return A `gList`.
 #' @noRd
 scene_path_grobs <- function(scene, scale = 1) {
-  grobs <- list()
+  do.call(grid::gList, c(list(scene_outline_grob(scene, scale)), scene_shape_grobs(scene, scale)))
+}
 
+# All glyph outlines as one path grob: one path per glyph (`pathId`), made of
+# its contours (`id`). NULL if the scene has no outlines.
+scene_outline_grob <- function(scene, scale = 1) {
   outlines <- scene$outlines
-  if (length(outlines$x) > 0) {
-    # One path per glyph (`pathId`), made of its contours (`id`).
-    glyphs <- scene$glyphs
-    owners <- unique(outlines$owner)
-    grobs <- c(
-      grobs,
-      list(grid::pathGrob(
-        x = outlines$x,
-        y = outlines$y,
-        id = outlines$sub,
-        pathId = outlines$owner,
-        rule = "winding",
-        default.units = "native",
-        gp = grid::gpar(
-          fill = glyphs$fill[owners],
-          col = na_if_empty(glyphs$stroke[owners]),
-          lwd = pt_to_lwd(glyphs$stroke_width[owners] * scale)
-        )
-      ))
-    )
+  if (length(outlines$x) == 0L) {
+    return(NULL)
   }
+  glyphs <- scene$glyphs
+  owners <- unique(outlines$owner)
+  grid::pathGrob(
+    x = outlines$x,
+    y = outlines$y,
+    id = outlines$sub,
+    pathId = outlines$owner,
+    rule = "winding",
+    default.units = "native",
+    gp = grid::gpar(
+      fill = glyphs$fill[owners],
+      col = na_if_empty(glyphs$stroke[owners]),
+      lwd = pt_to_lwd(glyphs$stroke_width[owners] * scale)
+    )
+  )
+}
 
+# One grob per shape: a path if it is closed or filled, otherwise a polyline.
+scene_shape_grobs <- function(scene, scale = 1) {
   shapes <- scene$shapes
   points <- scene$shape_points
-  for (i in seq_along(shapes$fill)) {
+  grobs <- lapply(seq_along(shapes$fill), function(i) {
     keep <- points$owner == i
     if (!any(keep)) {
-      next
+      return(NULL)
     }
     gp <- grid::gpar(
       fill = na_if_empty(shapes$fill[i]),
@@ -185,33 +308,26 @@ scene_path_grobs <- function(scene, scale = 1) {
       lineend = shapes$lineend[i],
       linejoin = shapes$linejoin[i]
     )
-    filled <- shapes$closed[i] == 1L || nzchar(shapes$fill[i])
-    grobs <- c(
-      grobs,
-      list(
-        if (filled) {
-          grid::pathGrob(
-            x = points$x[keep],
-            y = points$y[keep],
-            id = points$sub[keep],
-            rule = shapes$rule[i],
-            default.units = "native",
-            gp = gp
-          )
-        } else {
-          grid::polylineGrob(
-            x = points$x[keep],
-            y = points$y[keep],
-            id = points$sub[keep],
-            default.units = "native",
-            gp = gp
-          )
-        }
+    if (shapes$closed[i] == 1L || nzchar(shapes$fill[i])) {
+      grid::pathGrob(
+        x = points$x[keep],
+        y = points$y[keep],
+        id = points$sub[keep],
+        rule = shapes$rule[i],
+        default.units = "native",
+        gp = gp
       )
-    )
-  }
-
-  do.call(grid::gList, grobs)
+    } else {
+      grid::polylineGrob(
+        x = points$x[keep],
+        y = points$y[keep],
+        id = points$sub[keep],
+        default.units = "native",
+        gp = gp
+      )
+    }
+  })
+  Filter(Negate(is.null), grobs)
 }
 
 # Line width in grid's units (1/96 in) from Typst points (1/72 in).

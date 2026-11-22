@@ -1,6 +1,11 @@
 library(ggplot2)
 options(device = function(...) grDevices::pdf(file = NULL, ...))
 
+# Draw text as outlines everywhere, so visual snapshots do not depend on the
+# fonts and glyph rendering of the machine running them. Glyph rendering has
+# its own tests (test-glyph.R).
+options(ggtypst.renderer = "path")
+
 skip_if_no_vdiffr <- function() {
   testthat::skip_if_not_installed("vdiffr")
 

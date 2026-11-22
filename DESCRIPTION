@@ -37,9 +37,12 @@ Suggests:
     ggtext,
     knitr,
     pkgdown,
+    png,
+    ragg,
     rmarkdown,
     spelling,
     svglite,
+    systemfonts,
     testthat (>= 3.0.0),
     vdiffr
 VignetteBuilder: knitr
