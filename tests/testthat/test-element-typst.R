@@ -274,6 +274,22 @@ test_that("element_typst places text at hjust within the whole cell", {
   expect_pt_equal(right$right, 288 - gap)
 })
 
+test_that("element_typst reserves the same height whatever the glyphs", {
+  heights <- vapply(
+    c("HHH", "ace", "Ågy"),
+    function(label) {
+      grob <- element_grob(element_typst(size = 12), label = label, margin_y = TRUE)
+      grid::convertHeight(grid::grobHeight(grob), "bigpts", valueOnly = TRUE)
+    },
+    numeric(1)
+  )
+  expect_equal(unname(heights), rep(heights[[1]], 3))
+
+  # Cap height to baseline, plus the font descent below it.
+  rendered <- typst_svg(build_typst_source("HHH", size = 12))
+  expect_equal(heights[[1]], rendered$height_pt + rendered$descent_pt)
+})
+
 # Visual regression tests
 
 test_that("element_typst visual: plot title", {

@@ -1,29 +1,39 @@
 preamble_set <- c(
   r"(#set page(width: auto, height: auto, margin: 0pt, fill: none))",
-  r"(#set text(top-edge: "bounds", bottom-edge: "bounds"))"
+  r"(#set text(top-edge: "cap-height", bottom-edge: "baseline"))"
 )
 
-test_that("build_typst_source wraps text with page defaults", {
-  src <- build_typst_source(r"(Hello)")
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
+# The rule that spaces baselines `1.2 * lineheight` font sizes apart.
+leading_rule <- function(lineheight = "1.2") {
+  c(
+    "#show: body => context {",
+    "  let cap-em = measure([H]).height / text.size",
+    "  show math.equation: set text(top-edge: cap-em * 1em)",
+    sprintf("  set par(leading: (%s * 1.2 - cap-em) * 1em)", lineheight),
+    "  body",
+    "}"
+  )
+}
 
-  expect_equal(lines, c(preamble_set, r"(Hello)"))
+source_lines <- function(...) strsplit(build_typst_source(...), "\n", fixed = TRUE)[[1]]
+
+test_that("build_typst_source wraps text with page defaults", {
+  expect_equal(source_lines(r"(Hello)"), c(preamble_set, leading_rule(), r"(Hello)"))
 })
 
 test_that("build_typst_source adds color, alpha, and size directives", {
-  src <- build_typst_source(
-    typst_code = r"(A)",
-    color = "#33669980",
-    alpha = 0.5,
-    size = 12.5
-  )
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
+  lines <- source_lines(typst_code = r"(A)", color = "#33669980", alpha = 0.5, size = 12.5)
 
-  expect_equal(lines[1], preamble_set[1])
-  expect_equal(lines[2], preamble_set[2])
-  expect_equal(lines[3], '#set text(fill: rgb("#33669940"))')
-  expect_equal(lines[4], "#set text(size: 12.5pt)")
-  expect_equal(lines[5], r"(A)")
+  expect_equal(
+    lines,
+    c(
+      preamble_set,
+      '#set text(fill: rgb("#33669940"))',
+      "#set text(size: 12.5pt)",
+      leading_rule(),
+      r"(A)"
+    )
+  )
 })
 
 test_that("build_typst_source supports alpha-only style", {
@@ -31,76 +41,65 @@ test_that("build_typst_source supports alpha-only style", {
   expect_match(src, '#set text\\(fill: rgb\\("#00000080"\\)\\)')
 })
 
-test_that("build_typst_source maps lineheight to Typst paragraph leading", {
-  src <- build_typst_source(typst_code = "line1\nline2", lineheight = 1.25)
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
-
-  expect_equal(lines[1], preamble_set[1])
-  expect_equal(lines[2], preamble_set[2])
-  expect_equal(lines[3], "#set par(leading: 1.25em)")
-  expect_equal(lines[4], "line1")
-  expect_equal(lines[5], "line2")
+test_that("build_typst_source maps lineheight to the baseline distance", {
+  lines <- source_lines(typst_code = "line1\nline2", lineheight = 1.25)
+  expect_equal(lines, c(preamble_set, leading_rule("1.25"), "line1", "line2"))
 })
 
 test_that("build_typst_source allows negative lineheight", {
-  src <- build_typst_source(typst_code = "A", lineheight = -0.25)
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
-
-  expect_equal(lines[3], "#set par(leading: -0.25em)")
-  expect_equal(lines[4], "A")
+  lines <- source_lines(typst_code = "A", lineheight = -0.25)
+  expect_equal(lines, c(preamble_set, leading_rule("-0.25"), "A"))
 })
 
 test_that("build_typst_source preserves user text content", {
   text <- r"(line1
 line2 {x} % y)"
-  src <- build_typst_source(text, size = 11)
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
 
   expect_equal(
-    lines,
-    c(preamble_set, "#set text(size: 11pt)", "line1", "line2 {x} % y")
+    source_lines(text, size = 11),
+    c(preamble_set, "#set text(size: 11pt)", leading_rule(), "line1", "line2 {x} % y")
   )
 })
 
 test_that("build_typst_source maps face to Typst text styles", {
-  src <- build_typst_source("A", face = "bold.italic")
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
-
-  expect_equal(lines[1], preamble_set[1])
-  expect_equal(lines[2], preamble_set[2])
-  expect_equal(lines[3], '#set text(weight: "bold")')
-  expect_equal(lines[4], '#set text(style: "italic")')
-  expect_equal(lines[5], '#show math.equation: set text(weight: "bold")')
-  expect_equal(lines[6], "A")
+  expect_equal(
+    source_lines("A", face = "bold.italic"),
+    c(
+      preamble_set,
+      '#set text(weight: "bold")',
+      '#set text(style: "italic")',
+      '#show math.equation: set text(weight: "bold")',
+      leading_rule(),
+      "A"
+    )
+  )
 })
 
 test_that("build_typst_source supports colour and fontface aliases", {
-  src <- build_typst_source("A", colour = "#33669980", fontface = "bold.italic")
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
-
-  expect_equal(lines[3], '#set text(fill: rgb("#33669980"))')
-  expect_equal(lines[4], '#set text(weight: "bold")')
-  expect_equal(lines[5], '#set text(style: "italic")')
-  expect_equal(lines[6], '#show math.equation: set text(weight: "bold")')
-  expect_equal(lines[7], "A")
+  expect_equal(
+    source_lines("A", colour = "#33669980", fontface = "bold.italic"),
+    c(
+      preamble_set,
+      '#set text(fill: rgb("#33669980"))',
+      '#set text(weight: "bold")',
+      '#set text(style: "italic")',
+      '#show math.equation: set text(weight: "bold")',
+      leading_rule(),
+      "A"
+    )
+  )
 })
 
 test_that("build_typst_source does not force italic styling onto math", {
-  src <- build_typst_source("$ x $", face = "italic")
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
+  lines <- source_lines("$ x $", face = "italic")
 
-  expect_equal(lines[1], preamble_set[1])
-  expect_equal(lines[2], preamble_set[2])
-  expect_equal(lines[3], '#set text(style: "italic")')
+  expect_equal(lines, c(preamble_set, '#set text(style: "italic")', leading_rule(), "$ x $"))
   expect_false(any(grepl("#show math\\.equation: set text\\(weight:", lines)))
-  expect_equal(lines[4], "$ x $")
 })
 
 test_that("build_typst_source negates angle to match grid semantics", {
-  src <- build_typst_source("A", angle = 45)
-  lines <- strsplit(src, "\n", fixed = TRUE)[[1]]
-
-  expect_equal(lines[3], "#rotate(-45deg, reflow: true)[A]")
+  lines <- source_lines("A", angle = 45)
+  expect_equal(lines[length(lines)], "#rotate(-45deg, reflow: true)[A]")
 })
 
 test_that("build_typst_source maps hjust to the nearest Typst alignment", {

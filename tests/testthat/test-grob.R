@@ -99,6 +99,60 @@ test_that("lines of multi-line labels are aligned by hjust in every API", {
   }
 })
 
+test_that("the layout box spans cap height to baseline", {
+  heights <- vapply(
+    c("HHH", "ace", "Ågy", "$x$", "$integral_0^1 x^2$", "a $x^2$"),
+    function(code) typst_svg(build_typst_source(code, size = 10))$height_pt,
+    numeric(1)
+  )
+  expect_equal(unname(heights), rep(heights[[1]], 6))
+})
+
+test_that("vjust = 0 puts the last baseline on the anchor", {
+  skip_if_not_installed("svglite")
+
+  # Boxes sit on the baseline; both are lower than the cap height.
+  for (code in c(
+    "#box(width: 10pt, height: 4pt, fill: black)",
+    "A #linebreak() #box(width: 10pt, height: 4pt, fill: black)"
+  )) {
+    ink <- ink_extent(typst_test_grob(code, vjust = 0))
+    expect_pt_equal(ink$bottom, 108)
+  }
+})
+
+test_that("baselines are 1.2 * lineheight font sizes apart", {
+  skip_if_not_installed("svglite")
+
+  # Line edges apply to text, so each line holds an "H", whose flat bottom
+  # sits on the baseline.
+  line_bottoms <- function(lineheight, prefix = "") {
+    code <- paste0(prefix, "H #linebreak() H")
+    rendered <- typst_svg(build_typst_source(code, size = 10, lineheight = lineheight))
+    s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
+    grid::grid.newpage()
+    grid::grid.draw(positioned_typst_grob(rendered))
+    grDevices::dev.off()
+    svg <- as.character(s())
+    polys <- regmatches(svg, gregexpr("<polygon points='[^']+'", svg))[[1]]
+    vapply(
+      polys,
+      function(p) max(as.numeric(regmatches(p, gregexpr("-?[0-9]+(\\.[0-9]+)?", p))[[1]])[c(FALSE, TRUE)]),
+      numeric(1),
+      USE.NAMES = FALSE
+    )
+  }
+
+  for (lineheight in c(1.2, 0.9, 0.5)) {
+    bottoms <- line_bottoms(lineheight)
+    expect_pt_equal(diff(sort(bottoms)), 1.2 * lineheight * 10)
+  }
+
+  # A font size set in the Typst code itself is followed too.
+  bottoms <- line_bottoms(1.2, prefix = "#set text(size: 20pt)\n")
+  expect_pt_equal(diff(sort(bottoms)), 1.2 * 1.2 * 20)
+})
+
 test_that("ink overhanging the layout box is drawn, not clipped", {
   skip_if_not_installed("svglite")
 

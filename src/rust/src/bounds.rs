@@ -161,6 +161,19 @@ fn text_bounds(text: &TextItem, ts: Transform) -> Option<Bounds> {
     })
 }
 
+/// Largest font descender among the text runs in `frame`, in points: how far
+/// below the baseline descenders may reach. Zero if the frame has no text.
+pub fn max_descent_pt(frame: &Frame) -> f64 {
+    frame
+        .items()
+        .map(|(_, item)| match item {
+            FrameItem::Text(text) => -text.font.metrics().descender.at(text.size).to_pt(),
+            FrameItem::Group(group) => max_descent_pt(&group.frame),
+            _ => 0.0,
+        })
+        .fold(0.0, f64::max)
+}
+
 /// Upper bound on how much `ts` stretches a length.
 fn max_scale(ts: Transform) -> f64 {
     let column_x = ts.sx.get().abs() + ts.ky.get().abs();
@@ -250,6 +263,20 @@ mod tests {
         let (width, height, ink) = page_and_ink("Hello");
         assert!(ink.min_x >= 0.0 && ink.max_x <= width, "{ink:?}");
         assert!(ink.min_y >= -1e-6 && ink.max_y <= height + 1e-6, "{ink:?}");
+    }
+
+    #[test]
+    fn descent_is_the_font_descender() {
+        let world = InMemoryWorld::new(format!("{PREAMBLE}ace"), fonts::get_fonts());
+        let Ok(doc) = typst::compile::<PagedDocument>(&world).output else {
+            panic!("source should compile");
+        };
+        let Some(page) = doc.pages().first() else {
+            panic!("document should have a page");
+        };
+        let descent = max_descent_pt(&page.frame);
+        // Text without descenders still reports the font's descender.
+        assert!(descent > 0.1 * 20.0 && descent < 0.4 * 20.0, "{descent}");
     }
 
     #[test]

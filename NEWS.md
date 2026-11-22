@@ -18,6 +18,12 @@
 - Labels are now justified by their content: Typst's page margin no longer
   shifts text away from its anchor, so `hjust = 0` and `hjust = 1` line up
   exactly with `ggplot2` text.
+- Vertical metrics now match `ggplot2` text. `vjust = 0` puts the last
+  baseline on the anchor and `vjust = 1` the cap height of the first line,
+  whatever glyphs the text contains; `lineheight` sets the baseline distance to
+  `1.2 * lineheight` font sizes as in `ggplot2` (it used to add that much
+  spacing between lines), defaulting to `geom_text()`'s 1.2; and theme
+  elements reserve the same height for any text of a given font and size.
 
 # ggtypst 0.1.0
 

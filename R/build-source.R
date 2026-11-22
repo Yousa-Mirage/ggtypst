@@ -13,8 +13,9 @@
 #' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
 #' @param fontface Alias of `face`.
-#' @param lineheight Optional line height value, mapped to Typst paragraph
-#'   leading in `em` units. May be negative.
+#' @param lineheight Optional line height multiplier with grid's meaning:
+#'   baselines of consecutive lines are `1.2 * lineheight` font sizes apart.
+#'   Defaults to 1.2, `geom_text()`'s default.
 #' @param math_family Optional font family for math mode. Defaults to `New Computer Modern Math`.
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @param hjust Optional horizontal justification. Aligns the lines of
@@ -84,12 +85,6 @@ build_typst_source <- function(
     text_args <- c(text_args, sprintf('#set text(font: "%s")', family))
   }
 
-  # Line height
-  if (!is.null(lineheight)) {
-    lineheight_str <- format_typst_number(lineheight)
-    text_args <- c(text_args, sprintf('#set par(leading: %sem)', lineheight_str))
-  }
-
   # Face
   if (!is.null(face)) {
     text_args <- c(text_args, face_to_typst_styles(face))
@@ -100,6 +95,27 @@ build_typst_source <- function(
     text_args <- c(text_args, sprintf('#show math.equation: set text(font: "%s")', math_family))
   }
 
+  # Line height. grid puts baselines `1.2 * lineheight` font sizes apart. With
+  # the cap-height/baseline line edges set below, Typst puts them the cap
+  # height plus the paragraph leading apart, so set the leading to make up the
+  # difference, measuring the cap height of the font actually in use. Inline
+  # math gets the same top edge, so lines with formulas are spaced and sized
+  # like text lines. The cap height is kept as a fraction of the font size
+  # and both lengths are in em, so they follow a font size set inside
+  # `typst_code`. This comes after all text settings so the measurement sees
+  # them.
+  text_args <- c(
+    text_args,
+    paste0(
+      "#show: body => context {\n",
+      "  let cap-em = measure([H]).height / text.size\n",
+      "  show math.equation: set text(top-edge: cap-em * 1em)\n",
+      sprintf("  set par(leading: (%s * 1.2 - cap-em) * 1em)\n", format_typst_number(lineheight %||% 1.2)),
+      "  body\n",
+      "}"
+    )
+  )
+
   # Angle
   if (!is.null(angle) && (angle %% 360 != 0)) {
     # Typst's visible SVG rotation direction is opposite to grid's text rotation.
@@ -107,9 +123,12 @@ build_typst_source <- function(
     typst_code <- sprintf("#rotate(%sdeg, reflow: true)[%s]", angle, typst_code)
   }
 
+  # Like grid text, the layout box runs from the cap height of the first line to
+  # the baseline of the last. Ink outside it (descenders, accents) is kept by the
+  # renderer's canvas.
   preamble_set <- c(
     r"(#set page(width: auto, height: auto, margin: 0pt, fill: none))",
-    r"(#set text(top-edge: "bounds", bottom-edge: "bounds"))"
+    r"(#set text(top-edge: "cap-height", bottom-edge: "baseline"))"
   )
 
   paste(c(preamble_set, text_args, typst_code), collapse = "\n")

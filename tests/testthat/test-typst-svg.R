@@ -15,9 +15,9 @@ test_that("typst_svg returns raw svg and size", {
 })
 
 test_that("typst_svg sizes the svg canvas to the page and any overhanging ink", {
-  # Upright text stays inside its layout box: the canvas is the page, rounded
-  # up to whole points.
-  res <- typst_svg(build_typst_source("Hello", size = 12))
+  # A box on the baseline, lower than the cap height, stays inside the layout
+  # box: the canvas is the page, rounded up to whole points.
+  res <- typst_svg(build_typst_source("#box(width: 20.5pt, height: 4pt, fill: black)", size = 12))
   expect_identical(res$offset_x_pt, 0)
   expect_identical(res$offset_y_pt, 0)
   expect_identical(res$canvas_width_pt, ceiling(res$width_pt))

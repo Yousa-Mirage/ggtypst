@@ -319,6 +319,7 @@ typst_title_grob <- function(
   grobs <- vector("list", n)
   widths <- numeric(n)
   heights <- numeric(n)
+  descents <- numeric(n)
 
   for (i in seq_len(n)) {
     result <- typst_element_grob(
@@ -341,10 +342,15 @@ typst_title_grob <- function(
     grobs[[i]] <- result$grob
     widths[i] <- result$width_pt
     heights[i] <- result$height_pt
+    descents[i] <- result$descent_pt
   }
 
-  width <- grid::unit(max(widths), "bigpts")
-  height <- grid::unit(max(heights), "bigpts")
+  # Like ggplot2's titleGrob(), reserve room for descenders below the last
+  # baseline (the bottom of the Typst layout box), turned with the text.
+  rad <- (angle[1] %% 360) / 180 * pi
+  descent <- max(descents)
+  width <- grid::unit(max(widths) + abs(sin(rad)) * descent, "bigpts")
+  height <- grid::unit(max(heights) + abs(cos(rad)) * descent, "bigpts")
 
   new_width <- if (margin_x) grid::unit.c(margin[4], width, margin[2])
   new_height <- if (margin_y) grid::unit.c(margin[1], height, margin[3])
@@ -399,7 +405,7 @@ typst_title_grob <- function(
 #' @param lineheight Line height value or `NULL`.
 #' @param math_family Math font family or `NULL`.
 #' @param angle Rotation angle in degrees.
-#' @return A list with `$grob`, `$width_pt`, and `$height_pt`.
+#' @return A list with `$grob`, `$width_pt`, `$height_pt`, and `$descent_pt`.
 #' @noRd
 typst_element_grob <- function(
   label,
@@ -448,5 +454,10 @@ typst_element_grob <- function(
     angle = angle
   )
 
-  list(grob = grob, width_pt = width_pt, height_pt = height_pt)
+  list(
+    grob = grob,
+    width_pt = width_pt,
+    height_pt = height_pt,
+    descent_pt = rendered$descent_pt * scale
+  )
 }
