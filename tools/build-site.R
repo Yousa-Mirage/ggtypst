@@ -34,8 +34,6 @@ restore_agents <- function() {
   }
 }
 
-on.exit(restore_agents(), add = TRUE)
-
 if (file.exists(agents_path)) {
   ok <- file.rename(agents_path, hidden_agents_path)
 
@@ -44,8 +42,13 @@ if (file.exists(agents_path)) {
   }
 }
 
-pkgdown::init_site()
-pkgdown::build_site(preview = FALSE, devel = TRUE, lazy = TRUE)
+tryCatch(
+  {
+    pkgdown::init_site()
+    pkgdown::build_site(preview = FALSE, devel = TRUE, lazy = TRUE)
+  },
+  finally = restore_agents()
+)
 
 unlink("docs/AGENTS.html")
 unlink("docs/dev/AGENTS.html")
