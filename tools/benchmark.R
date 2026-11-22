@@ -165,9 +165,10 @@ cat("Warmup complete.\n\n")
 N_RENDER <- 30L # iterations for Layer 1 (fast)
 N_PLOT <- 15L # iterations for Layer 2 (slower)
 
-output <- character()
+output <- new.env()
+output$lines <- character()
 out <- function(...) {
-  output <<- c(output, paste0(...))
+  output$lines <- c(output$lines, paste0(...))
 }
 
 # ── Header ──────────────────────────────────────────────────────────────────
@@ -634,5 +635,5 @@ out("")
 # ── Write output ────────────────────────────────────────────────────────────
 
 out_file <- file.path("tools", "benchmark-results.txt")
-writeLines(output, out_file)
+writeLines(output$lines, out_file)
 cat(sprintf("\nResults written to %s\n", out_file))
