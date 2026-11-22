@@ -105,7 +105,7 @@ test_that("element_grob.element_math_mitex handles wrapped and unwrapped labels"
     element_grob(label = c(r"(\alpha)", r"($\beta$)", r"($$\gamma$$)"))
 
   expect_s3_class(grob, "titleGrob")
-  expect_equal(length(grob$children[[1]]$children), 3)
+  expect_length(grob$children, 3)
 })
 
 test_that("element_grob.element_math_mitex returns zeroGrob for blank labels", {

@@ -104,7 +104,7 @@ test_that("element_grob.element_math_typst handles wrapped and unwrapped labels"
     element_grob(label = c("x^2", "$ y^2 $", "$$ z^2 $$"))
 
   expect_s3_class(grob, "titleGrob")
-  expect_equal(length(grob$children[[1]]$children), 3)
+  expect_length(grob$children, 3)
 })
 
 test_that("element_grob.element_math_typst returns zeroGrob for blank labels", {

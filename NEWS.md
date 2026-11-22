@@ -1,4 +1,4 @@
-# ggtypst 0.1.1
+# ggtypst 0.2.0
 
 - **(BREAKING)** `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`
   now require optional arguments after `x` and `y` to be named, so misplaced
@@ -9,6 +9,9 @@
   about 9% too small, and short labels shrank by up to a further ~5% depending
   on their box size (so a single-line label drew smaller glyphs than a
   multi-line label of the same `size`).
+- `element_typst()`, `element_math_typst()`, and `element_math_mitex()` now
+  respect `hjust` and `vjust` within their cell, like `element_text()`: titles,
+  subtitles, captions, and legend labels are no longer always centered.
 
 # ggtypst 0.1.0
 

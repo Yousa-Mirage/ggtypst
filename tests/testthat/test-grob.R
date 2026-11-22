@@ -1,29 +1,6 @@
-# Draw a grob on an svglite device and return the extent of everything drawn,
-# in device points (svg y axis points down).
-ink_extent <- function(grob) {
-  s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
-  grid::grid.newpage()
-  grid::grid.draw(grob)
-  grDevices::dev.off()
-
-  svg <- as.character(s())
-  # Leading whitespace keeps `d=` from matching inside `id=`.
-  attrs <- unlist(regmatches(svg, gregexpr("\\s(points|d)='[^']+'", svg)))
-  nums <- as.numeric(unlist(regmatches(attrs, gregexpr("-?[0-9]+(\\.[0-9]+)?", attrs))))
-  xs <- nums[c(TRUE, FALSE)]
-  ys <- nums[c(FALSE, TRUE)]
-
-  list(left = min(xs), right = max(xs), top = min(ys), bottom = max(ys))
-}
-
 typst_test_grob <- function(code, ...) {
   rendered <- typst_svg(build_typst_source(code))
   positioned_typst_grob(rendered, ...)
-}
-
-# svglite writes coordinates with two decimals.
-expect_pt_equal <- function(object, expected) {
-  expect_lt(abs(object - expected), 0.02)
 }
 
 test_that("Typst output is drawn at its exact size", {

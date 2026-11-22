@@ -200,8 +200,8 @@ test_that("element_grob.element_typst drops blank entries and syncs x/y", {
     )
   expect_s3_class(grob, "titleGrob")
 
-  # The inner typst_grob should have exactly 2 children (blank dropped)
-  expect_equal(length(grob$children[[1]]$children), 2)
+  # One child per non-blank label (blank dropped)
+  expect_length(grob$children, 2)
 })
 
 test_that("element_grob.element_typst handles different labels", {
@@ -234,7 +234,7 @@ test_that("element_grob.element_typst anchors rotated grobs by rotated justifica
   grob <- element_typst(size = 12, angle = 90, vjust = 1) |>
     element_grob(label = "Test")
 
-  just <- grob$children[[1]]$children[[1]]$vp[[1]]$justification
+  just <- grob$children[[1]]$vp[[1]]$justification
 
   # Rotated justification is c(0, 0.5) on the Typst layout box; the picture
   # viewport spans the canvas, which is padded at the right and bottom.
@@ -244,6 +244,32 @@ test_that("element_grob.element_typst anchors rotated grobs by rotated justifica
     (canvas_height_pt - height_pt + 0.5 * height_pt) / canvas_height_pt
   )
   expect_equal(unname(just), c(0, canvas_vjust))
+})
+
+test_that("element_typst places text at hjust within the whole cell", {
+  skip_if_not_installed("svglite")
+
+  box <- "#box(width: 20pt, height: 10pt, fill: black)"
+  ink_at <- function(hjust, ...) {
+    element_typst(hjust = hjust, size = 10) |>
+      element_grob(label = box, ...) |>
+      ink_extent()
+  }
+
+  # The device is 288pt wide. The box sits inside Typst's 0.1em page margin.
+  page_margin <- 1
+  expect_pt_equal(ink_at(0, margin_y = TRUE)$left, page_margin)
+  expect_pt_equal(ink_at(1, margin_y = TRUE)$right, 288 - page_margin)
+  centre <- ink_at(0.5, margin_y = TRUE)
+  expect_pt_equal((centre$left + centre$right) / 2, 144)
+
+  # Horizontal margins push the text away from the edge it is justified to.
+  # ggplot2 margins are in TeX points (1/72.27 in), svglite in 1/72 in.
+  gap <- 15 * 72 / 72.27
+  left <- ink_at(0, margin_x = TRUE, margin = margin(l = 15))
+  expect_pt_equal(left$left, gap + page_margin)
+  right <- ink_at(1, margin_x = TRUE, margin = margin(r = 15))
+  expect_pt_equal(right$right, 288 - gap - page_margin)
 })
 
 # Visual regression tests

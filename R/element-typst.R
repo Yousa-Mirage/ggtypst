@@ -253,9 +253,13 @@ element_grob.element_typst <- function(
 
 #' Build a complete Typst title grob with margin support
 #'
-#' Handles vectorised labels (e.g. axis tick labels), renders each through Typst,
-#' and wraps the result in a margin-aware layout compatible with ggplot2's
-#' `titleGrob` class.
+#' Handles vectorised labels (e.g. axis tick labels), renders each through
+#' Typst, and returns a `titleGrob` laid out the way ggplot2's own
+#' `titleGrob()` does: labels are drawn in the full cell at `(hjust, vjust)`
+#' with margins folded into their position, while `$widths`/`$heights` only
+#' tell the layout how much space to reserve. (Wrapping the labels in a
+#' fixed-size layout viewport instead would centre them in wider cells and
+#' ignore `hjust`.)
 #'
 #' @param label Character vector of Typst source labels.
 #' @param x,y Grid units for label positions.
@@ -295,19 +299,32 @@ typst_title_grob <- function(
   debug
 ) {
   n <- length(label)
+  just <- rotate_just(angle, hjust, vjust)
+
+  if (is.null(margin)) {
+    margin <- ggplot2::margin(0, 0, 0, 0)
+  }
+  margin_x <- isTRUE(margin_x)
+  margin_y <- isTRUE(margin_y)
+
+  # Same offsets as ggplot2's titleGrob(): keep the label `margin` away from
+  # the cell edge it is justified against.
+  if (margin_x) {
+    x <- x - margin[2] * just$hjust + margin[4] * (1 - just$hjust)
+  }
+  if (margin_y) {
+    y <- y - margin[1] * just$vjust + margin[3] * (1 - just$vjust)
+  }
 
   grobs <- vector("list", n)
   widths <- numeric(n)
   heights <- numeric(n)
 
   for (i in seq_len(n)) {
-    xi <- x[i]
-    yi <- y[i]
-
     result <- typst_element_grob(
       label = label[[i]],
-      x = xi,
-      y = yi,
+      x = x[i],
+      y = y[i],
       hjust = hjust,
       vjust = vjust,
       scale = scale,
@@ -326,20 +343,44 @@ typst_title_grob <- function(
     heights[i] <- result$height_pt
   }
 
-  content <- grid::gTree(
-    children = do.call(grid::gList, grobs),
-    typst_width = grid::unit(max(widths), "bigpts"),
-    typst_height = grid::unit(max(heights), "bigpts"),
-    cl = "typst_grob"
-  )
+  width <- grid::unit(max(widths), "bigpts")
+  height <- grid::unit(max(heights), "bigpts")
 
-  # Margins set maybe have issues.
-  add_typst_margins(
-    grob = content,
-    margin = margin,
-    margin_x = margin_x,
-    margin_y = margin_y,
-    debug = debug
+  new_width <- if (margin_x) grid::unit.c(margin[4], width, margin[2])
+  new_height <- if (margin_y) grid::unit.c(margin[1], height, margin[3])
+
+  # With margins in one direction only, the other direction stretches to fill
+  # the cell, as in ggplot2.
+  if (xor(margin_x, margin_y)) {
+    new_width <- new_width %||% grid::unit(1, "null")
+    new_height <- new_height %||% grid::unit(1, "null")
+  }
+  new_width <- new_width %||% width
+  new_height <- new_height %||% height
+
+  if (isTRUE(debug)) {
+    grobs <- c(
+      list(
+        grid::rectGrob(
+          x = x,
+          y = y,
+          width = width,
+          height = height,
+          hjust = just$hjust,
+          vjust = just$vjust,
+          gp = grid::gpar(fill = "cornsilk", col = NA)
+        ),
+        grid::pointsGrob(x, y, pch = 20, gp = grid::gpar(col = "gold"))
+      ),
+      grobs
+    )
+  }
+
+  grid::gTree(
+    children = do.call(grid::gList, grobs),
+    widths = new_width,
+    heights = new_height,
+    cl = "titleGrob"
   )
 }
 
@@ -407,88 +448,4 @@ typst_element_grob <- function(
   )
 
   list(grob = grob, width_pt = width_pt, height_pt = height_pt)
-}
-
-
-# Margin wrapper ---------------------------------------------------------------
-
-#' Wrap a grob with ggplot2-compatible margins
-#'
-#' Modelled after ggtext's `add_margins()` and ggplot2's `titleGrob` layout.
-#' Returns a `gTree` with class `"titleGrob"` and `$widths`/`$heights` fields
-#' that ggplot2's layout engine uses via `widthDetails.titleGrob()` and
-#' `heightDetails.titleGrob()`.
-#'
-#' @param grob A grid grob (the rendered Typst content).
-#' @param margin A `margin()` object (top, right, bottom, left).
-#' @param margin_x,margin_y Whether margins apply horizontally/vertically.
-#' @param debug Whether to draw a debugging background.
-#' @return A `gTree` with class `"titleGrob"`.
-#' @noRd
-add_typst_margins <- function(
-  grob,
-  margin = NULL,
-  margin_x = FALSE,
-  margin_y = FALSE,
-  debug = FALSE
-) {
-  if (is.null(margin)) {
-    margin <- ggplot2::margin(0, 0, 0, 0)
-  }
-
-  width <- grid::grobWidth(grob)
-  height <- grid::grobHeight(grob)
-
-  margin_x <- isTRUE(margin_x)
-  margin_y <- isTRUE(margin_y)
-
-  if (margin_x && margin_y) {
-    widths <- grid::unit.c(margin[4], width, margin[2])
-    heights <- grid::unit.c(margin[1], height, margin[3])
-
-    vp <- grid::viewport(
-      layout = grid::grid.layout(3, 3, heights = heights, widths = widths)
-    )
-    child_vp <- grid::viewport(layout.pos.row = 2, layout.pos.col = 2)
-  } else if (margin_x) {
-    widths <- grid::unit.c(margin[4], width, margin[2])
-    heights <- grid::unit(1, "null")
-
-    vp <- grid::viewport(layout = grid::grid.layout(1, 3, widths = widths))
-    child_vp <- grid::viewport(layout.pos.col = 2)
-  } else if (margin_y) {
-    widths <- grid::unit(1, "null")
-    heights <- grid::unit.c(margin[1], height, margin[3])
-
-    vp <- grid::viewport(layout = grid::grid.layout(3, 1, heights = heights))
-    child_vp <- grid::viewport(layout.pos.row = 2)
-  } else {
-    # No margins active — simple wrapper
-    children <- if (isTRUE(debug)) {
-      grid::gList(grid::rectGrob(gp = grid::gpar(fill = "cornsilk", col = NA)), grob)
-    } else {
-      grid::gList(grob)
-    }
-
-    return(grid::gTree(
-      children = children,
-      widths = width,
-      heights = height,
-      cl = "titleGrob"
-    ))
-  }
-
-  children <- if (isTRUE(debug)) {
-    grid::gList(grid::rectGrob(gp = grid::gpar(fill = "cornsilk", col = NA)), grob)
-  } else {
-    grid::gList(grob)
-  }
-
-  grid::gTree(
-    children = children,
-    vp = grid::vpTree(vp, grid::vpList(child_vp)),
-    widths = widths,
-    heights = heights,
-    cl = "titleGrob"
-  )
 }
