@@ -103,12 +103,9 @@ vector_typst_grob <- function(
     height = canvas_height * 8L
   )
 
-  # TODO: Replace tempfile-based SVG import with an in-memory pipeline.
-  path <- tempfile(fileext = ".svg")
-  on.exit(unlink(path), add = TRUE)
-  writeBin(canonical_svg, path, useBytes = TRUE)
-
-  picture <- grImport2::readPicture(path, warn = FALSE)
+  # readPicture() hands its argument to XML::xmlParse(), which parses a string
+  # starting with "<" as XML content.
+  picture <- grImport2::readPicture(rawToChar(canonical_svg), warn = FALSE)
 
   grImport2::pictureGrob(
     picture,
