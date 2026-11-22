@@ -1,1 +1,28 @@
+# GitHub Linguist: keep the language bar to the package source (R/ and src/rust/src/).
+
+# Typst sources vendored from MiTeX.
 src/rust/specs/** linguist-vendored
+
+# Generated files: excluded from language stats and collapsed in diffs.
+R/extendr-wrappers.R linguist-generated
+NAMESPACE linguist-generated
+man/** linguist-generated
+README.md linguist-generated
+.github/CONTRIBUTING.md linguist-generated
+tests/testthat/_snaps/** linguist-generated
+src/rust/Cargo.lock linguist-generated
+src/entrypoint.c linguist-generated
+src/Makevars*.in linguist-generated
+configure linguist-generated
+configure.win linguist-generated
+
+# Documentation and website assets.
+inst/examples/** linguist-documentation
+vignettes/** linguist-documentation
+pkgdown/** linguist-documentation
+ggtypst-skill/** linguist-documentation
+
+# Tests and development tooling: real code, but not part of the package.
+tests/** -linguist-detectable
+tools/** -linguist-detectable
+justfile -linguist-detectable
