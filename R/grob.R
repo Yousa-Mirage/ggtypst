@@ -147,12 +147,8 @@ scene_typst_grob <- function(
 #' @importFrom grid makeContent
 #' @export
 makeContent.typst_scene_grob <- function(x) {
-  children <- switch(
-    typst_render_mode(x$scene),
-    glyph = scene_glyph_grobs(x$scene, x$scale, x$width_pt, x$height_pt),
-    path = scene_path_grobs(x$scene, x$scale)
-  )
-  grid::setChildren(x, children)
+  mode <- typst_render_mode(x$scene)
+  grid::setChildren(x, scene_grobs(x$scene, mode, x$scale, x$width_pt, x$height_pt))
 }
 
 #' Choose how to draw a scene's text: `"glyph"` or `"path"`
@@ -212,47 +208,133 @@ glyphs_supported <- function() {
   getRversion() >= "4.3.0"
 }
 
-#' Grid grobs drawing a scene's text as native glyphs, and its shapes
+#' Grid grobs drawing a scene, in Typst's drawing order
+#'
+#' Consecutive glyphs are drawn by one grob: native glyphs or their outlines,
+#' depending on `mode`. Each shape is drawn by its own grob.
 #'
 #' @param scene The `scene` of a rendered Typst result.
+#' @param mode `"glyph"` or `"path"`, see `typst_render_mode()`.
 #' @param scale Scaling factor applied to the rendered output.
 #' @param width,height Size of the layout box in points.
 #' @return A `gList`.
 #' @noRd
-scene_glyph_grobs <- function(scene, scale, width, height) {
+scene_grobs <- function(scene, mode, scale = 1, width, height) {
   glyphs <- scene$glyphs
-  shapes <- scene_shape_grobs(scene, scale)
-  if (length(glyphs$id) == 0L) {
-    return(do.call(grid::gList, shapes))
+  shapes <- scene$shapes
+  kind <- rep(c("glyph", "shape"), c(length(glyphs$z), length(shapes$z)))
+  row <- c(seq_along(glyphs$z), seq_along(shapes$z))
+  order <- order(c(glyphs$z, shapes$z))
+  kind <- kind[order]
+  row <- row[order]
+  if (length(kind) == 0L) {
+    return(grid::gList())
   }
 
-  fonts <- scene$fonts
-  files <- typst_font_files(fonts)
-  font_list <- do.call(
-    grDevices::glyphFontList,
-    lapply(seq_along(files), function(i) {
-      grDevices::glyphFont(files[i], fonts$collection_index[i], fonts$family[i], fonts$weight[i], fonts$style[i])
-    })
-  )
+  # A new run starts at every shape and at every glyph that follows a shape.
+  run <- cumsum(kind == "shape" | c(TRUE, kind[-1] != kind[-length(kind)]))
+  font_list <- if (mode == "glyph" && "glyph" %in% kind) glyph_font_list(scene$fonts)
 
-  # Glyph positions are in points from the layout box's bottom-left corner.
+  grobs <- lapply(split(seq_along(kind), run), function(i) {
+    if (kind[i[1]] == "shape") {
+      shape_grob(scene, row[i], scale)
+    } else if (mode == "glyph") {
+      glyph_run_grob(glyphs, row[i], font_list, scale, width, height)
+    } else {
+      outline_run_grob(scene, row[i], scale)
+    }
+  })
+  do.call(grid::gList, Filter(Negate(is.null), grobs))
+}
+
+# Native glyphs for some glyph rows. Positions are in points from the layout
+# box's bottom-left corner.
+glyph_run_grob <- function(glyphs, rows, font_list, scale, width, height) {
   info <- grDevices::glyphInfo(
-    id = glyphs$id,
-    x = glyphs$x * scale,
-    y = (height - glyphs$y) * scale,
-    font = glyphs$font,
-    size = glyphs$size * scale,
+    id = glyphs$id[rows],
+    x = glyphs$x[rows] * scale,
+    y = (height - glyphs$y[rows]) * scale,
+    font = glyphs$font[rows],
+    size = glyphs$size[rows] * scale,
     fontList = font_list,
     width = width * scale,
     height = height * scale,
     hAnchor = grDevices::glyphAnchor(0, "left"),
     vAnchor = grDevices::glyphAnchor(0, "bottom"),
-    col = glyphs$fill,
-    rot = glyphs$rot
+    col = glyphs$fill[rows],
+    rot = glyphs$rot[rows]
   )
-  text <- grid::glyphGrob(info, x = 0, y = 0, hjust = 0, vjust = 0, default.units = "npc")
+  grid::glyphGrob(info, x = 0, y = 0, hjust = 0, vjust = 0, default.units = "npc")
+}
 
-  do.call(grid::gList, c(list(text), shapes))
+glyph_font_list <- function(fonts) {
+  files <- typst_font_files(fonts)
+  do.call(
+    grDevices::glyphFontList,
+    lapply(seq_along(files), function(i) {
+      grDevices::glyphFont(files[i], fonts$collection_index[i], fonts$family[i], fonts$weight[i], fonts$style[i])
+    })
+  )
+}
+
+# Outlines of some glyph rows as one path grob: one path per glyph (`pathId`),
+# made of its contours (`id`).
+outline_run_grob <- function(scene, rows, scale = 1) {
+  outlines <- scene$outlines
+  keep <- outlines$owner %in% rows
+  if (!any(keep)) {
+    return(NULL)
+  }
+  glyphs <- scene$glyphs
+  owners <- unique(outlines$owner[keep])
+  grid::pathGrob(
+    x = outlines$x[keep],
+    y = outlines$y[keep],
+    id = outlines$sub[keep],
+    pathId = outlines$owner[keep],
+    rule = "winding",
+    default.units = "native",
+    gp = grid::gpar(
+      fill = glyphs$fill[owners],
+      col = na_if_empty(glyphs$stroke[owners]),
+      lwd = pt_to_lwd(glyphs$stroke_width[owners] * scale)
+    )
+  )
+}
+
+# One shape: a path if it is closed or filled, otherwise a polyline.
+shape_grob <- function(scene, i, scale = 1) {
+  shapes <- scene$shapes
+  points <- scene$shape_points
+  keep <- points$owner == i
+  if (!any(keep)) {
+    return(NULL)
+  }
+  gp <- grid::gpar(
+    fill = na_if_empty(shapes$fill[i]),
+    col = na_if_empty(shapes$stroke[i]),
+    lwd = pt_to_lwd(shapes$stroke_width[i] * scale),
+    lineend = shapes$lineend[i],
+    linejoin = shapes$linejoin[i]
+  )
+  if (shapes$closed[i] == 1L || nzchar(shapes$fill[i])) {
+    grid::pathGrob(
+      x = points$x[keep],
+      y = points$y[keep],
+      id = points$sub[keep],
+      rule = shapes$rule[i],
+      default.units = "native",
+      gp = gp
+    )
+  } else {
+    grid::polylineGrob(
+      x = points$x[keep],
+      y = points$y[keep],
+      id = points$sub[keep],
+      default.units = "native",
+      gp = gp
+    )
+  }
 }
 
 #' Files of the fonts a scene's glyphs use
@@ -286,79 +368,6 @@ typst_font_files <- function(fonts) {
     files[i] <- file
   }
   files
-}
-
-#' Grid grobs drawing a scene's glyph outlines and shapes
-#'
-#' @param scene The `scene` of a rendered Typst result.
-#' @param scale Scaling factor, applied to line widths (coordinates are scaled
-#'   by the viewport).
-#' @return A `gList`.
-#' @noRd
-scene_path_grobs <- function(scene, scale = 1) {
-  do.call(grid::gList, c(list(scene_outline_grob(scene, scale)), scene_shape_grobs(scene, scale)))
-}
-
-# All glyph outlines as one path grob: one path per glyph (`pathId`), made of
-# its contours (`id`). NULL if the scene has no outlines.
-scene_outline_grob <- function(scene, scale = 1) {
-  outlines <- scene$outlines
-  if (length(outlines$x) == 0L) {
-    return(NULL)
-  }
-  glyphs <- scene$glyphs
-  owners <- unique(outlines$owner)
-  grid::pathGrob(
-    x = outlines$x,
-    y = outlines$y,
-    id = outlines$sub,
-    pathId = outlines$owner,
-    rule = "winding",
-    default.units = "native",
-    gp = grid::gpar(
-      fill = glyphs$fill[owners],
-      col = na_if_empty(glyphs$stroke[owners]),
-      lwd = pt_to_lwd(glyphs$stroke_width[owners] * scale)
-    )
-  )
-}
-
-# One grob per shape: a path if it is closed or filled, otherwise a polyline.
-scene_shape_grobs <- function(scene, scale = 1) {
-  shapes <- scene$shapes
-  points <- scene$shape_points
-  grobs <- lapply(seq_along(shapes$fill), function(i) {
-    keep <- points$owner == i
-    if (!any(keep)) {
-      return(NULL)
-    }
-    gp <- grid::gpar(
-      fill = na_if_empty(shapes$fill[i]),
-      col = na_if_empty(shapes$stroke[i]),
-      lwd = pt_to_lwd(shapes$stroke_width[i] * scale),
-      lineend = shapes$lineend[i],
-      linejoin = shapes$linejoin[i]
-    )
-    if (shapes$closed[i] == 1L || nzchar(shapes$fill[i])) {
-      grid::pathGrob(
-        x = points$x[keep],
-        y = points$y[keep],
-        id = points$sub[keep],
-        rule = shapes$rule[i],
-        default.units = "native",
-        gp = gp
-      )
-    } else {
-      grid::polylineGrob(
-        x = points$x[keep],
-        y = points$y[keep],
-        id = points$sub[keep],
-        default.units = "native",
-        gp = gp
-      )
-    }
-  })
-  Filter(Negate(is.null), grobs)
 }
 
 # Line width in grid's units (1/96 in) from Typst points (1/72 in).

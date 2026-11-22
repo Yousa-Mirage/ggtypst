@@ -45,6 +45,8 @@ pub struct Glyphs {
     /// `#RRGGBBAA`, or empty for no stroke.
     pub stroke: Vec<String>,
     pub stroke_width: Vec<f64>,
+    /// Drawing order among glyphs and shapes.
+    pub z: Vec<i32>,
 }
 
 /// Points of flattened subpaths, each owned by a glyph or shape row.
@@ -74,6 +76,8 @@ pub struct Shapes {
     pub linejoin: Vec<String>,
     /// 1 if the outline is closed, 0 if it is an open line.
     pub closed: Vec<i32>,
+    /// Drawing order among glyphs and shapes.
+    pub z: Vec<i32>,
 }
 
 /// Font files used by the glyphs, one row per font.
@@ -130,7 +134,8 @@ impl Scene {
                 rot = g.rot,
                 fill = g.fill,
                 stroke = g.stroke,
-                stroke_width = g.stroke_width
+                stroke_width = g.stroke_width,
+                z = g.z
             ),
             outlines = list!(x = o.x, y = o.y, sub = o.sub, owner = o.owner),
             shapes = list!(
@@ -140,7 +145,8 @@ impl Scene {
                 rule = s.rule,
                 lineend = s.lineend,
                 linejoin = s.linejoin,
-                closed = s.closed
+                closed = s.closed,
+                z = s.z
             ),
             shape_points = list!(x = sp.x, y = sp.y, sub = sp.sub, owner = sp.owner),
             fonts = list!(
@@ -175,6 +181,7 @@ pub fn extract_scene(frame: &Frame) -> Scene {
         font_rows: HashMap::new(),
         next_outline_sub: 0,
         next_shape_sub: 0,
+        next_z: 0,
     };
     builder.frame(frame, Transform::identity());
     builder.scene
@@ -186,9 +193,15 @@ struct SceneBuilder {
     font_rows: HashMap<usize, i32>,
     next_outline_sub: i32,
     next_shape_sub: i32,
+    next_z: i32,
 }
 
 impl SceneBuilder {
+    fn next_z(&mut self) -> i32 {
+        self.next_z += 1;
+        self.next_z
+    }
+
     fn unsupported(&mut self, path: bool, glyph: bool, reason: &str) {
         self.scene.path_ok &= path;
         self.scene.glyph_ok &= glyph;
@@ -287,6 +300,7 @@ impl SceneBuilder {
             }
 
             let o = Point::new(Abs::pt(origin.0), Abs::pt(origin.1)).transform(ts);
+            let z = self.next_z();
             let g = &mut self.scene.glyphs;
             g.font.push(font_row);
             g.id.push(i32::from(glyph.id));
@@ -297,6 +311,7 @@ impl SceneBuilder {
             g.fill.push(fill.clone());
             g.stroke.push(stroke.clone());
             g.stroke_width.push(stroke_width);
+            g.z.push(z);
         }
     }
 
@@ -369,6 +384,7 @@ impl SceneBuilder {
             }
         };
 
+        let z = self.next_z();
         let s = &mut self.scene.shapes;
         s.fill.push(fill);
         s.stroke.push(stroke);
@@ -383,6 +399,7 @@ impl SceneBuilder {
         s.lineend.push(lineend.to_string());
         s.linejoin.push(linejoin.to_string());
         s.closed.push(i32::from(closed));
+        s.z.push(z);
     }
 
     /// 1-based row of `font` in the scene's font table, adding it if needed.
@@ -742,6 +759,14 @@ mod tests {
         assert_close(g.rot[0], 0.0);
         assert_eq!(g.fill[0], "#000000FF");
         assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+    }
+
+    #[test]
+    fn drawing_order_follows_the_frame() {
+        // The box background is drawn before the text inside it.
+        let (_, scene) = scene_of("#box(fill: yellow)[Hi] H");
+        assert_eq!(scene.shapes.z, vec![1]);
+        assert_eq!(scene.glyphs.z, vec![2, 3, 4]);
     }
 
     #[test]
