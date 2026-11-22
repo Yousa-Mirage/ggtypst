@@ -50,6 +50,55 @@ test_that("single-line and multi-line labels render glyphs at the same size", {
   expect_pt_equal(double$right - double$left, single$right - single$left)
 })
 
+test_that("lines of multi-line labels are aligned by hjust in every API", {
+  skip_if_not_installed("svglite")
+
+  # Two lines of different width; each box is drawn as its own polygon.
+  label <- paste(
+    "#box(width: 10pt, height: 5pt, fill: black)",
+    "#linebreak()",
+    "#box(width: 30pt, height: 5pt, fill: black)"
+  )
+
+  line_edges <- function(grob) {
+    s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
+    grid::grid.newpage()
+    grid::grid.draw(grob)
+    grDevices::dev.off()
+    svg <- as.character(s())
+    polys <- regmatches(svg, gregexpr("<polygon points='[^']+'", svg))[[1]]
+    t(vapply(
+      polys,
+      function(p) {
+        v <- as.numeric(regmatches(p, gregexpr("-?[0-9]+(\\.[0-9]+)?", p))[[1]])
+        range(v[c(TRUE, FALSE)])
+      },
+      numeric(2),
+      USE.NAMES = FALSE
+    ))
+  }
+
+  apis <- list(
+    annotate = function(h) annotate_typst(label, x = 0, y = 0, hjust = h)$geom_params$grob,
+    geom = function(h) {
+      p <- ggplot(data.frame(x = 0, y = 0), aes(x, y)) + geom_typst(label = label, hjust = h)
+      layer_grob(p)[[1]]
+    },
+    element = function(h) element_grob(element_typst(hjust = h), label = label)
+  )
+
+  for (api in names(apis)) {
+    left <- line_edges(apis[[api]](0))
+    expect_pt_equal(left[1, 1], left[2, 1])
+
+    centre <- line_edges(apis[[api]](0.5))
+    expect_pt_equal(mean(centre[1, ]), mean(centre[2, ]))
+
+    right <- line_edges(apis[[api]](1))
+    expect_pt_equal(right[1, 2], right[2, 2])
+  }
+})
+
 test_that("justification is relative to the Typst layout box, not the padded canvas", {
   skip_if_not_installed("svglite")
 

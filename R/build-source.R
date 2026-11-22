@@ -17,6 +17,10 @@
 #'   leading in `em` units. May be negative.
 #' @param math_family Optional font family for math mode. Defaults to `New Computer Modern Math`.
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
+#' @param hjust Optional horizontal justification. Aligns the lines of
+#'   multi-line content to the left (`hjust < 0.25`), centre, or right
+#'   (`hjust > 0.75`), the closest Typst can get to grid's per-line `hjust`.
+#'   Alignment set inside `typst_code` still takes precedence.
 #' @return A single UTF-8 Typst source string.
 #' @noRd
 build_typst_source <- function(
@@ -30,7 +34,8 @@ build_typst_source <- function(
   fontface = NULL,
   lineheight = NULL,
   math_family = NULL,
-  angle = NULL
+  angle = NULL,
+  hjust = NULL
 ) {
   typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
 
@@ -44,9 +49,22 @@ build_typst_source <- function(
   lineheight <- check_number(lineheight, "lineheight")
   math_family <- check_single_string(math_family, "math_family")
   angle <- check_number(angle, "angle")
+  hjust <- check_number(hjust, "hjust")
   face <- normalize_face(face, "face")
 
   text_args <- c()
+
+  # Alignment of lines within multi-line content
+  if (!is.null(hjust)) {
+    align <- if (hjust < 0.25) {
+      "left"
+    } else if (hjust > 0.75) {
+      "right"
+    } else {
+      "center"
+    }
+    text_args <- c(text_args, sprintf("#set align(%s)", align))
+  }
 
   # Color & Alpha
   if (!is.null(color) || !is.null(alpha)) {

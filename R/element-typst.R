@@ -428,7 +428,8 @@ typst_element_grob <- function(
     face = face,
     lineheight = lineheight,
     math_family = math_family,
-    angle = angle
+    angle = angle,
+    hjust = hjust
   )
 
   rendered <- typst_svg(source)

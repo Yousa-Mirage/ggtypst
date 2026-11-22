@@ -81,7 +81,8 @@ annotate_typst <- function(
     face = face,
     lineheight = lineheight,
     math_family = math_family,
-    angle = angle
+    angle = angle,
+    hjust = hjust
   )
   rendered <- typst_svg(full_source)
 

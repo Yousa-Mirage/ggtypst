@@ -279,7 +279,8 @@ geom_typst_row_grob <- function(
         family = normalize_optional_string(family, empty_is_null = TRUE),
         lineheight = normalize_optional_number(lineheight),
         math_family = normalize_optional_string(math_family, empty_is_null = TRUE),
-        angle = normalize_optional_number(angle)
+        angle = normalize_optional_number(angle),
+        hjust = hjust
       )
 
       rendered <- typst_svg(source)

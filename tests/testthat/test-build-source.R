@@ -103,6 +103,24 @@ test_that("build_typst_source negates angle to match grid semantics", {
   expect_equal(lines[3], "#rotate(-45deg, reflow: true)[A]")
 })
 
+test_that("build_typst_source maps hjust to the nearest Typst alignment", {
+  align_of <- function(hjust) {
+    src <- build_typst_source("A", hjust = hjust)
+    regmatches(src, regexpr("#set align\\([a-z]+\\)", src))
+  }
+
+  expect_equal(align_of(0), "#set align(left)")
+  expect_equal(align_of(0.2), "#set align(left)")
+  expect_equal(align_of(0.5), "#set align(center)")
+  expect_equal(align_of(0.8), "#set align(right)")
+  expect_equal(align_of(1), "#set align(right)")
+  expect_false(grepl("#set align", build_typst_source("A"), fixed = TRUE))
+
+  # The user's own alignment comes after ours, so it wins.
+  src <- build_typst_source("#align(right)[A]", hjust = 0)
+  expect_lt(regexpr("#set align(left)", src, fixed = TRUE), regexpr("#align(right)", src, fixed = TRUE))
+})
+
 test_that("build_typst_source validates arguments", {
   expect_snapshot(build_typst_source(NULL), error = TRUE)
   expect_snapshot(build_typst_source("A", size = 0), error = TRUE)
