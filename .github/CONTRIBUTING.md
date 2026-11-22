@@ -3,11 +3,12 @@
 
 Thanks for your interest in contributing to `ggtypst`.
 
-`ggtypst` is an R package with a Rust backend. It renders Typst text and
-math to SVG, then inserts that output into `ggplot2` as annotations,
-geoms, and theme elements. Most contributions touch both the R package
-layer and the Rust rendering layer, so a good change usually starts with
-understanding how those two halves fit together.
+`ggtypst` is an R package with a Rust backend. It lays out Typst text
+and math with the Typst compiler, then draws the result with grid in
+`ggplot2` annotations, geoms, and theme elements. Most contributions
+touch both the R package layer and the Rust rendering layer, so a good
+change usually starts with understanding how those two halves fit
+together.
 
 ## Development setup
 
@@ -42,9 +43,13 @@ At a high level, the pipeline is:
       [`mitex`](https://github.com/mitex-rs/mitex) to translate it into
       Typst.
 2.  `extendr` forwards the Typst source code into Rust.
-3.  Rust compiles Typst source in an in-memory world, renders the first
-    page to SVG, and returns dimensions plus diagnostics.
-4.  R converts the SVG into grobs and plugs those grobs into `ggplot2`.
+3.  Rust compiles Typst source in an in-memory world and describes the
+    first page as a scene: glyphs (font, glyph id, position), their
+    flattened outlines, and shapes, plus dimensions and diagnostics.
+4.  R turns the scene into grid grobs and plugs those grobs into
+    `ggplot2`. When a grob is drawn, it draws text as native glyphs on
+    devices that rasterize or embed fonts, and as outlines elsewhere
+    (see `?ggtypst-options`).
 
 That split is the key architectural idea of the package: R owns
 user-facing API design and `ggplot2` integration; Rust owns rendering,
@@ -77,9 +82,11 @@ Other R files include:
   directives around user code.
 - `diagnostic.R`: formats Rust/Typst diagnostics into structured `cli`
   warnings and errors.
-- `typst-svg.R`: thin R wrapper around the Rust SVG renderer entrypoint.
-- `grob.R`: converts rendered SVG bytes into measured grid grobs of
-  `ggplot2`.
+- `typst-svg.R`: thin R wrapper around the Rust renderer entrypoint.
+- `grob.R`: turns rendered scenes into measured grid grobs, choosing
+  native glyphs or outlines when drawn; content the scene cannot
+  describe yet (gradients, images) falls back to importing the SVG with
+  the optional `rsvg` and `grImport2` packages.
 - `helper.R`: shared validators, alias resolution, face normalization,
   unit conversion, and small utility helpers. Prefer reusing those
   helpers instead of open-coding validation.
@@ -94,19 +101,24 @@ Other R files include:
 
 ### Rust layer
 
-The Rust crate lives in `src/rust/` and currently exposes two exported
+The Rust crate lives in `src/rust/` and currently exposes three exported
 entry points:
 
-- `rs_typst_svg()` compiles Typst and returns SVG output plus
-  diagnostics
+- `rs_typst_svg()` compiles Typst and returns the page’s scene, its SVG
+  (for the fallback), and diagnostics
+- `rs_typst_font_data()` returns the data of a font built into the
+  binary, to write it to a file for native glyphs
 - `rs_convert_latex_to_typst()` converts LaTeX-style input through MiTeX
 
 Important modules include:
 
 - `world.rs`: builds the in-memory Typst world and serves embedded Typst
   files
-- `render.rs`: compiles Typst documents and converts the first page to
-  SVG
+- `render.rs`: compiles Typst documents and returns the first page’s
+  scene and SVG
+- `scene.rs`: walks the laid-out page into a scene of glyphs, outlines,
+  shapes, clip regions, and fonts
+- `bounds.rs`: ink bounds and font descent of a page
 - `mitex.rs`: bridges LaTeX-style input through MiTeX
 - `error.rs`: translates Rust-side failures into structured R errors
 - `fonts.rs`: loads and caches embedded/system fonts for Typst rendering

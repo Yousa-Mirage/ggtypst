@@ -12,7 +12,8 @@ Description: Provides a seamless integration of the 'Typst' typesetting engine
     into 'ggplot2'. It allows users to render complex mathematical formulas, 
     equations, and rich text directly in plot annotations, axis labels, 
     and titles without requiring a local Typst or LaTeX installation. Under
-    the hood, it leverages Rust FFI to compile Typst code into SVG.
+    the hood, it lays out Typst code through Rust FFI and draws the result
+    with 'grid'.
 URL: https://github.com/Yousa-Mirage/ggtypst,
     https://yousa-mirage.github.io/ggtypst/
 BugReports: https://github.com/Yousa-Mirage/ggtypst/issues
@@ -28,18 +29,18 @@ Depends:
 Imports:
     S7,
     cli,
-    grImport2,
     grDevices,
     grid,
-    rlang,
-    rsvg
+    rlang
 Suggests: 
     ggtext,
+    grImport2,
     knitr,
     pkgdown,
     png,
     ragg,
     rmarkdown,
+    rsvg,
     spelling,
     svglite,
     systemfonts,

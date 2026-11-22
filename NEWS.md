@@ -31,6 +31,10 @@
   embeds the real fonts. On `pdf()` and `postscript()`, which only reference
   fonts by name, text is drawn as outlines so it looks the same everywhere.
   See `?ggtypst-options` to choose (native glyphs need R >= 4.3).
+- `rsvg` and `grImport2` are no longer required. They are only used, when
+  installed, to draw Typst content that ggtypst cannot draw with grid yet
+  (gradients, images, and color glyphs drawn as outlines), so most
+  installations no longer need the system library `librsvg`.
 
 # ggtypst 0.1.0
 

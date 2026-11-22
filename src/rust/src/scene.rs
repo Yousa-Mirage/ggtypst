@@ -19,7 +19,9 @@ use std::sync::{LazyLock, Mutex};
 use extendr_api::prelude::{List, list};
 use typst::layout::{Abs, Frame, FrameItem, Point, Transform};
 use typst::text::{Font, FontStyle, TextItem};
-use typst::visualize::{CurveItem, FillRule, FixedStroke, Geometry, LineCap, LineJoin, Paint};
+use typst::visualize::{
+    Curve, CurveItem, FillRule, FixedStroke, Geometry, LineCap, LineJoin, Paint,
+};
 use typst_kit::fonts::FontPath;
 
 use crate::fonts;
@@ -47,6 +49,8 @@ pub struct Glyphs {
     pub stroke_width: Vec<f64>,
     /// Drawing order among glyphs and shapes.
     pub z: Vec<i32>,
+    /// Clip region the glyph is drawn in (row of `Scene::clips` owners), or 0.
+    pub clip: Vec<i32>,
 }
 
 /// Points of flattened subpaths, each owned by a glyph or shape row.
@@ -78,6 +82,8 @@ pub struct Shapes {
     pub closed: Vec<i32>,
     /// Drawing order among glyphs and shapes.
     pub z: Vec<i32>,
+    /// Clip region the shape is drawn in (row of `Scene::clips` owners), or 0.
+    pub clip: Vec<i32>,
 }
 
 /// Font files used by the glyphs, one row per font.
@@ -103,6 +109,8 @@ pub struct Scene {
     pub outlines: Points,
     pub shapes: Shapes,
     pub shape_points: Points,
+    /// Clip regions: closed outlines, owned by clip id (1-based).
+    pub clips: Points,
     pub fonts: Fonts,
     /// Everything can be drawn from `outlines` and `shapes`.
     pub path_ok: bool,
@@ -119,6 +127,7 @@ impl Scene {
             outlines: o,
             shapes: s,
             shape_points: sp,
+            clips: c,
             fonts: f,
             path_ok,
             glyph_ok,
@@ -135,7 +144,8 @@ impl Scene {
                 fill = g.fill,
                 stroke = g.stroke,
                 stroke_width = g.stroke_width,
-                z = g.z
+                z = g.z,
+                clip = g.clip
             ),
             outlines = list!(x = o.x, y = o.y, sub = o.sub, owner = o.owner),
             shapes = list!(
@@ -146,9 +156,11 @@ impl Scene {
                 lineend = s.lineend,
                 linejoin = s.linejoin,
                 closed = s.closed,
-                z = s.z
+                z = s.z,
+                clip = s.clip
             ),
             shape_points = list!(x = sp.x, y = sp.y, sub = sp.sub, owner = sp.owner),
+            clips = list!(x = c.x, y = c.y, sub = c.sub, owner = c.owner),
             fonts = list!(
                 store_index = f.store_index,
                 path = f.path,
@@ -173,6 +185,7 @@ pub fn extract_scene(frame: &Frame) -> Scene {
             outlines: Points::default(),
             shapes: Shapes::default(),
             shape_points: Points::default(),
+            clips: Points::default(),
             fonts: Fonts::default(),
             path_ok: true,
             glyph_ok: true,
@@ -182,6 +195,8 @@ pub fn extract_scene(frame: &Frame) -> Scene {
         next_outline_sub: 0,
         next_shape_sub: 0,
         next_z: 0,
+        current_clip: 0,
+        next_clip: 0,
     };
     builder.frame(frame, Transform::identity());
     builder.scene
@@ -194,6 +209,9 @@ struct SceneBuilder {
     next_outline_sub: i32,
     next_shape_sub: i32,
     next_z: i32,
+    /// Clip id of the group being walked, or 0.
+    current_clip: i32,
+    next_clip: i32,
 }
 
 impl SceneBuilder {
@@ -217,10 +235,29 @@ impl SceneBuilder {
             let ts = ts.pre_concat(Transform::translate(pos.x, pos.y));
             match item {
                 FrameItem::Group(group) => {
-                    if group.clip.is_some() {
-                        self.unsupported(false, false, "clipped group");
+                    let inner = ts.pre_concat(group.transform);
+                    match &group.clip {
+                        None => self.frame(&group.frame, inner),
+                        Some(_) if self.current_clip != 0 => {
+                            self.unsupported(false, false, "nested clipped group");
+                            self.frame(&group.frame, inner);
+                        }
+                        Some(clip) => {
+                            // The clip outline is in the group's own coordinates.
+                            self.next_clip += 1;
+                            let id = self.next_clip;
+                            for subpath in curve_subpaths(clip, inner).0 {
+                                self.next_shape_sub += 1;
+                                let sub = self.next_shape_sub;
+                                for point in subpath {
+                                    push(&mut self.scene.clips, point, sub, id);
+                                }
+                            }
+                            self.current_clip = id;
+                            self.frame(&group.frame, inner);
+                            self.current_clip = 0;
+                        }
                     }
-                    self.frame(&group.frame, ts.pre_concat(group.transform));
                 }
                 FrameItem::Text(text) => self.text(text, ts),
                 FrameItem::Shape(shape, _) => self.shape(shape, ts),
@@ -312,6 +349,7 @@ impl SceneBuilder {
             g.stroke.push(stroke.clone());
             g.stroke_width.push(stroke_width);
             g.z.push(z);
+            g.clip.push(self.current_clip);
         }
     }
 
@@ -326,80 +364,94 @@ impl SceneBuilder {
                 }
             },
         };
-        let (stroke, stroke_width, lineend, linejoin) = match &shape.stroke {
-            None => (String::new(), 0.0, "butt", "mitre"),
-            Some(s) => {
-                if s.dash.is_some() {
-                    self.unsupported(false, false, "dashed stroke");
-                }
-                let Some(hex) = stroke_hex(s) else {
-                    self.unsupported(false, false, "non-solid shape stroke");
-                    return;
-                };
-                let lineend = match s.cap {
-                    LineCap::Butt => "butt",
-                    LineCap::Round => "round",
-                    LineCap::Square => "square",
-                };
-                let linejoin = match s.join {
-                    LineJoin::Miter => "mitre",
-                    LineJoin::Round => "round",
-                    LineJoin::Bevel => "bevel",
-                };
-                (hex, s.thickness.to_pt() * max_scale(ts), lineend, linejoin)
-            }
+        let rule = match shape.fill_rule {
+            FillRule::NonZero => "winding",
+            FillRule::EvenOdd => "evenodd",
         };
 
-        let row = i32::try_from(self.scene.shapes.fill.len() + 1).unwrap_or(i32::MAX);
-        let mut sink = ShapeSink {
-            builder: self,
-            ts,
-            owner: row,
-            last: (0.0, 0.0),
-        };
-        let closed = match &shape.geometry {
+        let (subpaths, closed) = match &shape.geometry {
             Geometry::Line(end) => {
-                sink.move_to(Point::zero());
-                sink.line_to(*end);
-                false
+                let mut c = PathCollector::new(ts);
+                c.move_to(Point::zero());
+                c.line_to(*end);
+                (c.subpaths, false)
             }
             Geometry::Rect(size) => {
-                sink.move_to(Point::zero());
-                sink.line_to(Point::new(size.x, Abs::zero()));
-                sink.line_to(Point::new(size.x, size.y));
-                sink.line_to(Point::new(Abs::zero(), size.y));
-                true
+                let mut c = PathCollector::new(ts);
+                c.move_to(Point::zero());
+                c.line_to(Point::new(size.x, Abs::zero()));
+                c.line_to(Point::new(size.x, size.y));
+                c.line_to(Point::new(Abs::zero(), size.y));
+                (c.subpaths, true)
             }
-            Geometry::Curve(curve) => {
-                let mut closed = false;
-                for item in &curve.0 {
-                    match item {
-                        CurveItem::Move(p) => sink.move_to(*p),
-                        CurveItem::Line(p) => sink.line_to(*p),
-                        CurveItem::Cubic(c1, c2, p) => sink.cubic_to(*c1, *c2, *p),
-                        CurveItem::Close => closed = true,
-                    }
-                }
-                closed
-            }
+            Geometry::Curve(curve) => curve_subpaths(curve, ts),
         };
 
-        let z = self.next_z();
-        let s = &mut self.scene.shapes;
-        s.fill.push(fill);
-        s.stroke.push(stroke);
-        s.stroke_width.push(stroke_width);
-        s.rule.push(
-            match shape.fill_rule {
-                FillRule::NonZero => "winding",
-                FillRule::EvenOdd => "evenodd",
+        let Some(stroke) = &shape.stroke else {
+            self.push_shape(&fill, &ShapeStroke::none(), rule, closed, &subpaths);
+            return;
+        };
+        let Some(hex) = stroke_hex(stroke) else {
+            self.unsupported(false, false, "non-solid shape stroke");
+            return;
+        };
+        let scale = max_scale(ts);
+        let style = ShapeStroke {
+            colour: hex,
+            width: stroke.thickness.to_pt() * scale,
+            lineend: match stroke.cap {
+                LineCap::Butt => "butt",
+                LineCap::Round => "round",
+                LineCap::Square => "square",
+            },
+            linejoin: match stroke.join {
+                LineJoin::Miter => "mitre",
+                LineJoin::Round => "round",
+                LineJoin::Bevel => "bevel",
+            },
+        };
+
+        match &stroke.dash {
+            None => self.push_shape(&fill, &style, rule, closed, &subpaths),
+            Some(dash) => {
+                // Fill the shape, then stroke its outline cut into dashes.
+                if !fill.is_empty() {
+                    self.push_shape(&fill, &ShapeStroke::none(), rule, true, &subpaths);
+                }
+                let array: Vec<f64> = dash.array.iter().map(|a| a.to_pt() * scale).collect();
+                let dashes = dash_subpaths(&subpaths, closed, &array, dash.phase.to_pt() * scale);
+                self.push_shape("", &style, rule, false, &dashes);
             }
-            .to_string(),
-        );
-        s.lineend.push(lineend.to_string());
-        s.linejoin.push(linejoin.to_string());
+        }
+    }
+
+    fn push_shape(
+        &mut self,
+        fill: &str,
+        stroke: &ShapeStroke,
+        rule: &str,
+        closed: bool,
+        subpaths: &[Vec<(f64, f64)>],
+    ) {
+        let z = self.next_z();
+        let row = i32::try_from(self.scene.shapes.fill.len() + 1).unwrap_or(i32::MAX);
+        for subpath in subpaths {
+            self.next_shape_sub += 1;
+            let sub = self.next_shape_sub;
+            for &point in subpath {
+                push(&mut self.scene.shape_points, point, sub, row);
+            }
+        }
+        let s = &mut self.scene.shapes;
+        s.fill.push(fill.to_string());
+        s.stroke.push(stroke.colour.clone());
+        s.stroke_width.push(stroke.width);
+        s.rule.push(rule.to_string());
+        s.lineend.push(stroke.lineend.to_string());
+        s.linejoin.push(stroke.linejoin.to_string());
         s.closed.push(i32::from(closed));
         s.z.push(z);
+        s.clip.push(self.current_clip);
     }
 
     /// 1-based row of `font` in the scene's font table, adding it if needed.
@@ -434,18 +486,6 @@ impl SceneBuilder {
         self.font_rows.insert(found.store_index, row);
         row
     }
-
-    fn push_point(&mut self, outline: bool, p: (f64, f64), sub: i32, owner: i32) {
-        let points = if outline {
-            &mut self.scene.outlines
-        } else {
-            &mut self.scene.shape_points
-        };
-        points.x.push(p.0);
-        points.y.push(p.1);
-        points.sub.push(sub);
-        points.owner.push(owner);
-    }
 }
 
 /// Receives a glyph outline in font units and records it flattened in page
@@ -472,7 +512,7 @@ impl OutlineSink<'_> {
 
     fn emit(&mut self, p: (f64, f64)) {
         let sub = self.builder.next_outline_sub;
-        self.builder.push_point(true, p, sub, self.owner);
+        push(&mut self.builder.scene.outlines, p, sub, self.owner);
         self.last = p;
     }
 }
@@ -515,45 +555,153 @@ impl ttf_parser::OutlineBuilder for OutlineSink<'_> {
     fn close(&mut self) {}
 }
 
-/// Records a shape's geometry flattened in page coordinates.
-struct ShapeSink<'a> {
-    builder: &'a mut SceneBuilder,
-    ts: Transform,
-    owner: i32,
-    last: (f64, f64),
+/// Stroke style of a shape row; an empty colour means no stroke.
+struct ShapeStroke {
+    colour: String,
+    width: f64,
+    lineend: &'static str,
+    linejoin: &'static str,
 }
 
-impl ShapeSink<'_> {
+impl ShapeStroke {
+    fn none() -> Self {
+        Self {
+            colour: String::new(),
+            width: 0.0,
+            lineend: "butt",
+            linejoin: "mitre",
+        }
+    }
+}
+
+fn push(points: &mut Points, p: (f64, f64), sub: i32, owner: i32) {
+    points.x.push(p.0);
+    points.y.push(p.1);
+    points.sub.push(sub);
+    points.owner.push(owner);
+}
+
+/// Collects geometry as flattened subpaths in page coordinates.
+struct PathCollector {
+    ts: Transform,
+    subpaths: Vec<Vec<(f64, f64)>>,
+}
+
+impl PathCollector {
+    fn new(ts: Transform) -> Self {
+        Self {
+            ts,
+            subpaths: Vec::new(),
+        }
+    }
+
     fn map(&self, p: Point) -> (f64, f64) {
         let p = p.transform(self.ts);
         (p.x.to_pt(), p.y.to_pt())
     }
 
-    fn emit(&mut self, p: (f64, f64)) {
-        let sub = self.builder.next_shape_sub;
-        self.builder.push_point(false, p, sub, self.owner);
-        self.last = p;
-    }
-
     fn move_to(&mut self, p: Point) {
-        self.builder.next_shape_sub += 1;
         let p = self.map(p);
-        self.emit(p);
+        self.subpaths.push(vec![p]);
     }
 
     fn line_to(&mut self, p: Point) {
         let p = self.map(p);
-        self.emit(p);
+        if let Some(subpath) = self.subpaths.last_mut() {
+            subpath.push(p);
+        }
     }
 
     fn cubic_to(&mut self, c1: Point, c2: Point, p: Point) {
         let (c1, c2, p) = (self.map(c1), self.map(c2), self.map(p));
-        let mut points = Vec::new();
-        flatten_cubic(self.last, c1, c2, p, 0, &mut points);
-        for point in points {
-            self.emit(point);
+        if let Some(subpath) = self.subpaths.last_mut() {
+            let last = subpath.last().copied().unwrap_or(c1);
+            flatten_cubic(last, c1, c2, p, 0, subpath);
         }
     }
+}
+
+/// A curve's flattened subpaths in page coordinates, and whether it is closed.
+fn curve_subpaths(curve: &Curve, ts: Transform) -> (Vec<Vec<(f64, f64)>>, bool) {
+    let mut c = PathCollector::new(ts);
+    let mut closed = false;
+    for item in &curve.0 {
+        match item {
+            CurveItem::Move(p) => c.move_to(*p),
+            CurveItem::Line(p) => c.line_to(*p),
+            CurveItem::Cubic(c1, c2, p) => c.cubic_to(*c1, *c2, *p),
+            CurveItem::Close => closed = true,
+        }
+    }
+    (c.subpaths, closed)
+}
+
+/// Cut subpaths into dashes: `array` alternates dash and gap lengths, starting
+/// `phase` into the pattern. Like SVG and PDF, the pattern restarts at each
+/// subpath, and an odd-length array is repeated to make dash/gap pairs.
+fn dash_subpaths(
+    subpaths: &[Vec<(f64, f64)>],
+    closed: bool,
+    array: &[f64],
+    phase: f64,
+) -> Vec<Vec<(f64, f64)>> {
+    let period: f64 = array.iter().sum();
+    if array.is_empty() || period <= 0.0 || array.iter().any(|a| *a < 0.0) {
+        return subpaths.to_vec();
+    }
+
+    let mut dashes = Vec::new();
+    for subpath in subpaths {
+        let mut points = subpath.clone();
+        if closed && let Some(&first) = points.first() {
+            points.push(first);
+        }
+
+        // Find where in the pattern the subpath starts.
+        let mut index = 0;
+        let mut on = true;
+        let mut left = array[0];
+        let mut skip = phase.rem_euclid(period);
+        while skip > 0.0 && skip >= left {
+            skip -= left;
+            index = (index + 1) % array.len();
+            on = !on;
+            left = array[index];
+        }
+        left -= skip;
+
+        let mut current: Vec<(f64, f64)> = Vec::new();
+        if on && let Some(&first) = points.first() {
+            current.push(first);
+        }
+        for pair in points.windows(2) {
+            let (a, b) = (pair[0], pair[1]);
+            let length = ((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)).sqrt();
+            let mut done = 0.0;
+            while length - done > left {
+                done += left;
+                let t = done / length;
+                let p = (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
+                if on {
+                    current.push(p);
+                    dashes.push(std::mem::take(&mut current));
+                } else {
+                    current = vec![p];
+                }
+                index = (index + 1) % array.len();
+                on = !on;
+                left = array[index];
+            }
+            left -= length - done;
+            if on {
+                current.push(b);
+            }
+        }
+        if on && current.len() > 1 {
+            dashes.push(current);
+        }
+    }
+    dashes
 }
 
 /// Flatten a cubic Bézier into line segments, appending the end points of the
@@ -895,9 +1043,76 @@ mod tests {
     }
 
     #[test]
+    fn dashed_strokes_are_cut_into_dashes() {
+        // A 30pt line with 4pt dashes and 2pt gaps: dashes start at 0, 6, ...
+        let (_, scene) = scene_of(
+            "#line(length: 30pt, stroke: (paint: black, thickness: 1pt, dash: (4pt, 2pt)))",
+        );
+        assert!(scene.path_ok, "{:?}", scene.unsupported);
+        let p = &scene.shape_points;
+        let mut starts = Vec::new();
+        let mut lengths = Vec::new();
+        let mut i = 0;
+        while i < p.sub.len() {
+            let j = p.sub[i..]
+                .iter()
+                .position(|&s| s != p.sub[i])
+                .map_or(p.sub.len(), |k| i + k);
+            starts.push(p.x[i]);
+            lengths.push(p.x[j - 1] - p.x[i]);
+            i = j;
+        }
+        assert_eq!(starts.len(), 5);
+        for (k, (start, length)) in starts.iter().zip(&lengths).enumerate() {
+            assert_close(*start, 6.0 * k as f64);
+            assert_close(*length, 4.0);
+        }
+        assert_eq!(scene.shapes.closed, vec![0]);
+    }
+
+    #[test]
+    fn dash_phase_and_odd_arrays_follow_svg() {
+        let line = vec![vec![(0.0, 0.0), (10.0, 0.0)]];
+        // Odd arrays repeat: (3) means 3 on, 3 off.
+        let dashes = dash_subpaths(&line, false, &[3.0], 0.0);
+        assert_eq!(dashes.len(), 2);
+        assert_close(dashes[1][0].0, 6.0);
+        // A phase of 1 starts one point into the first dash.
+        let shifted = dash_subpaths(&line, false, &[3.0, 1.0], 1.0);
+        assert_close(shifted[0][1].0, 2.0);
+        assert_close(shifted[1][0].0, 3.0);
+    }
+
+    #[test]
+    fn filled_dashed_shapes_keep_their_fill() {
+        let (_, scene) = scene_of(
+            "#rect(width: 10pt, height: 10pt, fill: red, stroke: (paint: black, dash: \"dotted\"))",
+        );
+        let s = &scene.shapes;
+        assert_eq!(s.fill.len(), 2);
+        assert_eq!(s.fill[0], "#FF4136FF");
+        assert_eq!(s.stroke[0], "");
+        assert_eq!(s.fill[1], "");
+        assert_eq!(s.stroke[1], "#000000FF");
+    }
+
+    #[test]
+    fn clipped_groups_record_their_clip_region() {
+        let (_, scene) = scene_of("#box(clip: true, width: 5pt)[HHH] H");
+        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        let c = &scene.clips;
+        assert!(c.owner.iter().all(|&o| o == 1));
+        let max_x = c.x.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        assert_close(max_x, 5.0);
+        // The three clipped glyphs, then the one after the box.
+        assert_eq!(scene.glyphs.clip, vec![1, 1, 1, 0]);
+    }
+
+    #[test]
     fn unsupported_content_is_flagged() {
-        let (_, clipped) = scene_of("#box(clip: true, width: 5pt)[HHH]");
-        assert!(!clipped.path_ok && !clipped.glyph_ok);
+        let (_, nested) =
+            scene_of("#box(clip: true, width: 8pt)[#box(clip: true, width: 5pt)[HHH]]");
+        assert!(!nested.path_ok && !nested.glyph_ok);
 
         let (_, gradient) = scene_of("#text(fill: gradient.linear(red, blue))[H]");
         assert!(!gradient.path_ok);

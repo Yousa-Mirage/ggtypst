@@ -1,7 +1,7 @@
 #' Build a positioned Typst grob from rendered output
 #'
-#' @param rendered A rendered Typst result containing SVG bytes and dimensions.
-#' @param x,y Position passed to [grImport2::pictureGrob()].
+#' @param rendered A rendered Typst result from `typst_svg()`.
+#' @param x,y Position of the anchor.
 #' @param default.units Grid units for numeric `x` and `y`.
 #' @param scale Scaling factor applied to rendered dimensions.
 #' @param hjust,vjust Horizontal and vertical justification values.
@@ -56,9 +56,8 @@ positioned_typst_grob <- function(
 #'
 #' The Typst page has no margin, so it is exactly the content's layout box
 #' (`width_pt` x `height_pt`), and justification is relative to it, like grid
-#' text. The page is drawn from its scene (glyph outlines and shapes as grid
-#' paths) when the scene can describe everything on it, and otherwise from its
-#' SVG.
+#' text. The page is drawn from its scene with grid (see
+#' `scene_typst_grob()`).
 #'
 #' @param rendered A rendered Typst result from `typst_svg()`.
 #' @param x,y Position of the anchor.
@@ -78,8 +77,7 @@ vector_typst_grob <- function(
   vjust,
   angle = NULL
 ) {
-  draw <- if (isTRUE(rendered$scene$path_ok)) scene_typst_grob else svg_typst_grob
-  draw(
+  scene_typst_grob(
     rendered = rendered,
     x = x,
     y = y,
@@ -93,11 +91,14 @@ vector_typst_grob <- function(
 
 #' Draw a Typst scene with grid
 #'
-#' The layout box becomes a viewport whose native coordinates are Typst's
-#' points with y pointing down, so scene coordinates are used as they are. Ink
-#' outside the box (overhangs, descenders) is drawn, not clipped. The grob's
+#' The layout box becomes a viewport. Scene coordinates (Typst points, y
+#' pointing down from the box's top-left corner) are drawn in `"bigpts"` from
+#' its bottom-left corner, which also works for boxes of zero width or height
+#' (a bare `#line()`). Ink outside the box (overhangs, descenders) is drawn,
+#' not clipped. The grob's
 #' content is built when it is drawn (see `makeContent.typst_scene_grob()`),
-#' so it can draw text as native glyphs or as outlines to suit the device.
+#' so it can draw text as native glyphs or as outlines to suit the device, and
+#' fall back to importing the SVG for content neither can express.
 #'
 #' @inheritParams vector_typst_grob
 #' @return A `gTree` of class `"typst_scene_grob"`.
@@ -128,13 +129,12 @@ scene_typst_grob <- function(
     y = y,
     width = grid::unit(width * scale, "bigpts"),
     height = grid::unit(height * scale, "bigpts"),
-    just = c(just$hjust, just$vjust),
-    xscale = c(0, width),
-    yscale = c(height, 0)
+    just = c(just$hjust, just$vjust)
   )
 
   grid::gTree(
     scene = rendered$scene,
+    rendered = rendered,
     scale = scale,
     width_pt = width,
     height_pt = height,
@@ -148,7 +148,31 @@ scene_typst_grob <- function(
 #' @export
 makeContent.typst_scene_grob <- function(x) {
   mode <- typst_render_mode(x$scene)
+  if (mode == "path" && !isTRUE(x$scene$path_ok) && svg_fallback_available()) {
+    # Content grid paths cannot draw yet (gradients, images, colour glyphs):
+    # import the SVG, placed on the layout box this viewport spans.
+    svg <- svg_typst_grob(x$rendered, x = 0, y = 0, scale = x$scale, hjust = 0, vjust = 0)
+    class(svg) <- c("typst_svg_fallback", class(svg))
+    return(grid::setChildren(x, grid::gList(svg)))
+  }
   grid::setChildren(x, scene_grobs(x$scene, mode, x$scale, x$width_pt, x$height_pt))
+}
+
+# The SVG fallback needs rsvg and grImport2, which are optional. Without them,
+# warn once and draw what grid paths can.
+svg_fallback_available <- function() {
+  available <- requireNamespace("rsvg", quietly = TRUE) && requireNamespace("grImport2", quietly = TRUE)
+  if (!available) {
+    cli::cli_warn(
+      c(
+        "Some Typst content (gradients, images, or colour glyphs) cannot be drawn as outlines.",
+        "i" = "Install {.pkg rsvg} and {.pkg grImport2} to draw it, or draw text as native glyphs (see {.topic ggtypst::ggtypst-options})."
+      ),
+      .frequency = "once",
+      .frequency_id = "ggtypst_svg_fallback"
+    )
+  }
+  available
 }
 
 #' Choose how to draw a scene's text: `"glyph"` or `"path"`
@@ -231,20 +255,63 @@ scene_grobs <- function(scene, mode, scale = 1, width, height) {
     return(grid::gList())
   }
 
-  # A new run starts at every shape and at every glyph that follows a shape.
-  run <- cumsum(kind == "shape" | c(TRUE, kind[-1] != kind[-length(kind)]))
+  clip <- c(glyphs$clip, shapes$clip)[order]
+
+  # A new run starts at every shape, at every glyph that follows a shape, and
+  # wherever the clip region changes.
+  changed <- c(TRUE, kind[-1] != kind[-length(kind)] | clip[-1] != clip[-length(clip)])
+  run <- cumsum(kind == "shape" | changed)
   font_list <- if (mode == "glyph" && "glyph" %in% kind) glyph_font_list(scene$fonts)
 
-  grobs <- lapply(split(seq_along(kind), run), function(i) {
+  runs <- split(seq_along(kind), run)
+  grobs <- lapply(runs, function(i) {
     if (kind[i[1]] == "shape") {
-      shape_grob(scene, row[i], scale)
+      shape_grob(scene, row[i], scale, height)
     } else if (mode == "glyph") {
       glyph_run_grob(glyphs, row[i], font_list, scale, width, height)
     } else {
-      outline_run_grob(scene, row[i], scale)
+      outline_run_grob(scene, row[i], scale, height)
     }
   })
-  do.call(grid::gList, Filter(Negate(is.null), grobs))
+
+  # Wrap consecutive runs in the same clip region in a viewport clipped to it.
+  run_clip <- vapply(runs, function(i) clip[i[1]], integer(1))
+  segment <- cumsum(c(TRUE, run_clip[-1] != run_clip[-length(run_clip)]))
+  grobs <- lapply(split(seq_along(runs), segment), function(j) {
+    children <- Filter(Negate(is.null), grobs[j])
+    id <- run_clip[j[1]]
+    if (id == 0L || length(children) == 0L) {
+      return(children)
+    }
+    list(grid::gTree(
+      children = do.call(grid::gList, children),
+      vp = clip_viewport(scene$clips, id, scale, height)
+    ))
+  })
+  do.call(grid::gList, unlist(grobs, recursive = FALSE))
+}
+
+# A viewport over the layout box, clipped to clip region `id`.
+clip_viewport <- function(clips, id, scale, height) {
+  keep <- clips$owner == id
+  grid::viewport(
+    clip = grid::pathGrob(
+      x = scene_x(clips$x[keep], scale),
+      y = scene_y(clips$y[keep], scale, height),
+      id = clips$sub[keep],
+      default.units = "bigpts"
+    )
+  )
+}
+
+# Scene coordinates (points, y down from the layout box's top-left corner) as
+# distances in points from the box's bottom-left corner.
+scene_x <- function(x, scale) {
+  x * scale
+}
+
+scene_y <- function(y, scale, height) {
+  (height - y) * scale
 }
 
 # Native glyphs for some glyph rows. Positions are in points from the layout
@@ -252,8 +319,8 @@ scene_grobs <- function(scene, mode, scale = 1, width, height) {
 glyph_run_grob <- function(glyphs, rows, font_list, scale, width, height) {
   info <- grDevices::glyphInfo(
     id = glyphs$id[rows],
-    x = glyphs$x[rows] * scale,
-    y = (height - glyphs$y[rows]) * scale,
+    x = scene_x(glyphs$x[rows], scale),
+    y = scene_y(glyphs$y[rows], scale, height),
     font = glyphs$font[rows],
     size = glyphs$size[rows] * scale,
     fontList = font_list,
@@ -279,7 +346,7 @@ glyph_font_list <- function(fonts) {
 
 # Outlines of some glyph rows as one path grob: one path per glyph (`pathId`),
 # made of its contours (`id`).
-outline_run_grob <- function(scene, rows, scale = 1) {
+outline_run_grob <- function(scene, rows, scale = 1, height) {
   outlines <- scene$outlines
   keep <- outlines$owner %in% rows
   if (!any(keep)) {
@@ -288,12 +355,12 @@ outline_run_grob <- function(scene, rows, scale = 1) {
   glyphs <- scene$glyphs
   owners <- unique(outlines$owner[keep])
   grid::pathGrob(
-    x = outlines$x[keep],
-    y = outlines$y[keep],
+    x = scene_x(outlines$x[keep], scale),
+    y = scene_y(outlines$y[keep], scale, height),
     id = outlines$sub[keep],
     pathId = outlines$owner[keep],
     rule = "winding",
-    default.units = "native",
+    default.units = "bigpts",
     gp = grid::gpar(
       fill = glyphs$fill[owners],
       col = na_if_empty(glyphs$stroke[owners]),
@@ -303,7 +370,7 @@ outline_run_grob <- function(scene, rows, scale = 1) {
 }
 
 # One shape: a path if it is closed or filled, otherwise a polyline.
-shape_grob <- function(scene, i, scale = 1) {
+shape_grob <- function(scene, i, scale = 1, height) {
   shapes <- scene$shapes
   points <- scene$shape_points
   keep <- points$owner == i
@@ -319,19 +386,19 @@ shape_grob <- function(scene, i, scale = 1) {
   )
   if (shapes$closed[i] == 1L || nzchar(shapes$fill[i])) {
     grid::pathGrob(
-      x = points$x[keep],
-      y = points$y[keep],
+      x = scene_x(points$x[keep], scale),
+      y = scene_y(points$y[keep], scale, height),
       id = points$sub[keep],
       rule = shapes$rule[i],
-      default.units = "native",
+      default.units = "bigpts",
       gp = gp
     )
   } else {
     grid::polylineGrob(
-      x = points$x[keep],
-      y = points$y[keep],
+      x = scene_x(points$x[keep], scale),
+      y = scene_y(points$y[keep], scale, height),
       id = points$sub[keep],
-      default.units = "native",
+      default.units = "bigpts",
       gp = gp
     )
   }

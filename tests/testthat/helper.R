@@ -99,3 +99,15 @@ drawn_subpaths <- function(grob) {
   subpaths <- subpaths[grepl("[0-9]", subpaths)]
   lapply(c(points, subpaths), to_matrix)
 }
+
+# Bounding box of the ink a grob draws at 600 dpi, in points (y down).
+raster_ink <- function(grob) {
+  file <- tempfile(fileext = ".png")
+  ragg::agg_png(file, 4, 3, units = "in", res = 600)
+  grid::grid.draw(grob)
+  grDevices::dev.off()
+  ink <- (1 - png::readPNG(file)[,, 1]) > 0.3
+  rows <- which(rowSums(ink) > 0)
+  cols <- which(colSums(ink) > 0)
+  c(left = min(cols), right = max(cols), top = min(rows), bottom = max(rows)) * 72 / 600
+}
