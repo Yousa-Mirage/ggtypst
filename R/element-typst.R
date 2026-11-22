@@ -328,8 +328,8 @@ typst_title_grob <- function(
 
   content <- grid::gTree(
     children = do.call(grid::gList, grobs),
-    typst_width = grid::unit(max(widths), "pt"),
-    typst_height = grid::unit(max(heights), "pt"),
+    typst_width = grid::unit(max(widths), "bigpts"),
+    typst_height = grid::unit(max(heights), "bigpts"),
     cl = "typst_grob"
   )
 
@@ -396,12 +396,11 @@ typst_element_grob <- function(
   height_pt <- rendered$height_pt * scale
 
   grob <- vector_typst_grob(
-    svg = rendered$svg,
+    rendered = rendered,
     x = x,
     y = y,
     default.units = "npc",
-    width_pt = width_pt,
-    height_pt = height_pt,
+    scale = scale,
     hjust = hjust,
     vjust = vjust,
     angle = angle

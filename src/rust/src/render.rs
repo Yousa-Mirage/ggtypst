@@ -1,7 +1,7 @@
 use extendr_api::prelude::{List, list};
 use typst::compile;
 use typst::diag::Warned;
-use typst::layout::FrameItem;
+use typst::layout::{Abs, FrameItem, Size};
 use typst_layout::PagedDocument;
 
 use crate::error::{RenderDiagnostic, RenderError, diagnostics_to_r_list};
@@ -10,8 +10,12 @@ use crate::world::InMemoryWorld;
 #[derive(Debug)]
 pub struct RenderedSvg {
     pub svg: Vec<u8>,
+    /// Size of the Typst page (the layout box), in points.
     pub width_pt: f64,
     pub height_pt: f64,
+    /// Size of the SVG canvas: the page padded up to whole points.
+    pub canvas_width_pt: f64,
+    pub canvas_height_pt: f64,
     pub warnings: Vec<RenderDiagnostic>,
 }
 
@@ -21,6 +25,8 @@ impl RenderedSvg {
             svg = self.svg,
             width_pt = self.width_pt,
             height_pt = self.height_pt,
+            canvas_width_pt = self.canvas_width_pt,
+            canvas_height_pt = self.canvas_height_pt,
             warnings = diagnostics_to_r_list(&self.warnings)
         )
     }
@@ -45,14 +51,30 @@ impl InMemoryWorld {
             return Err(RenderError::EmptySvg);
         }
 
-        let svg = typst_svg::svg(first_page, &typst_svg::SvgOptions::default()).into_bytes();
         let width_pt = first_page.frame.width().to_pt();
         let height_pt = first_page.frame.height().to_pt();
+
+        // SVG importers such as librsvg size their canvas in whole units and
+        // rescale fractional-size documents to fit. Padding the page (right
+        // and bottom, content stays anchored top-left) to whole points keeps
+        // the drawing at exactly 1:1 through that pipeline.
+        let canvas_width_pt = width_pt.ceil();
+        let canvas_height_pt = height_pt.ceil();
+
+        let mut page = first_page.clone();
+        page.frame.set_size(Size::new(
+            Abs::pt(canvas_width_pt),
+            Abs::pt(canvas_height_pt),
+        ));
+
+        let svg = typst_svg::svg(&page, &typst_svg::SvgOptions::default()).into_bytes();
 
         Ok(RenderedSvg {
             svg,
             width_pt,
             height_pt,
+            canvas_width_pt,
+            canvas_height_pt,
             warnings,
         })
     }
@@ -121,6 +143,35 @@ mod tests {
         assert!(
             rendered.height_pt > 0.0,
             "rendered height should be positive"
+        );
+    }
+
+    #[test]
+    fn test_compile_to_svg_pads_canvas_to_whole_points() {
+        let source = concat!(
+            "#set page(width: auto, height: auto, margin: 0.1em, fill: none)\n",
+            "Hello"
+        );
+        let Ok(rendered) = compile_source(source) else {
+            panic!("visible text should render successfully");
+        };
+
+        for (canvas, layout) in [
+            (rendered.canvas_width_pt, rendered.width_pt),
+            (rendered.canvas_height_pt, rendered.height_pt),
+        ] {
+            assert_eq!(canvas, canvas.trunc(), "canvas must be whole points");
+            assert!(canvas >= layout && canvas - layout < 1.0);
+        }
+
+        let svg = String::from_utf8_lossy(&rendered.svg);
+        let expected = format!(
+            "viewBox=\"0 0 {} {}\"",
+            rendered.canvas_width_pt, rendered.canvas_height_pt
+        );
+        assert!(
+            svg.contains(&expected),
+            "svg header should use the padded canvas ({expected})"
         );
     }
 

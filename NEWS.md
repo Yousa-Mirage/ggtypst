@@ -1,9 +1,14 @@
 # ggtypst 0.1.1
 
-- `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()` now
-  require optional arguments after `x` and `y` to be named, so misplaced
+- **(BREAKING)** `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`
+  now require optional arguments after `x` and `y` to be named, so misplaced
   positional inputs and misspelled argument names fail fast.
-- (DOING) Improved the performance of insert contents.
+-  **(BREAKING: Expect plots to change slightly in size)**
+  Typst output is now drawn at exactly the size Typst lays it out, so `size`
+  matches the requested font size. Previously all rendered text and math were
+  about 9% too small, and short labels shrank by up to a further ~5% depending
+  on their box size (so a single-line label drew smaller glyphs than a
+  multi-line label of the same `size`).
 
 # ggtypst 0.1.0
 

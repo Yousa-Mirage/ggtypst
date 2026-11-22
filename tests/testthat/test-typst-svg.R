@@ -14,6 +14,17 @@ test_that("typst_svg returns raw svg and size", {
   expect_true(grepl("</svg>\\s*$", svg_txt))
 })
 
+test_that("typst_svg pads the svg canvas to whole points", {
+  res <- typst_svg(build_typst_source("Hello"))
+
+  for (side in c("width", "height")) {
+    canvas <- res[[paste0("canvas_", side, "_pt")]]
+    layout <- res[[paste0(side, "_pt")]]
+
+    expect_identical(canvas, ceiling(layout))
+  }
+})
+
 test_that("typst_svg reports EmptySvg for empty-like Typst input", {
   empty_like_cases <- c(
     "",

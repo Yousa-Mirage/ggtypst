@@ -235,7 +235,15 @@ test_that("element_grob.element_typst anchors rotated grobs by rotated justifica
     element_grob(label = "Test")
 
   just <- grob$children[[1]]$children[[1]]$vp[[1]]$justification
-  expect_equal(unname(just), c(0, 0.5))
+
+  # Rotated justification is c(0, 0.5) on the Typst layout box; the picture
+  # viewport spans the canvas, which is padded at the right and bottom.
+  rendered <- typst_svg(build_typst_source("Test", size = 12, angle = 90))
+  canvas_vjust <- with(
+    rendered,
+    (canvas_height_pt - height_pt + 0.5 * height_pt) / canvas_height_pt
+  )
+  expect_equal(unname(just), c(0, canvas_vjust))
 })
 
 # Visual regression tests
