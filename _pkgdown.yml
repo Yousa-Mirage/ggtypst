@@ -49,3 +49,7 @@ reference:
       - geom_typst
       - geom_math_typst
       - geom_math_mitex
+
+  - title: Options
+    contents:
+      - ggtypst-options

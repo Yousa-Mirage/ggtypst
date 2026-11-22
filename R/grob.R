@@ -157,22 +157,53 @@ makeContent.typst_scene_grob <- function(x) {
 
 #' Choose how to draw a scene's text: `"glyph"` or `"path"`
 #'
-#' Follows `getOption("ggtypst.renderer")`. Native glyphs need R 4.3 or later
-#' and a scene that glyphs can express (no stroked or skewed text, ...);
-#' otherwise text is drawn as outlines.
+#' Follows `getOption("ggtypst.renderer")` (see [ggtypst-options]). With
+#' `"auto"`, text is drawn as native glyphs on devices that rasterize or embed
+#' fonts, and as outlines on devices that only reference fonts by name (such as
+#' [grDevices::pdf()]), where glyphs could be shown in the wrong font. Native
+#' glyphs need R 4.3 or later and a scene that glyphs can express (no stroked or
+#' skewed text, ...); otherwise text is always drawn as outlines.
+#'
+#' Called when the grob is drawn, so the device in use decides.
 #'
 #' @param scene The `scene` of a rendered Typst result.
 #' @return `"glyph"` or `"path"`.
 #' @noRd
 typst_render_mode <- function(scene) {
-  renderer <- getOption("ggtypst.renderer", "path")
-  if (!is.character(renderer) || length(renderer) != 1L || !renderer %in% c("glyph", "path")) {
+  renderer <- getOption("ggtypst.renderer", "auto")
+  if (!is.character(renderer) || length(renderer) != 1L || !renderer %in% c("auto", "glyph", "path")) {
     cli::cli_abort(c(
-      "Option {.code ggtypst.renderer} must be {.val glyph} or {.val path}.",
+      "Option {.code ggtypst.renderer} must be {.val auto}, {.val glyph}, or {.val path}.",
       "x" = "It is {.val {renderer}}."
     ))
   }
-  if (renderer == "glyph" && glyphs_supported() && isTRUE(scene$glyph_ok)) "glyph" else "path"
+  if (renderer == "path" || !glyphs_supported() || !isTRUE(scene$glyph_ok)) {
+    return("path")
+  }
+  if (renderer == "glyph" || device_draws_glyphs()) "glyph" else "path"
+}
+
+# Devices that rasterize glyphs or embed their fonts, so native glyphs look
+# right wherever the output is viewed. Others (pdf(), postscript(), unknown
+# devices) get outlines.
+glyph_devices <- c(
+  "png",
+  "jpeg",
+  "tiff",
+  "bmp",
+  "quartz",
+  "quartz_off_screen",
+  "X11cairo",
+  "cairo_pdf",
+  "cairo_ps",
+  "svg",
+  "devSVG"
+)
+
+device_draws_glyphs <- function() {
+  name <- names(grDevices::dev.cur())
+  known <- startsWith(name, "agg_") || name %in% glyph_devices
+  known && isTRUE(grDevices::dev.capabilities("glyphs")$glyphs)
 }
 
 # Native glyph rendering (grDevices::glyphInfo(), grid::glyphGrob()) arrived

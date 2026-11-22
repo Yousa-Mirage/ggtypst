@@ -63,7 +63,7 @@ test_that("glyphs are drawn where the outlines are", {
   }
 })
 
-test_that("glyphs rasterise like grid text, unlike outlines", {
+test_that("glyphs rasterize like grid text, unlike outlines", {
   skip_if_no_glyphs()
   skip_if_not_installed("ragg")
   skip_if_not_installed("png")
@@ -113,4 +113,71 @@ test_that("embedded fonts are written once to the font cache", {
 test_that("an invalid renderer option is reported", {
   scene <- scene_grob("Hello")
   expect_error(with_renderer("bitmap", grid::makeContent(scene)), "ggtypst.renderer")
+})
+
+# How a scene would be drawn on a freshly opened device.
+mode_on <- function(scene, open_device) {
+  open_device()
+  on.exit(grDevices::dev.off())
+  typst_render_mode(scene)
+}
+
+test_that("auto draws glyphs where devices rasterize or embed fonts", {
+  skip_if_no_glyphs()
+
+  scene <- scene_grob("Hello")$scene
+  with_renderer("auto", {
+    expect_equal(mode_on(scene, function() grDevices::pdf(NULL)), "path")
+    expect_equal(mode_on(scene, function() grDevices::postscript(tempfile())), "path")
+    if (requireNamespace("ragg", quietly = TRUE)) {
+      expect_equal(mode_on(scene, function() ragg::agg_png(tempfile())), "glyph")
+    }
+    if (requireNamespace("svglite", quietly = TRUE)) {
+      expect_equal(mode_on(scene, function() svglite::svglite(tempfile())), "glyph")
+    }
+    if (isTRUE(capabilities("cairo"))) {
+      expect_equal(mode_on(scene, function() grDevices::cairo_pdf(tempfile())), "glyph")
+      expect_equal(mode_on(scene, function() grDevices::png(tempfile(), type = "cairo")), "glyph")
+    }
+  })
+
+  # Auto is the default.
+  with_renderer(NULL, expect_equal(mode_on(scene, function() grDevices::pdf(NULL)), "path"))
+})
+
+test_that("auto draws outlines when glyphs cannot express the text", {
+  skip_if_no_glyphs()
+  skip_if_not_installed("ragg")
+
+  scene <- scene_grob("#text(stroke: 0.3pt + red)[Hello]")$scene
+  with_renderer("auto", expect_equal(mode_on(scene, function() ragg::agg_png(tempfile())), "path"))
+})
+
+test_that("R before 4.3 always draws outlines", {
+  local_mocked_bindings(glyphs_supported = function() FALSE)
+  scene <- scene_grob("Hello")$scene
+
+  expect_equal(with_renderer("glyph", typst_render_mode(scene)), "path")
+  skip_if_not_installed("ragg")
+  expect_equal(with_renderer("auto", mode_on(scene, function() ragg::agg_png(tempfile()))), "path")
+})
+
+test_that("ggsave() output gets outlines in pdf() and embedded fonts in cairo_pdf()", {
+  skip_if_no_glyphs()
+  skip_if_not(isTRUE(capabilities("cairo")), "needs cairo")
+
+  p <- ggplot() + annotate_typst("Hello $x^2$", x = 0, y = 0) + theme_void()
+  # Search the bytes: a PDF is not text in any locale.
+  has_font <- function(file) {
+    length(grepRaw("/FontFile", readBin(file, "raw", file.size(file)), fixed = TRUE)) > 0
+  }
+  with_renderer("auto", {
+    pdf_file <- tempfile(fileext = ".pdf")
+    ggsave(pdf_file, p, width = 2, height = 1, device = grDevices::pdf)
+    expect_false(has_font(pdf_file))
+
+    cairo_file <- tempfile(fileext = ".pdf")
+    ggsave(cairo_file, p, width = 2, height = 1, device = grDevices::cairo_pdf)
+    expect_true(has_font(cairo_file))
+  })
 })

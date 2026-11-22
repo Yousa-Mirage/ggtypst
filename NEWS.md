@@ -24,6 +24,13 @@
   `1.2 * lineheight` font sizes as in `ggplot2` (it used to add that much
   spacing between lines), defaulting to `geom_text()`'s 1.2; and theme
   elements reserve the same height for any text of a given font and size.
+- Typst output is now drawn with grid directly instead of being imported as
+  SVG. On devices that rasterize or embed fonts (ragg, `png()`, `cairo_pdf()`,
+  svglite, ...) text is drawn as native glyphs, exactly like `ggplot2` text, so
+  it is no longer heavier than `element_text()` on screen and `cairo_pdf()`
+  embeds the real fonts. On `pdf()` and `postscript()`, which only reference
+  fonts by name, text is drawn as outlines so it looks the same everywhere.
+  See `?ggtypst-options` to choose (native glyphs need R >= 4.3).
 
 # ggtypst 0.1.0
 

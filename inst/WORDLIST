@@ -24,6 +24,9 @@ mitex
 overbrace
 pre
 prebuilt
+ragg
+rasterize
+svglite
 toolchain
 toolchains
 transpilation

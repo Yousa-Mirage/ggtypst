@@ -62,6 +62,7 @@ Collate:
     'geom-typst.R'
     'geom-math.R'
     'mitex.R'
+    'options.R'
     'zzz.R'
 Language: en-US
 Config/roxygen2/version: 8.0.0
