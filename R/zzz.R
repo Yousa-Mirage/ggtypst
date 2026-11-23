@@ -1,4 +1,5 @@
 #' @import ggplot2
+#' @importFrom rlang %||%
 NULL
 
 .onLoad <- function(libname, pkgname) {

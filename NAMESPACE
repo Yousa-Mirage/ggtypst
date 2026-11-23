@@ -21,4 +21,5 @@ importFrom(grid,
   makeContent,
   widthDetails
 )
+importFrom(rlang,"%||%")
 useDynLib(ggtypst, .registration = TRUE)
