@@ -197,7 +197,8 @@ warn_svg_fallback_missing <- function() {
 #' fonts, and as outlines on devices that only reference fonts by name (such as
 #' [grDevices::pdf()]), where glyphs could be shown in the wrong font. Scenes
 #' that glyphs cannot express (stroked or skewed text, ...) are always drawn as
-#' outlines.
+#' outlines. On R older than 4.5, text with glyphs at different angles is also
+#' drawn as outlines (see `glyph_run_grob()`).
 #'
 #' Called when the grob is drawn, so the device in use decides.
 #'
@@ -206,6 +207,7 @@ warn_svg_fallback_missing <- function() {
 #' @noRd
 typst_render_mode <- function(scene) {
   renderer <- getOption("ggtypst.renderer", "auto")
+
   if (
     !is.character(renderer) ||
       length(renderer) != 1L ||
@@ -216,9 +218,16 @@ typst_render_mode <- function(scene) {
       "x" = "It is {.val {renderer}}."
     ))
   }
+
   if (renderer == "path" || !isTRUE(scene$glyph_ok)) {
     return("path")
   }
+
+  # R older than 4.5 cannot give each native glyph its own angle.
+  if (!glyph_rot_supported() && !glyph_runs_share_angle(scene)) {
+    return("path")
+  }
+
   if (renderer == "glyph" || device_draws_glyphs()) "glyph" else "path"
 }
 

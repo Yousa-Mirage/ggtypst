@@ -184,7 +184,10 @@ test_that("cached glyphs are rebuilt when their font files are gone", {
 })
 
 test_that("labels with the same fonts share one font list", {
-  rm(list = ls(font_lists), envir = font_lists)
+  # Start empty, and leave no mocked font lists behind for later tests.
+  clear <- function() rm(list = ls(font_lists), envir = font_lists)
+  clear()
+  on.exit(clear(), add = TRUE)
   count <- new.env()
   count$made <- 0
   local_mocked_bindings(
@@ -291,4 +294,49 @@ test_that("ggsave() output gets outlines in pdf() and embedded fonts in cairo_pd
     ggsave(cairo_file, p, width = 2, height = 1, device = grDevices::cairo_pdf)
     expect_true(has_font(cairo_file))
   })
+})
+
+# Draw a rendered label with or without `glyphInfo(rot = )`.
+rotation_ink <- function(rendered, rot) {
+  local_mocked_bindings(glyph_rot_supported = function() rot)
+  with_renderer("glyph", raster_ink(positioned_typst_grob(rendered)))
+}
+
+test_that("without per-glyph rotation, a rotated label is drawn in a turned viewport", {
+  skip_if_not_installed("ragg")
+  skip_if_not_installed("png")
+
+  for (angle in c(90, 30)) {
+    rendered <- typst_render(
+      build_typst_source("Hxample", size = 20, angle = angle)
+    )
+    expect_lt(
+      max(abs(rotation_ink(rendered, FALSE) - rotation_ink(rendered, TRUE))),
+      0.15
+    )
+  }
+
+  local_mocked_bindings(glyph_rot_supported = function() FALSE)
+  scene <- scene_grob("Hxample", angle = 90)
+  child <- with_renderer("glyph", grid::makeContent(scene))$children[[1]]
+  expect_equal(child$vp$angle, 90)
+  expect_s3_class(child$children[[1]], "glyphgrob")
+})
+
+test_that("without per-glyph rotation, unrotated text needs no viewport", {
+  local_mocked_bindings(glyph_rot_supported = function() FALSE)
+  scene <- scene_grob("Hello")
+  child <- with_renderer("glyph", grid::makeContent(scene))$children[[1]]
+  expect_s3_class(child, "glyphgrob")
+})
+
+test_that("without per-glyph rotation, labels mixing angles are drawn as outlines", {
+  scene <- scene_grob("H #box(rotate(30deg)[H]) H")$scene
+  expect_equal(with_renderer("glyph", typst_render_mode(scene)), "glyph")
+
+  local_mocked_bindings(glyph_rot_supported = function() FALSE)
+  expect_equal(with_renderer("glyph", typst_render_mode(scene)), "path")
+  # A label rotated as a whole keeps native glyphs.
+  rotated <- scene_grob("Hxample", angle = 90)$scene
+  expect_equal(with_renderer("glyph", typst_render_mode(rotated)), "glyph")
 })

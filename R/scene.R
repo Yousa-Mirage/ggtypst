@@ -79,11 +79,31 @@ clip_viewport <- function(scene, id, scale) {
 }
 
 # Native glyphs `rows`, positioned in the layout box.
+#
+# `glyphInfo()` can only rotate glyphs (its `rot` argument) in R 4.5 and later.
+# On older R, if all glyphs of the run have the same angle (for example in a
+# rotated axis title), we draw them without rotation inside a viewport that
+# is rotated by that angle. Text with glyphs at different angles is drawn as
+# outlines instead (see `typst_render_mode()`).
 glyph_run_grob <- function(glyphs, rows, font_list, scale, width, height) {
-  info <- grDevices::glyphInfo(
+  x <- glyphs$x[rows] * scale
+  y <- glyphs$y[rows] * scale
+  rot <- glyphs$rot[rows]
+  turn <- if (glyph_rot_supported()) 0 else rot[1]
+  if (turn != 0) {
+    # Rotate the positions back by the angle, around the layout box's
+    # bottom-left corner. The rotated viewport below then puts the glyphs
+    # back in place.
+    angle <- -turn * pi / 180
+    turned_x <- x * cos(angle) - y * sin(angle)
+    y <- x * sin(angle) + y * cos(angle)
+    x <- turned_x
+  }
+
+  args <- list(
     id = glyphs$id[rows],
-    x = glyphs$x[rows] * scale,
-    y = glyphs$y[rows] * scale,
+    x = x,
+    y = y,
     font = glyphs$font[rows],
     size = glyphs$size[rows] * scale,
     fontList = font_list,
@@ -91,17 +111,55 @@ glyph_run_grob <- function(glyphs, rows, font_list, scale, width, height) {
     height = height * scale,
     hAnchor = grDevices::glyphAnchor(0, "left"),
     vAnchor = grDevices::glyphAnchor(0, "bottom"),
-    col = glyphs$fill[rows],
-    rot = glyphs$rot[rows]
+    col = glyphs$fill[rows]
   )
-  grid::glyphGrob(
-    info,
+
+  if (glyph_rot_supported()) {
+    args$rot <- rot
+  }
+
+  grob <- grid::glyphGrob(
+    do.call(grDevices::glyphInfo, args),
     x = 0,
     y = 0,
     hjust = 0,
     vjust = 0,
     default.units = "npc"
   )
+
+  if (turn == 0) {
+    return(grob)
+  }
+
+  grid::gTree(
+    children = grid::gList(grob),
+    vp = grid::viewport(
+      x = 0,
+      y = 0,
+      width = grid::unit(width * scale, "bigpts"),
+      height = grid::unit(height * scale, "bigpts"),
+      just = c(0, 0),
+      angle = turn
+    )
+  )
+}
+
+# Whether `glyphInfo()` has the `rot` argument (R 4.5 and later).
+glyph_rot_supported <- function() {
+  "rot" %in% names(formals(grDevices::glyphInfo))
+}
+
+# Whether all glyphs in each glyph run have the same angle. If so, native
+# glyphs can draw them on R older than 4.5 (see `glyph_run_grob()`).
+glyph_runs_share_angle <- function(scene) {
+  runs <- scene$runs
+  for (i in which(runs$kind == "glyph")) {
+    rot <- scene$glyphs$rot[seq(runs$row[i], length.out = runs$n_rows[i])]
+    if (any(abs(rot - rot[1]) > 1e-9)) {
+      return(FALSE)
+    }
+  }
+  TRUE
 }
 
 # Font lists already built in this session, by their fonts, so that labels
