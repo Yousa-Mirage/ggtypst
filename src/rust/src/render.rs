@@ -1,6 +1,7 @@
 use extendr_api::prelude::{List, list};
 use typst::compile;
 use typst::diag::Warned;
+use typst::foundations::Smart;
 use typst::layout::FrameItem;
 use typst_layout::PagedDocument;
 
@@ -49,7 +50,8 @@ impl InMemoryWorld {
             .first()
             .ok_or(RenderError::NoPagesGenerated)?;
 
-        if !has_visual_content(&page.frame) {
+        let filled = matches!(page.fill, Smart::Custom(Some(_)));
+        if !filled && !has_visual_content(&page.frame) {
             return Err(RenderError::EmptyPage);
         }
 
@@ -142,6 +144,15 @@ mod tests {
             };
             assert!(rendered.scene.glyph_ok, "{source}");
         }
+    }
+
+    #[test]
+    fn test_render_draws_a_page_with_only_a_fill() {
+        let source = "#set page(width: 10pt, height: 10pt, margin: 0pt, fill: red)";
+        let Ok(rendered) = compile_source(source) else {
+            panic!("a filled page should render");
+        };
+        assert_eq!(rendered.scene.runs.kind, vec!["path"]);
     }
 
     #[test]

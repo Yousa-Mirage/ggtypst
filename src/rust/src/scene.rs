@@ -26,7 +26,8 @@ use std::sync::{LazyLock, Mutex};
 use extendr_api::prelude::{List, list};
 use typst::foundations::Bytes;
 use typst::foundations::Smart;
-use typst::layout::{Abs, Frame, FrameItem, Point, Transform};
+use typst::layout::{Abs, Frame, FrameItem, FrameKind, Point, Size, Transform};
+use typst::syntax::Span;
 use typst::text::{Font, FontInstance, FontStyle, TextItem};
 use typst::visualize::{
     Curve, CurveItem, FillRule, Geometry, ImageScaling, LineCap, LineJoin, Paint,
@@ -257,7 +258,15 @@ pub fn extract_scene(page: &Page, raster_dpi: f64) -> Scene {
         next_shape_sub: 0,
         next_clip_sub: 0,
         current_clip: 0,
+        container: (frame.size(), Transform::identity()),
     };
+    // A page fill, which the preamble leaves out but the label's code may set,
+    // is drawn behind everything else.
+    if let Smart::Custom(Some(paint)) = &page.fill {
+        let shape = Geometry::Rect(frame.size()).filled(paint.clone());
+        let item = FrameItem::Shape(shape.clone(), Span::detached());
+        builder.shape(&shape, Transform::identity(), &item);
+    }
     builder.frame(frame, Transform::identity());
 
     // Typst's y axis points down from the page's top; grid's points up from
@@ -283,6 +292,9 @@ struct SceneBuilder {
     next_clip_sub: i32,
     /// Clip region of the group being walked, or 0.
     current_clip: i32,
+    /// Size and transform of the innermost hard frame (the page at first),
+    /// which paint relative to its parent spans.
+    container: (Size, Transform),
     /// The page, for rendering items as images with its settings.
     page: Page,
     raster_dpi: f64,
@@ -305,6 +317,10 @@ impl SceneBuilder {
             match item {
                 FrameItem::Group(group) => {
                     let inner = ts.pre_concat(group.transform);
+                    let outer_container = self.container;
+                    if matches!(group.frame.kind(), FrameKind::Hard) {
+                        self.container = (group.frame.size(), inner);
+                    }
                     match &group.clip {
                         None => self.frame(&group.frame, inner),
                         Some(clip) => {
@@ -329,6 +345,7 @@ impl SceneBuilder {
                             self.current_clip = outer;
                         }
                     }
+                    self.container = outer_container;
                 }
                 FrameItem::Text(text) => self.text(text, ts, item),
                 FrameItem::Shape(shape, _) => self.shape(shape, ts, item),
@@ -410,8 +427,16 @@ impl SceneBuilder {
                 // monochrome outline to draw as a path, and devices draw them
                 // as native glyphs unreliably (squashed on svglite, without
                 // colour for some fonts on ragg): draw an image of the glyph.
-                let mut alone = text.clone();
-                alone.glyphs = vec![glyph.clone()];
+                let alone = TextItem {
+                    font: text.font.clone(),
+                    size: text.size,
+                    fill: text.fill.clone(),
+                    stroke: text.stroke.clone(),
+                    lang: text.lang,
+                    region: text.region,
+                    text: text.text.clone(),
+                    glyphs: vec![glyph.clone()],
+                };
                 self.raster(&FrameItem::Text(alone), ts.pre_concat(advanced), true);
                 continue;
             } else if ttf.glyph_bounding_box(id).is_none() {
@@ -457,7 +482,7 @@ impl SceneBuilder {
 
     /// Draw `item`, transformed by `ts`, as an image.
     fn raster(&mut self, item: &FrameItem, ts: Transform, interpolate: bool) {
-        let Some(raster) = rasterize(item, ts, &self.page, self.raster_dpi) else {
+        let Some(raster) = rasterize(item, ts, self.container, &self.page, self.raster_dpi) else {
             return;
         };
         self.scene.rasters.push(raster, interpolate);
@@ -1514,6 +1539,55 @@ mod tests {
         let (_, scene) = scene_of("H #text(fill: gradient.linear(red, blue))[ello] H");
         assert_eq!(kinds(&scene), vec!["glyph", "raster", "glyph"]);
         assert_eq!(scene.glyphs.id.len(), 2);
+    }
+
+    /// The colour of the leftmost fully opaque pixel in the middle row of
+    /// raster `i`.
+    fn leftmost_ink(scene: &Scene, i: usize) -> [u8; 4] {
+        let r = &scene.rasters;
+        let (Ok(w), Ok(h)) = (
+            usize::try_from(r.width_px[i]),
+            usize::try_from(r.height_px[i]),
+        ) else {
+            panic!("raster {i} should have a size");
+        };
+        let row = &r.pixels[i][(h / 2) * w..(h / 2 + 1) * w];
+        let Some(pixel) = row.iter().map(|p| p.to_le_bytes()).find(|p| p[3] == 255) else {
+            panic!("raster {i} should have ink in its middle row");
+        };
+        pixel
+    }
+
+    #[test]
+    fn parent_relative_gradients_span_the_whole_text() {
+        // Regular and bold text are separate items, each drawn as an image. The
+        // gradient spans both, as in Typst, rather than restarting at each.
+        let (_, scene) = scene_of(
+            "#text(fill: gradient.linear(rgb(\"#ff0000\"), rgb(\"#0000ff\")))[HHHH *HHHH*]",
+        );
+        assert_eq!(kinds(&scene), vec!["raster", "raster"]);
+        let (first, second) = (leftmost_ink(&scene, 0), leftmost_ink(&scene, 1));
+        assert!(first[0] > 200 && first[2] < 80, "{first:?}");
+        assert!(second[0] < 200 && second[2] > 80, "{second:?}");
+    }
+
+    #[test]
+    fn long_thin_images_keep_to_the_pixel_cap() {
+        let (_, scene) = scene_of(
+            "#line(length: 100000pt, stroke: (paint: gradient.linear(red, blue), thickness: 0.01pt))",
+        );
+        let r = &scene.rasters;
+        for i in 0..r.x.len() {
+            let pixels = f64::from(r.width_px[i]) * f64::from(r.height_px[i]);
+            assert!(pixels <= crate::raster::MAX_PIXELS, "{pixels}");
+        }
+    }
+
+    #[test]
+    fn page_fills_are_drawn_first() {
+        let (_, scene) = scene_of("#set page(fill: rgb(\"#ff0000\"))\nHi");
+        assert_eq!(kinds(&scene), vec!["path", "glyph"]);
+        assert_eq!(scene.shapes.fill[0].as_deref(), Some("#FF0000FF"));
     }
 
     #[test]

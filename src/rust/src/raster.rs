@@ -78,8 +78,16 @@ impl Rasters {
 }
 
 /// Draw `item`, transformed by `ts`, as an image at `dpi` (fewer if it would
-/// exceed `MAX_PIXELS`). `page` supplies the page settings Typst renders with.
-pub fn rasterize(item: &FrameItem, ts: Transform, page: &Page, dpi: f64) -> Option<Raster> {
+/// exceed `MAX_PIXELS`). `container` is the size and transform of the hard
+/// frame the item is in, which paint relative to its parent (the default for
+/// text) spans. `page` supplies the page settings Typst renders with.
+pub fn rasterize(
+    item: &FrameItem,
+    ts: Transform,
+    container: (Size, Transform),
+    page: &Page,
+    dpi: f64,
+) -> Option<Raster> {
     if !(dpi.is_finite() && dpi > 0.0) {
         return None;
     }
@@ -89,20 +97,42 @@ pub fn rasterize(item: &FrameItem, ts: Transform, page: &Page, dpi: f64) -> Opti
     if !(width > 0.0 && height > 0.0) {
         return None;
     }
+    // Typst renders whole pixels, at least one each way: limit those.
+    let pixels_at =
+        |per_pt: f64| (width * per_pt).round().max(1.0) * (height * per_pt).round().max(1.0);
     let mut per_pt = dpi / 72.0;
-    let pixels = width * height * per_pt * per_pt;
-    if pixels > MAX_PIXELS {
-        per_pt *= (MAX_PIXELS / pixels).sqrt();
+    for _ in 0..64 {
+        let pixels = pixels_at(per_pt);
+        if pixels <= MAX_PIXELS {
+            break;
+        }
+        per_pt *= (MAX_PIXELS / pixels).sqrt() * 0.999;
+    }
+    if pixels_at(per_pt) > MAX_PIXELS {
+        // Thinner than a pixel and longer than the limit: nothing to see.
+        return None;
     }
 
-    // The item alone, moved so its ink bounds start at the image's corner.
-    let mut inner = Frame::soft(Size::zero());
-    inner.push(Point::zero(), item.clone());
-    let mut group = GroupItem::new(inner);
-    group.transform =
-        Transform::translate(Abs::pt(-bounds.min_x), Abs::pt(-bounds.min_y)).pre_concat(ts);
+    // The item alone, moved so its ink bounds start at the image's corner,
+    // inside a hard frame like its container so that paint relative to the
+    // parent spans the same area as in Typst.
+    let (container_size, container_ts) = container;
+    let shift = Transform::translate(Abs::pt(-bounds.min_x), Abs::pt(-bounds.min_y));
+    let content = match container_ts.invert() {
+        Some(into_container) => {
+            let mut hard = Frame::hard(container_size);
+            hard.push(
+                Point::zero(),
+                FrameItem::Group(group_of(item, into_container.pre_concat(ts))),
+            );
+            let mut outer = GroupItem::new(hard);
+            outer.transform = shift.pre_concat(container_ts);
+            outer
+        }
+        None => group_of(item, shift.pre_concat(ts)),
+    };
     let mut frame = Frame::soft(Size::new(Abs::pt(width), Abs::pt(height)));
-    frame.push(Point::zero(), FrameItem::Group(group));
+    frame.push(Point::zero(), FrameItem::Group(content));
     let mut page = page.clone();
     page.frame = frame;
     page.fill = Smart::Custom(None);
@@ -134,4 +164,13 @@ pub fn rasterize(item: &FrameItem, ts: Transform, page: &Page, dpi: f64) -> Opti
         height_px: pixmap.height(),
         pixels,
     })
+}
+
+/// A group drawing `item` with transform `ts`.
+fn group_of(item: &FrameItem, ts: Transform) -> GroupItem {
+    let mut frame = Frame::soft(Size::zero());
+    frame.push(Point::zero(), item.clone());
+    let mut group = GroupItem::new(frame);
+    group.transform = ts;
+    group
 }
