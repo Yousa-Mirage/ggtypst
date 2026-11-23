@@ -87,7 +87,7 @@ The Rust crate lives in `src/rust/` and currently exposes three exported entry p
 - `rs_typst_render()` compiles Typst and returns the page's size, scene, and diagnostics, plus its SVG when the scene
   cannot be drawn with paths
 - `rs_glyph_outlines()` computes the outlines of a scene's glyphs, only when its text is drawn as paths
-- `rs_typst_font_data()` returns the data of a font built into the binary, to write it to a file for native glyphs
+- `rs_typst_write_font()` writes a font built into the binary to a file, so devices can load it for native glyphs
 - `rs_convert_latex_to_typst()` converts LaTeX-style input through MiTeX
 
 Important modules include:

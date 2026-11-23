@@ -14,7 +14,7 @@ rs_typst_render <- function(typst_code) .Call(wrap__rs_typst_render, typst_code)
 
 rs_glyph_outlines <- function(fonts, glyphs) .Call(wrap__rs_glyph_outlines, fonts, glyphs)
 
-rs_typst_font_data <- function(store_index) .Call(wrap__rs_typst_font_data, store_index)
+rs_typst_write_font <- function(store_index, collection_index, cache_key, path) .Call(wrap__rs_typst_write_font, store_index, collection_index, cache_key, path)
 
 rs_convert_latex_to_typst <- function(latex_code) .Call(wrap__rs_convert_latex_to_typst, latex_code)
 

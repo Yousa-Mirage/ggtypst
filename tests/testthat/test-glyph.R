@@ -97,11 +97,35 @@ test_that("embedded fonts are written once to the font cache", {
 
   file <- typst_font_files(fonts)
   expect_equal(dirname(file), cache)
-  expect_equal(file.size(file), length(rs_typst_font_data(fonts$store_index)))
+  # An OpenType font with CFF outlines (Libertinus) starts with "OTTO".
+  expect_identical(readBin(file, "raw", 4), charToRaw("OTTO"))
+  expect_length(list.files(cache, all.files = TRUE, no.. = TRUE), 1)
 
   written <- file.mtime(file)
   expect_equal(typst_font_files(fonts), file)
   expect_equal(file.mtime(file), written)
+})
+
+test_that("embedded fonts are written from a stale store index", {
+  fonts <- typst_render(build_typst_source("Hello"))$scene$fonts
+  write <- function(fonts) {
+    old <- options(ggtypst.font_cache = tempfile("font-cache"))
+    on.exit(options(old))
+    file <- typst_font_files(fonts)
+    readBin(file, "raw", file.size(file))
+  }
+  expected <- write(fonts)
+
+  # As in a scene saved in another session: the cache key finds the font.
+  fonts$store_index <- .Machine$integer.max
+  expect_identical(write(fonts), expected)
+
+  fonts$cache_key <- "Missing-0-0000000000000000"
+  expect_error(
+    write(fonts),
+    "Cannot write a font file",
+    class = "ggtypst_typst_error"
+  )
 })
 
 # Count how often scene grobs are built, while still building them.

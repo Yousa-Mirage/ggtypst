@@ -38,13 +38,26 @@ fn rs_glyph_outlines(fonts: List, glyphs: List) -> List {
     }
 }
 
-/// Data of an embedded font, to write it to a file that devices can load.
+/// Write a font built into ggtypst to `path`, so devices can load it.
 #[extendr]
-fn rs_typst_font_data(store_index: i32) -> Robj {
-    usize::try_from(store_index)
-        .ok()
-        .and_then(scene::font_data)
-        .map_or_else(|| ().into_robj(), |data| Raw::from_bytes(&data).into_robj())
+fn rs_typst_write_font(
+    store_index: i32,
+    collection_index: i32,
+    cache_key: &str,
+    path: &str,
+) -> Robj {
+    let written = scene::write_embedded_font(
+        store_index,
+        collection_index,
+        cache_key,
+        std::path::Path::new(path),
+    );
+    match written {
+        Ok(()) => true.into_robj(),
+        Err(message) => error::RenderError::FontFileFailed { message }
+            .to_typst_error()
+            .into_robj(),
+    }
 }
 
 /// Convert LaTeX code to Typst code.
@@ -63,6 +76,6 @@ extendr_module! {
     mod ggtypst;
     fn rs_typst_render;
     fn rs_glyph_outlines;
-    fn rs_typst_font_data;
+    fn rs_typst_write_font;
     fn rs_convert_latex_to_typst;
 }

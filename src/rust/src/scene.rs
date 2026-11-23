@@ -18,9 +18,12 @@
 
 use std::any::Any;
 use std::collections::HashMap;
+use std::path::Path;
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::sync::{LazyLock, Mutex};
 
 use extendr_api::prelude::{List, list};
+use typst::foundations::Bytes;
 use typst::layout::{Abs, Frame, FrameItem, Point, Transform};
 use typst::text::{Font, FontInstance, FontStyle, TextItem};
 use typst::visualize::{Curve, CurveItem, FillRule, Geometry, LineCap, LineJoin, Paint};
@@ -880,11 +883,83 @@ fn cache_key(font: &Font) -> String {
     format!("{family}-{}-{hash:016x}", font.index())
 }
 
-/// Data of the font at `store_index` in the global font store.
-pub fn font_data(store_index: usize) -> Option<Vec<u8>> {
-    fonts::get_fonts()
-        .font(store_index)
-        .map(|font| font.data().as_slice().to_vec())
+/// Font `store_index` of the global font store, checked against where the
+/// scene said it came from (`path`, `collection_index`, `cache_key`).
+///
+/// A scene from another R session (a saved plot) may name a font at another
+/// store index: then a font file is read from its path, and a font built into
+/// ggtypst is found by its cache key.
+pub(crate) fn find_font(
+    store_index: i32,
+    path: &str,
+    collection_index: i32,
+    cache_key: &str,
+) -> Result<Font, String> {
+    let is_it = |font: &Font| {
+        lookup_font(font).is_some_and(|found| {
+            found.path == path
+                && found.cache_key == cache_key
+                && r_int(found.collection_index) == collection_index
+        })
+    };
+
+    let store = fonts::get_fonts();
+    if let Ok(store_index) = usize::try_from(store_index)
+        && let Some(font) = store.font(store_index)
+        && is_it(&font)
+    {
+        return Ok(font);
+    }
+
+    if !path.is_empty() {
+        let data =
+            std::fs::read(path).map_err(|err| format!("cannot read font file {path}: {err}"))?;
+        let index = u32::try_from(collection_index).unwrap_or(0);
+        return Font::new(Bytes::new(data), index)
+            .ok_or_else(|| format!("{path} has no font {index}"));
+    }
+
+    // Only fonts built into the binary have no file; check just those.
+    let embedded = |j: &usize| {
+        store
+            .source(*j)
+            .is_some_and(|source| (source as &dyn Any).downcast_ref::<FontPath>().is_none())
+    };
+    (0..)
+        .map_while(|j| store.book().info(j).map(|_| j))
+        .filter(embedded)
+        .filter_map(|j| store.font(j))
+        .find(is_it)
+        .ok_or_else(|| format!("the built-in font {cache_key} is not available"))
+}
+
+/// Write a font built into ggtypst to `path`, so graphics devices can load
+/// it. The data goes to a temporary file next to `path` first, so a concurrent
+/// reader never sees a partial font.
+pub fn write_embedded_font(
+    store_index: i32,
+    collection_index: i32,
+    cache_key: &str,
+    path: &Path,
+) -> Result<(), String> {
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+
+    let font = find_font(store_index, "", collection_index, cache_key)?;
+    let name = path
+        .file_name()
+        .ok_or_else(|| format!("{} is not a file path", path.display()))?
+        .to_string_lossy();
+    let partial = path.with_file_name(format!(
+        ".{name}.{}-{}.partial",
+        std::process::id(),
+        NEXT.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::write(&partial, font.data().as_slice())
+        .and_then(|()| std::fs::rename(&partial, path))
+        .map_err(|err| {
+            let _ = std::fs::remove_file(&partial);
+            format!("cannot write {}: {err}", path.display())
+        })
 }
 
 #[cfg(test)]
@@ -1054,15 +1129,45 @@ mod tests {
         assert_eq!(f.weight[0], 400);
         assert_eq!(f.style[0], "normal");
         assert_eq!(f.variations[0], "");
-        let Ok(store_index) = usize::try_from(f.store_index[0]) else {
-            panic!("store index should be non-negative");
-        };
-        assert!(font_data(store_index).is_some_and(|data| !data.is_empty()));
 
         // The same font maps to the same row.
         let (_, two) = scene_of("H #text(weight: \"bold\")[H] H");
         assert_eq!(two.fonts.path.len(), 2);
         assert_eq!(two.glyphs.font, vec![1, 2, 1]);
+    }
+
+    #[test]
+    fn embedded_fonts_are_written_whole() {
+        let (_, scene) = scene_of("H");
+        let f = &scene.fonts;
+        let dir = std::env::temp_dir().join(format!("ggtypst-font-test-{}", std::process::id()));
+        if let Err(err) = std::fs::create_dir_all(&dir) {
+            panic!("cannot create {}: {err}", dir.display());
+        }
+        let Ok(store_index) = usize::try_from(f.store_index[0]) else {
+            panic!("store index should be non-negative");
+        };
+        let Some(font) = fonts::get_fonts().font(store_index) else {
+            panic!("the font should be in the store");
+        };
+
+        // A stale store index, as in a scene from another session, still
+        // writes the font named by the cache key.
+        for (i, store_index) in [f.store_index[0], i32::MAX].into_iter().enumerate() {
+            let path = dir.join(format!("{i}.otf"));
+            let written =
+                write_embedded_font(store_index, f.collection_index[0], &f.cache_key[0], &path);
+            assert!(written.is_ok(), "{written:?}");
+            let Ok(data) = std::fs::read(&path) else {
+                panic!("{} should be written", path.display());
+            };
+            assert!(data == font.data().as_slice());
+        }
+
+        let missing = write_embedded_font(i32::MAX, 0, "Missing-0-0", &dir.join("missing.otf"));
+        assert!(missing.is_err());
+        assert!(!dir.join("missing.otf").exists());
+        let _ = std::fs::remove_dir_all(&dir);
     }
 
     #[test]

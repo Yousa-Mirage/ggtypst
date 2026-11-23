@@ -52,6 +52,10 @@ pub enum RenderError {
     OutlinesUnavailable {
         message: String,
     },
+    /// A font built into ggtypst could not be written to a file.
+    FontFileFailed {
+        message: String,
+    },
 }
 
 impl std::error::Error for RenderError {}
@@ -64,6 +68,7 @@ impl RenderError {
             RenderError::EmptyPage => "EmptyPage",
             RenderError::MitexConversionFailed { .. } => "MitexConversionFailed",
             RenderError::OutlinesUnavailable { .. } => "OutlinesUnavailable",
+            RenderError::FontFileFailed { .. } => "FontFileFailed",
         }
     }
 
@@ -74,6 +79,7 @@ impl RenderError {
             RenderError::EmptyPage => List::new(0),
             RenderError::MitexConversionFailed { .. } => List::new(0),
             RenderError::OutlinesUnavailable { .. } => List::new(0),
+            RenderError::FontFileFailed { .. } => List::new(0),
         };
 
         let mut err = list!(
@@ -101,6 +107,9 @@ impl std::fmt::Display for RenderError {
             }
             RenderError::OutlinesUnavailable { message } => {
                 write!(f, "Cannot draw glyph outlines: {message}")
+            }
+            RenderError::FontFileFailed { message } => {
+                write!(f, "Cannot write a font file: {message}")
             }
         }
     }

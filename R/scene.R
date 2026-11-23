@@ -226,11 +226,15 @@ typst_font_files <- function(fonts) {
   for (i in embedded) {
     file <- file.path(dir, paste0(fonts$cache_key[i], ".otf"))
     if (!file.exists(file)) {
-      # Write to a temporary name first so a concurrent reader never sees a
-      # partial file.
-      partial <- tempfile(tmpdir = dir)
-      writeBin(rs_typst_font_data(fonts$store_index[i]), partial)
-      file.rename(partial, file)
+      written <- rs_typst_write_font(
+        fonts$store_index[i],
+        fonts$collection_index[i],
+        fonts$cache_key[i],
+        file
+      )
+      if (inherits(written, "typst_error")) {
+        abort_typst_errors(written)
+      }
     }
     files[i] <- file
   }

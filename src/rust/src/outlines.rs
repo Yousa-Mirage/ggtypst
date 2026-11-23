@@ -4,16 +4,11 @@
 //! are only computed when R draws a scene as paths: from the scene's glyph
 //! table (font, glyph id, origin, and transform) and the fonts it names.
 
-use std::any::Any;
-
 use extendr_api::prelude::{List, Robj, list};
-use typst::foundations::Bytes;
 use typst::text::Font;
-use typst_kit::fonts::FontPath;
 
 use crate::error::RenderError;
-use crate::fonts;
-use crate::scene::{Fonts, Glyphs, Points, flatten_cubic, lookup_font, push, r_int};
+use crate::scene::{Fonts, Glyphs, Points, find_font, flatten_cubic, push, r_int};
 
 /// Flattened outlines of a scene's glyphs, in the scene's coordinates.
 #[derive(Debug, Default)]
@@ -86,51 +81,14 @@ pub fn glyph_outlines(fonts: &Fonts, glyphs: &Glyphs) -> Result<Outlines, Render
 }
 
 /// Font `i` of a scene's font table.
-///
-/// It is usually where the scene found it in this session's font store. A
-/// scene from another R session (a saved plot) may not be: then a font file
-/// is read from its path, and a font built into ggtypst is found by its cache
-/// key.
 fn resolve_font(fonts: &Fonts, i: usize) -> Result<Font, RenderError> {
-    let path = &fonts.path[i];
-    let cache_key = &fonts.cache_key[i];
-    let index = fonts.collection_index[i];
-    let is_it = |font: &Font| {
-        lookup_font(font).is_some_and(|found| {
-            found.path == *path
-                && found.cache_key == *cache_key
-                && r_int(found.collection_index) == index
-        })
-    };
-
-    let store = fonts::get_fonts();
-    if let Ok(store_index) = usize::try_from(fonts.store_index[i])
-        && let Some(font) = store.font(store_index)
-        && is_it(&font)
-    {
-        return Ok(font);
-    }
-
-    if !path.is_empty() {
-        let data = std::fs::read(path)
-            .map_err(|err| unavailable(format!("cannot read font file {path}: {err}")))?;
-        let index = u32::try_from(index).unwrap_or(0);
-        return Font::new(Bytes::new(data), index)
-            .ok_or_else(|| unavailable(format!("{path} has no font {index}")));
-    }
-
-    // Only fonts built into the binary have no file; check just those.
-    let embedded = |j: &usize| {
-        store
-            .source(*j)
-            .is_some_and(|source| (source as &dyn Any).downcast_ref::<FontPath>().is_none())
-    };
-    (0..)
-        .map_while(|j| store.book().info(j).map(|_| j))
-        .filter(embedded)
-        .filter_map(|j| store.font(j))
-        .find(is_it)
-        .ok_or_else(|| unavailable(format!("the built-in font {cache_key} is not available")))
+    find_font(
+        fonts.store_index[i],
+        &fonts.path[i],
+        fonts.collection_index[i],
+        &fonts.cache_key[i],
+    )
+    .map_err(unavailable)
 }
 
 /// The face of `font` at the variable font coordinates `variations`, as the
@@ -307,6 +265,7 @@ impl ttf_parser::OutlineBuilder for OutlineSink<'_> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::fonts;
     use crate::scene::{Scene, extract_scene};
     use crate::world::InMemoryWorld;
     use typst::layout::Frame;
