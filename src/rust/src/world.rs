@@ -1,5 +1,6 @@
+use std::collections::HashMap;
 use std::path::Path;
-use std::sync::{Arc, LazyLock};
+use std::sync::{Arc, LazyLock, Mutex, PoisonError};
 
 use typst::diag::{FileError, FileResult};
 use typst::foundations::{Bytes, Datetime, Duration};
@@ -15,6 +16,17 @@ const MITEX_STANDARD_TYP: &str = include_str!("../specs/latex/standard.typ");
 
 static LIBRARY: LazyLock<LazyHash<Library>> =
     LazyLock::new(|| LazyHash::new(Library::builder().build()));
+
+/// Parsed MiTeX files by file id.
+static SPEC_SOURCES: LazyLock<Mutex<HashMap<FileId, Source>>> = LazyLock::new(Default::default);
+
+fn spec_source(id: FileId, contents: &'static str) -> Source {
+    let mut sources = SPEC_SOURCES.lock().unwrap_or_else(PoisonError::into_inner);
+    sources
+        .entry(id)
+        .or_insert_with(|| Source::new(id, contents.to_string()))
+        .clone()
+}
 
 fn virtual_typst_file(path: &str) -> Option<&'static str> {
     match path {
@@ -64,7 +76,7 @@ impl World for InMemoryWorld {
             let normalized = normalize_virtual_path(&p);
 
             if let Some(contents) = virtual_typst_file(&normalized) {
-                Ok(Source::new(id, contents.to_string()))
+                Ok(spec_source(id, contents))
             } else {
                 Err(FileError::NotFound(p))
             }
@@ -125,6 +137,21 @@ mod tests {
         let b = InMemoryWorld::new("b".to_string(), fonts.clone());
         assert!(std::ptr::eq(a.book(), b.book()));
         assert!(std::ptr::eq(a.book(), fonts.book()));
+    }
+
+    #[test]
+    fn worlds_share_parsed_mitex_files() {
+        let Ok(path) = VirtualPath::new("/specs/mod.typ") else {
+            panic!("the path should be valid");
+        };
+        let id = RootedPath::new(VirtualRoot::Project, path).intern();
+        let fonts = crate::fonts::get_fonts();
+        let a = InMemoryWorld::new("a".to_string(), fonts.clone());
+        let b = InMemoryWorld::new("b".to_string(), fonts);
+        let (Ok(a), Ok(b)) = (a.source(id), b.source(id)) else {
+            panic!("MiTeX's module should be found");
+        };
+        assert!(std::ptr::eq(a.text(), b.text()));
     }
 
     #[test]
