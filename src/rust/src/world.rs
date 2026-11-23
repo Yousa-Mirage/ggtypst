@@ -40,7 +40,6 @@ pub struct InMemoryWorld {
     source: Source,
     bytes: Bytes,
     library: &'static LazyHash<Library>,
-    book: LazyHash<FontBook>,
     fonts: Arc<FontStore>,
 }
 
@@ -50,7 +49,7 @@ impl World for InMemoryWorld {
     }
 
     fn book(&self) -> &LazyHash<FontBook> {
-        &self.book
+        self.fonts.book()
     }
 
     fn main(&self) -> FileId {
@@ -104,14 +103,12 @@ impl InMemoryWorld {
         let main = RootedPath::new(VirtualRoot::Project, main_path).intern();
         let source = Source::new(main, typst_code.clone());
         let bytes = Bytes::from_string(typst_code);
-        let book = fonts.book().clone();
 
         Self {
             main,
             source,
             bytes,
             library: &LIBRARY,
-            book,
             fonts,
         }
     }
@@ -120,6 +117,15 @@ impl InMemoryWorld {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn worlds_share_the_font_book() {
+        let fonts = crate::fonts::get_fonts();
+        let a = InMemoryWorld::new("a".to_string(), fonts.clone());
+        let b = InMemoryWorld::new("b".to_string(), fonts.clone());
+        assert!(std::ptr::eq(a.book(), b.book()));
+        assert!(std::ptr::eq(a.book(), fonts.book()));
+    }
 
     #[test]
     fn normalize_virtual_path_accepts_unix_style_paths() {
