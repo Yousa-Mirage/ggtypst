@@ -84,7 +84,7 @@ annotate_typst <- function(
     angle = angle,
     hjust = hjust
   )
-  rendered <- typst_svg(full_source)
+  rendered <- typst_render(full_source)
 
   grob <- positioned_typst_grob(
     rendered,

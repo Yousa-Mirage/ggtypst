@@ -271,8 +271,8 @@ test_that("geom_typst system fonts visual check (local only)", {
   skip_on_ci()
   skip_on_cran()
 
-  arial <- suppressWarnings(typst_svg(build_typst_source("probe", family = "Arial")))
-  courier <- suppressWarnings(typst_svg(build_typst_source("probe", family = "Courier New")))
+  arial <- suppressWarnings(typst_render(build_typst_source("probe", family = "Arial")))
+  courier <- suppressWarnings(typst_render(build_typst_source("probe", family = "Courier New")))
 
   if (length(arial$warnings) > 0 || length(courier$warnings) > 0) {
     skip("Required system fonts are not available: Arial/Courier New")

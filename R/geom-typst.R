@@ -283,7 +283,7 @@ geom_typst_row_grob <- function(
         hjust = hjust
       )
 
-      rendered <- typst_svg(source)
+      rendered <- typst_render(source)
 
       positioned_typst_grob(
         rendered,

@@ -1,4 +1,4 @@
-#' @include helper.R grob.R build-source.R typst-svg.R
+#' @include helper.R grob.R build-source.R typst-render.R
 NULL
 
 # element_typst ----------------------------------------------------------------
@@ -438,12 +438,12 @@ typst_element_grob <- function(
     hjust = hjust
   )
 
-  rendered <- typst_svg(source)
+  rendered <- typst_render(source)
 
   width_pt <- rendered$width_pt * scale
   height_pt <- rendered$height_pt * scale
 
-  grob <- vector_typst_grob(
+  grob <- scene_typst_grob(
     rendered = rendered,
     x = x,
     y = y,

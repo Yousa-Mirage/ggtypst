@@ -2,7 +2,7 @@
 # The rest of the suite draws text as outlines (see helper.R).
 
 scene_grob <- function(code, ...) {
-  positioned_typst_grob(typst_svg(build_typst_source(code, ...)))$children[[1]]
+  positioned_typst_grob(typst_render(build_typst_source(code, ...)))$children[[1]]
 }
 
 test_that("the renderer option chooses glyphs or outlines", {
@@ -31,7 +31,7 @@ test_that("glyphs are drawn where the outlines are", {
 
   for (code in c("Hxample long text", "$integral_0^1 x^2 dif x$", "#rotate(30deg)[Hxg]")) {
     grob <- positioned_typst_grob(
-      typst_svg(
+      typst_render(
         build_typst_source(code, size = 14)
       ),
       hjust = 0,
@@ -52,7 +52,7 @@ test_that("glyphs rasterize like grid text, unlike outlines", {
   skip_if_not_installed("systemfonts")
 
   label <- "Hxample long text"
-  rendered <- typst_svg(build_typst_source(label, size = 11))
+  rendered <- typst_render(build_typst_source(label, size = 11))
 
   # Make the font Typst used (embedded in ggtypst) available to grid text too.
   family <- "ggtypst test serif"
@@ -80,7 +80,7 @@ test_that("embedded fonts are written once to the font cache", {
   old <- options(ggtypst.font_cache = cache)
   on.exit(options(old), add = TRUE)
 
-  fonts <- typst_svg(build_typst_source("Hello"))$scene$fonts
+  fonts <- typst_render(build_typst_source("Hello"))$scene$fonts
   expect_equal(fonts$path, "")
 
   file <- typst_font_files(fonts)

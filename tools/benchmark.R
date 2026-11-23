@@ -26,7 +26,7 @@ if (!requireNamespace("ggtext", quietly = TRUE)) {
 suppressPackageStartupMessages(library(ggtext))
 
 build_typst_source_internal <- utils::getFromNamespace("build_typst_source", "ggtypst")
-typst_svg_internal <- utils::getFromNamespace("typst_svg", "ggtypst")
+typst_render_internal <- utils::getFromNamespace("typst_render", "ggtypst")
 convert_latex_to_typst_internal <- utils::getFromNamespace("convert_latex_to_typst", "ggtypst")
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
@@ -156,7 +156,7 @@ ggtext_styled_compare <- "<b>Bold</b> <i>italic</i> plain text"
 
 cat("Warming up Rust backend (font loading, JIT, etc.)...\n")
 for (i in seq_len(3)) {
-  typst_svg_internal(build_typst_source_internal("warmup"))
+  typst_render_internal(build_typst_source_internal("warmup"))
 }
 cat("Warmup complete.\n\n")
 
@@ -192,7 +192,7 @@ out("")
 cat("Running Layer 1: Typst Rendering (Rust FFI)...\n")
 out("\u2500\u2500 Layer 1: Typst Rendering (Rust FFI) \u2500\u2500")
 out("")
-out("  Measures the time of build_typst_source() + typst_svg() calls only,")
+out("  Measures the time of build_typst_source() + typst_render() calls only,")
 out("  bypassing ggplot2 layer construction and SVG-to-grob import.")
 out("")
 out(header_line())
@@ -201,33 +201,33 @@ out(divider())
 layer1_cases <- list(
   list(
     label = "plain_short",
-    expr = quote(typst_svg_internal(build_typst_source_internal(typst_plain_short)))
+    expr = quote(typst_render_internal(build_typst_source_internal(typst_plain_short)))
   ),
   list(
     label = "plain_styled",
-    expr = quote(typst_svg_internal(build_typst_source_internal(typst_plain_styled)))
+    expr = quote(typst_render_internal(build_typst_source_internal(typst_plain_styled)))
   ),
   list(
     label = "math_simple",
-    expr = quote(typst_svg_internal(build_typst_source_internal(typst_math_simple)))
+    expr = quote(typst_render_internal(build_typst_source_internal(typst_math_simple)))
   ),
   list(
     label = "math_moderate",
-    expr = quote(typst_svg_internal(build_typst_source_internal(typst_math_moderate)))
+    expr = quote(typst_render_internal(build_typst_source_internal(typst_math_moderate)))
   ),
   list(
     label = "math_complex",
-    expr = quote(typst_svg_internal(build_typst_source_internal(typst_math_complex)))
+    expr = quote(typst_render_internal(build_typst_source_internal(typst_math_complex)))
   ),
   list(
     label = "mitex_simple",
-    expr = quote(typst_svg_internal(build_typst_source_internal(
+    expr = quote(typst_render_internal(build_typst_source_internal(
       convert_latex_to_typst_internal(latex_simple)
     )))
   ),
   list(
     label = "mitex_complex",
-    expr = quote(typst_svg_internal(build_typst_source_internal(
+    expr = quote(typst_render_internal(build_typst_source_internal(
       convert_latex_to_typst_internal(latex_complex)
     )))
   )

@@ -43,7 +43,7 @@ impl RenderDiagnostic {
 pub enum RenderError {
     CompilationFailed { diagnostics: Vec<RenderDiagnostic> },
     NoPagesGenerated,
-    EmptySvg,
+    EmptyPage,
     MitexConversionFailed { message: String },
 }
 
@@ -54,7 +54,7 @@ impl RenderError {
         match self {
             RenderError::CompilationFailed { .. } => "CompilationFailed",
             RenderError::NoPagesGenerated => "NoPagesGenerated",
-            RenderError::EmptySvg => "EmptySvg",
+            RenderError::EmptyPage => "EmptyPage",
             RenderError::MitexConversionFailed { .. } => "MitexConversionFailed",
         }
     }
@@ -63,7 +63,7 @@ impl RenderError {
         let diagnostics = match self {
             RenderError::CompilationFailed { diagnostics } => diagnostics_to_r_list(diagnostics),
             RenderError::NoPagesGenerated => List::new(0),
-            RenderError::EmptySvg => List::new(0),
+            RenderError::EmptyPage => List::new(0),
             RenderError::MitexConversionFailed { .. } => List::new(0),
         };
 
@@ -86,7 +86,7 @@ impl std::fmt::Display for RenderError {
         match self {
             RenderError::CompilationFailed { .. } => write!(f, "Typst compilation failed"),
             RenderError::NoPagesGenerated => write!(f, "Typst compilation produced no pages"),
-            RenderError::EmptySvg => write!(f, "Typst rendered an empty SVG"),
+            RenderError::EmptyPage => write!(f, "Typst output has nothing to draw"),
             RenderError::MitexConversionFailed { message } => {
                 write!(f, "MiTeX conversion failed: {message}")
             }
@@ -128,7 +128,7 @@ mod tests {
                 RenderError::NoPagesGenerated,
                 "Typst compilation produced no pages",
             ),
-            (RenderError::EmptySvg, "Typst rendered an empty SVG"),
+            (RenderError::EmptyPage, "Typst output has nothing to draw"),
             (
                 RenderError::MitexConversionFailed {
                     message: "unknown command".to_string(),
@@ -152,7 +152,7 @@ mod tests {
             "CompilationFailed"
         );
         assert_eq!(RenderError::NoPagesGenerated.kind(), "NoPagesGenerated");
-        assert_eq!(RenderError::EmptySvg.kind(), "EmptySvg");
+        assert_eq!(RenderError::EmptyPage.kind(), "EmptyPage");
         assert_eq!(
             RenderError::MitexConversionFailed {
                 message: "x".to_string(),

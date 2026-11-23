@@ -47,7 +47,7 @@ full GC was run before each iteration.
 
 ## Layer 1: Typst Rendering
 
-This layer measures only `build_typst_source()` + `typst_svg()` — the Typst
+This layer measures only `build_typst_source()` + `typst_render()` — the Typst
 source generation and Rust compilation step — without any `ggplot2` overhead or
 SVG-to-grob import.
 

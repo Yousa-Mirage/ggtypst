@@ -168,5 +168,5 @@ test_that("convert_latex_to_typst supports matrix environments without alias", {
     r"(\begin{pmatrix}1 & 2 \\ 3 & 4\end{pmatrix})"
   )
 
-  expect_no_error(typst_svg(build_typst_source(src)))
+  expect_no_error(typst_render(build_typst_source(src)))
 })

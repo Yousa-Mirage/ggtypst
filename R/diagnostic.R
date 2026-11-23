@@ -59,9 +59,9 @@ warn_typst_warnings <- function(warnings) {
 abort_typst_errors <- function(err) {
   kind <- err$kind
 
-  if (kind == "EmptySvg") {
+  if (kind == "EmptyPage") {
     cli::cli_abort(
-      "Typst rendered an empty SVG. Check your input.",
+      "Typst output has nothing to draw. Check your input.",
       class = c("ggtypst_typst_error", "typst_error"),
       typst_error = err,
       call = rlang::caller_env()

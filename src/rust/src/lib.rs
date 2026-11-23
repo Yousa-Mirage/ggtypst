@@ -8,14 +8,14 @@ mod render;
 mod scene;
 mod world;
 
-/// Convert a Typst document to SVG.
+/// Compile a Typst document and describe its first page for drawing.
 #[extendr]
-fn rs_typst_svg(typst_code: &str) -> List {
+fn rs_typst_render(typst_code: &str) -> List {
     let fonts = fonts::get_fonts();
     let world = world::InMemoryWorld::new(typst_code.to_string(), fonts);
 
-    match world.compile_to_svg() {
-        Ok(rendered_svg) => rendered_svg.into_r_list(),
+    match world.render() {
+        Ok(rendered) => rendered.into_r_list(),
         Err(err) => err.to_typst_error(),
     }
 }
@@ -43,7 +43,7 @@ fn rs_convert_latex_to_typst(latex_code: &str) -> Robj {
 // See corresponding C code in `entrypoint.c`.
 extendr_module! {
     mod ggtypst;
-    fn rs_typst_svg;
+    fn rs_typst_render;
     fn rs_typst_font_data;
     fn rs_convert_latex_to_typst;
 }

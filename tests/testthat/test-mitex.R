@@ -8,7 +8,7 @@ test_that("convert_latex_to_typst handles quote and backslash-like fragments saf
 
   for (latex_code in special_cases) {
     src <- convert_latex_to_typst(latex_code)
-    expect_no_error(typst_svg(build_typst_source(src)))
+    expect_no_error(typst_render(build_typst_source(src)))
   }
 })
 
@@ -57,7 +57,7 @@ test_that("convert_latex_to_typst is stable under randomized valid formulas", {
   # Compile stress on a representative subset
   for (latex_code in formulas[1:25]) {
     src <- convert_latex_to_typst(latex_code)
-    expect_no_error(typst_svg(build_typst_source(src)))
+    expect_no_error(typst_render(build_typst_source(src)))
   }
 })
 

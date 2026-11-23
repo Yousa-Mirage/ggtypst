@@ -54,7 +54,7 @@ Collate:
     'annotate-math.R'
     'build-source.R'
     'diagnostic.R'
-    'typst-svg.R'
+    'typst-render.R'
     'grob.R'
     'helper.R'
     'element-typst.R'

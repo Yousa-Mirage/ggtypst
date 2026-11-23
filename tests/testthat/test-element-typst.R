@@ -277,7 +277,7 @@ test_that("element_typst reserves the same height whatever the glyphs", {
   expect_equal(unname(heights), rep(heights[[1]], 3))
 
   # Cap height to baseline, plus the font descent below it.
-  rendered <- typst_svg(build_typst_source("HHH", size = 12))
+  rendered <- typst_render(build_typst_source("HHH", size = 12))
   expect_equal(heights[[1]], rendered$height_pt + rendered$descent_pt)
 })
 
@@ -368,7 +368,7 @@ test_that("element_typst visual: axis title y and legend text", {
   skip_on_cran()
 
   noto_cjk <- suppressWarnings(
-    typst_svg(build_typst_source("probe 中文 ℃", family = "Noto Sans CJK SC"))
+    typst_render(build_typst_source("probe 中文 ℃", family = "Noto Sans CJK SC"))
   )
 
   if (length(noto_cjk$warnings) > 0) {
