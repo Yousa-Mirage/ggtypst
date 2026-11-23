@@ -17,21 +17,17 @@ test_that("curved outlines are flattened finely enough to look smooth", {
   expect_lt(max_step, 6)
 })
 
-test_that("the drawing plan follows Typst's order and clip regions", {
-  plan <- typst_test_grob("#box(fill: yellow)[Hi] H")$children[[1]]$plan
-  expect_equal(
-    vapply(plan$runs, function(r) r$kind, character(1)),
-    c("shape", "glyph")
-  )
-  expect_equal(plan$runs[[2]]$rows, 1:3)
-  expect_length(plan$segments, 1)
+test_that("runs follow Typst's order and clip regions", {
+  runs <- typst_test_grob("#box(fill: yellow)[Hi] H")$children[[1]]$scene$runs
+  expect_equal(runs$kind, c("path", "glyph"))
+  expect_equal(runs$n_rows, c(1L, 3L))
+  expect_equal(runs$segment, c(1L, 1L))
 
   # The clipped glyphs, then the glyph after the box, in separate segments.
   clipped <- typst_test_grob("#box(clip: true, width: 5pt)[HHH] H")
-  plan <- clipped$children[[1]]$plan
-  expect_equal(vapply(plan$runs, function(r) r$clip, integer(1)), c(1L, 0L))
-  expect_equal(plan$segments, list(1L, 2L))
-  expect_length(plan$clips, 1)
+  runs <- clipped$children[[1]]$scene$runs
+  expect_equal(runs$clip, c(1L, 0L))
+  expect_equal(runs$segment, c(1L, 2L))
 })
 
 test_that("text and shapes are drawn in Typst's order", {

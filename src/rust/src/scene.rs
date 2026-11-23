@@ -1,14 +1,17 @@
 //! A drawable description of a Typst page, for R to draw with grid.
 //!
 //! The frame tree is walked once, accumulating group transforms the way
-//! typst-svg does, and flattened into plain tables in page coordinates
-//! (points, y pointing down):
+//! typst-svg does, and flattened into plain tables in page coordinates: points
+//! from the page's bottom-left corner, y pointing up, as grid draws them.
 //!
 //! - glyphs: which font and glyph to draw where, for drawing them natively;
 //! - outlines: the same glyphs as flattened outlines, for drawing them as paths;
 //! - shapes and their points: lines, rectangles, and curves, flattened;
+//! - clips and their points: the outlines of clip regions;
+//! - runs: what to draw, in Typst's drawing order, one grob each;
 //! - fonts: the font files the glyphs come from.
 //!
+//! Rows and points are numbered from 1, so R can index with them directly.
 //! Content that a mode cannot express clears `path_ok` or `glyph_ok`, so R can
 //! fall back to another way of drawing the page.
 
@@ -27,10 +30,13 @@ use crate::fonts;
 /// Maximum distance, in points, between a flattened curve and the true curve.
 const FLATTEN_TOLERANCE_PT: f64 = 0.005;
 
+/// Grid line widths (`lwd`, 1/96 in) per Typst point (1/72 in).
+const LWD_PER_PT: f64 = 96.0 / 72.0;
+
 /// Glyphs to draw natively, one row per glyph.
 #[derive(Debug, Default)]
 pub struct Glyphs {
-    /// 1-based row in `Fonts`.
+    /// Row in `Fonts`.
     pub font: Vec<i32>,
     pub id: Vec<i32>,
     /// Glyph origin on the baseline.
@@ -42,46 +48,63 @@ pub struct Glyphs {
     pub rot: Vec<f64>,
     /// `#RRGGBBAA`.
     pub fill: Vec<String>,
-    /// `#RRGGBBAA`, or empty for no stroke.
-    pub stroke: Vec<String>,
-    pub stroke_width: Vec<f64>,
-    /// Drawing order among glyphs and shapes.
-    pub z: Vec<i32>,
-    /// Clip region the glyph is drawn in (row of `Scene::clips` owners), or 0.
-    pub clip: Vec<i32>,
+    /// `#RRGGBBAA`, or `NA` for no stroke.
+    pub stroke: Vec<Option<String>>,
+    /// Stroke width as grid's `lwd`.
+    pub lwd: Vec<f64>,
 }
 
-/// Points of flattened subpaths, each owned by a glyph or shape row.
+/// Points of flattened subpaths.
 #[derive(Debug, Default)]
 pub struct Points {
     pub x: Vec<f64>,
     pub y: Vec<f64>,
     /// Subpath id, unique within the table.
     pub sub: Vec<i32>,
-    /// 1-based row of the owning glyph or shape.
-    pub owner: Vec<i32>,
 }
 
 /// Lines, rectangles, and curves, one row per shape.
 #[derive(Debug, Default)]
 pub struct Shapes {
-    /// `#RRGGBBAA`, or empty for no fill.
-    pub fill: Vec<String>,
-    /// `#RRGGBBAA`, or empty for no stroke.
-    pub stroke: Vec<String>,
-    pub stroke_width: Vec<f64>,
+    /// `#RRGGBBAA`, or `NA` for no fill.
+    pub fill: Vec<Option<String>>,
+    /// `#RRGGBBAA`, or `NA` for no stroke.
+    pub stroke: Vec<Option<String>>,
+    /// Stroke width as grid's `lwd`.
+    pub lwd: Vec<f64>,
     /// `"winding"` or `"evenodd"`, as for `grid::pathGrob()`.
     pub rule: Vec<String>,
     /// `"butt"`, `"round"`, or `"square"`.
     pub lineend: Vec<String>,
     /// `"mitre"`, `"round"`, or `"bevel"`.
     pub linejoin: Vec<String>,
-    /// 1 if the outline is closed, 0 if it is an open line.
-    pub closed: Vec<i32>,
-    /// Drawing order among glyphs and shapes.
-    pub z: Vec<i32>,
-    /// Clip region the shape is drawn in (row of `Scene::clips` owners), or 0.
+}
+
+/// Where each clip region's points are in `Scene::clip_points`, one row per
+/// clip region.
+#[derive(Debug, Default)]
+pub struct Clips {
+    pub point: Vec<i32>,
+    pub n_points: Vec<i32>,
+}
+
+/// What to draw, in Typst's drawing order: one grob per run.
+#[derive(Debug, Default)]
+pub struct Runs {
+    /// `"glyph"` (consecutive glyphs), `"path"` (a closed or filled shape), or
+    /// `"polyline"` (an open line).
+    pub kind: Vec<String>,
+    /// First row in `glyphs` or `shapes`, and how many rows the run draws.
+    pub row: Vec<i32>,
+    pub n_rows: Vec<i32>,
+    /// First point in `outlines` (glyph runs) or `shape_points` (shapes), and
+    /// how many points the run draws.
+    pub point: Vec<i32>,
+    pub n_points: Vec<i32>,
+    /// Clip region (row of `clips`) the run is drawn in, or 0.
     pub clip: Vec<i32>,
+    /// Consecutive runs in the same clip region share a segment.
+    pub segment: Vec<i32>,
 }
 
 /// Font files used by the glyphs, one row per font.
@@ -101,14 +124,17 @@ pub struct Fonts {
     pub style: Vec<String>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Scene {
     pub glyphs: Glyphs,
     pub outlines: Points,
+    /// Row in `glyphs` of each outline point: one path per glyph.
+    pub outline_owner: Vec<i32>,
     pub shapes: Shapes,
     pub shape_points: Points,
-    /// Clip regions: closed outlines, owned by clip id (1-based).
-    pub clips: Points,
+    pub clips: Clips,
+    pub clip_points: Points,
+    pub runs: Runs,
     pub fonts: Fonts,
     /// Everything can be drawn from `outlines` and `shapes`.
     pub path_ok: bool,
@@ -123,9 +149,12 @@ impl Scene {
         let Scene {
             glyphs: g,
             outlines: o,
+            outline_owner,
             shapes: s,
             shape_points: sp,
             clips: c,
+            clip_points: cp,
+            runs: r,
             fonts: f,
             path_ok,
             glyph_ok,
@@ -141,24 +170,29 @@ impl Scene {
                 rot = g.rot,
                 fill = g.fill,
                 stroke = g.stroke,
-                stroke_width = g.stroke_width,
-                z = g.z,
-                clip = g.clip
+                lwd = g.lwd
             ),
-            outlines = list!(x = o.x, y = o.y, sub = o.sub, owner = o.owner),
+            outlines = list!(x = o.x, y = o.y, sub = o.sub, owner = outline_owner),
             shapes = list!(
                 fill = s.fill,
                 stroke = s.stroke,
-                stroke_width = s.stroke_width,
+                lwd = s.lwd,
                 rule = s.rule,
                 lineend = s.lineend,
-                linejoin = s.linejoin,
-                closed = s.closed,
-                z = s.z,
-                clip = s.clip
+                linejoin = s.linejoin
             ),
-            shape_points = list!(x = sp.x, y = sp.y, sub = sp.sub, owner = sp.owner),
-            clips = list!(x = c.x, y = c.y, sub = c.sub, owner = c.owner),
+            shape_points = list!(x = sp.x, y = sp.y, sub = sp.sub),
+            clips = list!(point = c.point, n_points = c.n_points),
+            clip_points = list!(x = cp.x, y = cp.y, sub = cp.sub),
+            runs = list!(
+                kind = r.kind,
+                row = r.row,
+                n_rows = r.n_rows,
+                point = r.point,
+                n_points = r.n_points,
+                clip = r.clip,
+                segment = r.segment
+            ),
             fonts = list!(
                 store_index = f.store_index,
                 path = f.path,
@@ -179,47 +213,45 @@ impl Scene {
 pub fn extract_scene(frame: &Frame) -> Scene {
     let mut builder = SceneBuilder {
         scene: Scene {
-            glyphs: Glyphs::default(),
-            outlines: Points::default(),
-            shapes: Shapes::default(),
-            shape_points: Points::default(),
-            clips: Points::default(),
-            fonts: Fonts::default(),
             path_ok: true,
             glyph_ok: true,
-            unsupported: Vec::new(),
+            ..Scene::default()
         },
         font_rows: HashMap::new(),
         next_outline_sub: 0,
         next_shape_sub: 0,
         next_clip_sub: 0,
-        next_z: 0,
         current_clip: 0,
-        next_clip: 0,
     };
     builder.frame(frame, Transform::identity());
-    builder.scene
+
+    // Typst's y axis points down from the page's top; grid's points up from
+    // its bottom.
+    let mut scene = builder.scene;
+    let height = frame.height().to_pt();
+    for y in [
+        &mut scene.glyphs.y,
+        &mut scene.outlines.y,
+        &mut scene.shape_points.y,
+        &mut scene.clip_points.y,
+    ] {
+        y.iter_mut().for_each(|y| *y = height - *y);
+    }
+    scene
 }
 
 struct SceneBuilder {
     scene: Scene,
-    /// Store index -> 1-based row in `scene.fonts`.
+    /// Store index -> row in `scene.fonts`.
     font_rows: HashMap<usize, i32>,
     next_outline_sub: i32,
     next_shape_sub: i32,
     next_clip_sub: i32,
-    next_z: i32,
-    /// Clip id of the group being walked, or 0.
+    /// Clip region of the group being walked, or 0.
     current_clip: i32,
-    next_clip: i32,
 }
 
 impl SceneBuilder {
-    fn next_z(&mut self) -> i32 {
-        self.next_z += 1;
-        self.next_z
-    }
-
     fn unsupported(&mut self, path: bool, glyph: bool, reason: &str) {
         self.scene.path_ok &= path;
         self.scene.glyph_ok &= glyph;
@@ -244,16 +276,20 @@ impl SceneBuilder {
                         }
                         Some(clip) => {
                             // The clip outline is in the group's own coordinates.
-                            self.next_clip += 1;
-                            let id = self.next_clip;
+                            let first = self.scene.clip_points.x.len();
                             for subpath in curve_subpaths(clip, inner).0 {
                                 self.next_clip_sub += 1;
-                                let sub = self.next_clip_sub;
                                 for point in subpath {
-                                    push(&mut self.scene.clips, point, sub, id);
+                                    push(&mut self.scene.clip_points, point, self.next_clip_sub);
                                 }
                             }
-                            self.current_clip = id;
+                            let clips = &mut self.scene.clips;
+                            clips.point.push(r_int(first + 1));
+                            clips
+                                .n_points
+                                .push(r_int(self.scene.clip_points.x.len() - first));
+
+                            self.current_clip = r_int(clips.point.len());
                             self.frame(&group.frame, inner);
                             self.current_clip = 0;
                         }
@@ -272,13 +308,16 @@ impl SceneBuilder {
             self.unsupported(false, false, "non-solid text fill");
             return;
         };
-        let (stroke, stroke_width) = match &text.stroke {
-            None => (String::new(), 0.0),
+        let (stroke, lwd) = match &text.stroke {
+            None => (None, 0.0),
             Some(stroke) => {
                 // Native glyphs cannot be stroked.
                 self.unsupported(true, false, "stroked text");
                 match solid_hex(&stroke.paint) {
-                    Some(hex) => (hex, stroke.thickness.to_pt() * max_scale(ts)),
+                    Some(hex) => (
+                        Some(hex),
+                        stroke.thickness.to_pt() * max_scale(ts) * LWD_PER_PT,
+                    ),
                     None => {
                         self.unsupported(false, false, "non-solid text stroke");
                         return;
@@ -321,6 +360,7 @@ impl SceneBuilder {
                 self.unsupported(false, true, "colour glyph");
             }
 
+            let first_point = self.scene.outlines.x.len();
             let row = r_int(self.scene.glyphs.id.len() + 1);
             let mut outline = OutlineSink {
                 builder: self,
@@ -333,11 +373,11 @@ impl SceneBuilder {
             let has_outline = ttf.outline_glyph(id, &mut outline).is_some();
             if !has_outline && !colour {
                 // Whitespace draws nothing.
+                self.truncate_outlines(first_point);
                 continue;
             }
 
             let o = Point::new(Abs::pt(origin.0), Abs::pt(origin.1)).transform(ts);
-            let z = self.next_z();
             let g = &mut self.scene.glyphs;
             g.font.push(font_row);
             g.id.push(i32::from(glyph.id));
@@ -347,17 +387,61 @@ impl SceneBuilder {
             g.rot.push(rotation);
             g.fill.push(fill.clone());
             g.stroke.push(stroke.clone());
-            g.stroke_width.push(stroke_width);
-            g.z.push(z);
-            g.clip.push(self.current_clip);
+            g.lwd.push(lwd);
+
+            let n_points = self.scene.outlines.x.len() - first_point;
+            self.add_glyph_to_run(first_point, n_points);
         }
+    }
+
+    fn truncate_outlines(&mut self, len: usize) {
+        let o = &mut self.scene.outlines;
+        o.x.truncate(len);
+        o.y.truncate(len);
+        o.sub.truncate(len);
+        self.scene.outline_owner.truncate(len);
+    }
+
+    /// Draw the glyph just added, whose outline is `n_points` points from
+    /// `first_point` (0-based), with the glyphs before it if they form a run.
+    fn add_glyph_to_run(&mut self, first_point: usize, n_points: usize) {
+        let runs = &mut self.scene.runs;
+        if let Some(last) = runs.kind.len().checked_sub(1)
+            && runs.kind[last] == "glyph"
+            && runs.clip[last] == self.current_clip
+        {
+            runs.n_rows[last] += 1;
+            runs.n_points[last] += r_int(n_points);
+            return;
+        }
+        let row = self.scene.glyphs.id.len();
+        self.begin_run("glyph", row, first_point + 1, n_points);
+    }
+
+    /// Start a run drawing one row from `row` and `n_points` points from
+    /// `point` (both 1-based).
+    fn begin_run(&mut self, kind: &str, row: usize, point: usize, n_points: usize) {
+        let clip = self.current_clip;
+        let runs = &mut self.scene.runs;
+        let segment = match (runs.segment.last(), runs.clip.last()) {
+            (Some(&segment), Some(&last)) if last == clip => segment,
+            (Some(&segment), _) => segment + 1,
+            (None, _) => 1,
+        };
+        runs.kind.push(kind.to_string());
+        runs.row.push(r_int(row));
+        runs.n_rows.push(1);
+        runs.point.push(r_int(point));
+        runs.n_points.push(r_int(n_points));
+        runs.clip.push(clip);
+        runs.segment.push(segment);
     }
 
     fn shape(&mut self, shape: &typst::visualize::Shape, ts: Transform) {
         let fill = match &shape.fill {
-            None => String::new(),
+            None => None,
             Some(paint) => match solid_hex(paint) {
-                Some(hex) => hex,
+                Some(hex) => Some(hex),
                 None => {
                     self.unsupported(false, false, "non-solid shape fill");
                     return;
@@ -388,7 +472,7 @@ impl SceneBuilder {
         };
 
         let Some(stroke) = &shape.stroke else {
-            self.push_shape(&fill, &ShapeStroke::none(), rule, closed, &subpaths);
+            self.push_shape(fill, &ShapeStroke::none(), rule, closed, &subpaths);
             return;
         };
         let Some(hex) = solid_hex(&stroke.paint) else {
@@ -397,8 +481,8 @@ impl SceneBuilder {
         };
         let scale = max_scale(ts);
         let style = ShapeStroke {
-            colour: hex,
-            width: stroke.thickness.to_pt() * scale,
+            colour: Some(hex),
+            lwd: stroke.thickness.to_pt() * scale * LWD_PER_PT,
             lineend: match stroke.cap {
                 LineCap::Butt => "butt",
                 LineCap::Round => "round",
@@ -412,49 +496,58 @@ impl SceneBuilder {
         };
 
         match &stroke.dash {
-            None => self.push_shape(&fill, &style, rule, closed, &subpaths),
+            None => self.push_shape(fill, &style, rule, closed, &subpaths),
             Some(dash) => {
                 // Fill the shape, then stroke its outline cut into dashes.
-                if !fill.is_empty() {
-                    self.push_shape(&fill, &ShapeStroke::none(), rule, true, &subpaths);
+                if fill.is_some() {
+                    self.push_shape(fill, &ShapeStroke::none(), rule, true, &subpaths);
                 }
                 let array: Vec<f64> = dash.array.iter().map(|a| a.to_pt() * scale).collect();
                 let dashes = dash_subpaths(&subpaths, closed, &array, dash.phase.to_pt() * scale);
-                self.push_shape("", &style, rule, false, &dashes);
+                self.push_shape(None, &style, rule, false, &dashes);
             }
         }
     }
 
+    /// Add a shape and the run drawing it: a path if it is closed or filled,
+    /// otherwise a polyline. Shapes without points draw nothing.
     fn push_shape(
         &mut self,
-        fill: &str,
+        fill: Option<String>,
         stroke: &ShapeStroke,
         rule: &str,
         closed: bool,
         subpaths: &[Vec<(f64, f64)>],
     ) {
-        let z = self.next_z();
-        let row = r_int(self.scene.shapes.fill.len() + 1);
+        let first = self.scene.shape_points.x.len();
         for subpath in subpaths {
             self.next_shape_sub += 1;
-            let sub = self.next_shape_sub;
             for &point in subpath {
-                push(&mut self.scene.shape_points, point, sub, row);
+                push(&mut self.scene.shape_points, point, self.next_shape_sub);
             }
         }
+        let n_points = self.scene.shape_points.x.len() - first;
+        if n_points == 0 {
+            return;
+        }
+
+        let kind = if closed || fill.is_some() {
+            "path"
+        } else {
+            "polyline"
+        };
         let s = &mut self.scene.shapes;
-        s.fill.push(fill.to_string());
+        s.fill.push(fill);
         s.stroke.push(stroke.colour.clone());
-        s.stroke_width.push(stroke.width);
+        s.lwd.push(stroke.lwd);
         s.rule.push(rule.to_string());
         s.lineend.push(stroke.lineend.to_string());
         s.linejoin.push(stroke.linejoin.to_string());
-        s.closed.push(i32::from(closed));
-        s.z.push(z);
-        s.clip.push(self.current_clip);
+        let row = s.fill.len();
+        self.begin_run(kind, row, first + 1, n_points);
     }
 
-    /// 1-based row of `font` in the scene's font table, adding it if needed.
+    /// Row of `font` in the scene's font table, adding it if needed.
     fn font_row(&mut self, font: &Font) -> i32 {
         let Some(found) = lookup_font(font) else {
             // Not from the global store: glyph mode needs a font file.
@@ -510,7 +603,8 @@ impl OutlineSink<'_> {
 
     fn emit(&mut self, p: (f64, f64)) {
         let sub = self.builder.next_outline_sub;
-        push(&mut self.builder.scene.outlines, p, sub, self.owner);
+        push(&mut self.builder.scene.outlines, p, sub);
+        self.builder.scene.outline_owner.push(self.owner);
         self.last = p;
     }
 }
@@ -553,10 +647,11 @@ impl ttf_parser::OutlineBuilder for OutlineSink<'_> {
     fn close(&mut self) {}
 }
 
-/// Stroke style of a shape row; an empty colour means no stroke.
+/// Stroke style of a shape row.
 struct ShapeStroke {
-    colour: String,
-    width: f64,
+    /// `None` for no stroke.
+    colour: Option<String>,
+    lwd: f64,
     lineend: &'static str,
     linejoin: &'static str,
 }
@@ -564,8 +659,8 @@ struct ShapeStroke {
 impl ShapeStroke {
     fn none() -> Self {
         Self {
-            colour: String::new(),
-            width: 0.0,
+            colour: None,
+            lwd: 0.0,
             lineend: "butt",
             linejoin: "mitre",
         }
@@ -577,11 +672,10 @@ fn r_int<T: TryInto<i32>>(n: T) -> i32 {
     n.try_into().unwrap_or(i32::MAX)
 }
 
-fn push(points: &mut Points, p: (f64, f64), sub: i32, owner: i32) {
+fn push(points: &mut Points, p: (f64, f64), sub: i32) {
     points.x.push(p.0);
     points.y.push(p.1);
     points.sub.push(sub);
-    points.owner.push(owner);
 }
 
 /// Collects geometry as flattened subpaths in page coordinates.
@@ -893,33 +987,58 @@ mod tests {
         );
     }
 
+    fn kinds(scene: &Scene) -> Vec<&str> {
+        scene.runs.kind.iter().map(String::as_str).collect()
+    }
+
+    /// The 0-based range of a run's points.
+    fn run_points(scene: &Scene, run: usize) -> std::ops::Range<usize> {
+        let r = &scene.runs;
+        let (Ok(start), Ok(n)) = (
+            usize::try_from(r.point[run] - 1),
+            usize::try_from(r.n_points[run]),
+        ) else {
+            panic!("run {run} should have a valid point range");
+        };
+        start..start + n
+    }
+
     #[test]
     fn glyphs_sit_on_the_baseline_in_page_coordinates() {
-        let (frame, scene) = scene_of("HH");
+        let (_, scene) = scene_of("HH");
         let g = &scene.glyphs;
         assert_eq!(g.id.len(), 2);
-        // With baseline as the bottom edge, the baseline is the page bottom.
-        assert_close(g.y[0], frame.height().to_pt());
+        // With baseline as the bottom edge, the baseline is the page bottom,
+        // and y points up from there.
+        assert_close(g.y[0], 0.0);
         assert_close(g.x[0], 0.0);
         assert!(g.x[1] > g.x[0]);
         assert_close(g.size[0], 20.0);
         assert_close(g.rot[0], 0.0);
         assert_eq!(g.fill[0], "#000000FF");
+        assert_eq!(g.stroke[0], None);
         assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
     }
 
     #[test]
-    fn drawing_order_follows_the_frame() {
-        // The box background is drawn before the text inside it.
+    fn runs_follow_the_drawing_order() {
+        // The box background is drawn before the text inside it, and the
+        // glyphs inside and after the box form one run.
         let (_, scene) = scene_of("#box(fill: yellow)[Hi] H");
-        assert_eq!(scene.shapes.z, vec![1]);
-        assert_eq!(scene.glyphs.z, vec![2, 3, 4]);
+        assert_eq!(kinds(&scene), vec!["path", "glyph"]);
+        let r = &scene.runs;
+        assert_eq!((r.row[0], r.n_rows[0]), (1, 1));
+        assert_eq!((r.row[1], r.n_rows[1]), (1, 3));
+        assert_eq!(r.segment, vec![1, 1]);
+        // The glyph run covers every outline point.
+        assert_eq!(run_points(&scene, 1), 0..scene.outlines.x.len());
     }
 
     #[test]
     fn whitespace_produces_no_glyph() {
         let (_, scene) = scene_of("H H");
         assert_eq!(scene.glyphs.id.len(), 2);
+        assert_eq!(scene.runs.n_rows, vec![2]);
     }
 
     #[test]
@@ -927,25 +1046,27 @@ mod tests {
         let (frame, scene) = scene_of("Hxgy");
         let o = &scene.outlines;
         assert!(!o.x.is_empty());
-        let owners: std::collections::BTreeSet<i32> = o.owner.iter().copied().collect();
+        let owners: std::collections::BTreeSet<i32> = scene.outline_owner.iter().copied().collect();
         assert_eq!(owners.into_iter().collect::<Vec<_>>(), vec![1, 2, 3, 4]);
 
         let Some(ink) = crate::bounds::ink_bounds(&frame) else {
             panic!("text should have ink");
         };
         // Font bounding boxes include Bézier control points, so the outline
-        // lies inside them, a little within the box.
+        // lies inside them, a little within the box. Ink bounds have y down
+        // from the top; the outlines y up from the bottom.
+        let height = frame.height().to_pt();
         let min_x = o.x.iter().copied().fold(f64::INFINITY, f64::min);
-        let max_y = o.y.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        let min_y = o.y.iter().copied().fold(f64::INFINITY, f64::min);
+        let lowest = height - ink.max_y;
         assert!(
             min_x >= ink.min_x - 1e-6 && min_x - ink.min_x < 0.1,
             "{min_x} vs {}",
             ink.min_x
         );
         assert!(
-            max_y <= ink.max_y + 1e-6 && ink.max_y - max_y < 0.1,
-            "{max_y} vs {}",
-            ink.max_y
+            min_y >= lowest - 1e-6 && min_y - lowest < 0.1,
+            "{min_y} vs {lowest}"
         );
     }
 
@@ -981,20 +1102,16 @@ mod tests {
         let s = &scene.shapes;
         assert_eq!(s.fill.len(), 2);
         // The fraction bar is a stroked line; the box a filled rectangle.
-        let line = s.closed.iter().position(|&c| c == 0);
-        let rect = s.closed.iter().position(|&c| c == 1);
+        let kinds = kinds(&scene);
+        let line = kinds.iter().position(|&k| k == "polyline");
+        let rect = kinds.iter().position(|&k| k == "path");
         let (Some(line), Some(rect)) = (line, rect) else {
-            panic!("expected a line and a rectangle: {s:?}");
+            panic!("expected a line and a rectangle: {kinds:?}");
         };
-        assert!(s.stroke_width[line] > 0.0);
-        assert_eq!(s.fill[rect], "#FF4136FF");
-        let rect_points = scene
-            .shape_points
-            .owner
-            .iter()
-            .filter(|&&o| o == r_int(rect + 1))
-            .count();
-        assert_eq!(rect_points, 4);
+        let row = |run: usize| usize::try_from(scene.runs.row[run] - 1).unwrap_or(usize::MAX);
+        assert!(s.lwd[row(line)] > 0.0);
+        assert_eq!(s.fill[row(rect)].as_deref(), Some("#FF4136FF"));
+        assert_eq!(run_points(&scene, rect).len(), 4);
     }
 
     #[test]
@@ -1066,7 +1183,7 @@ mod tests {
             assert_close(*start, 6.0 * k as f64);
             assert_close(*length, 4.0);
         }
-        assert_eq!(scene.shapes.closed, vec![0]);
+        assert_eq!(kinds(&scene), vec!["polyline"]);
     }
 
     #[test]
@@ -1089,22 +1206,35 @@ mod tests {
         );
         let s = &scene.shapes;
         assert_eq!(s.fill.len(), 2);
-        assert_eq!(s.fill[0], "#FF4136FF");
-        assert_eq!(s.stroke[0], "");
-        assert_eq!(s.fill[1], "");
-        assert_eq!(s.stroke[1], "#000000FF");
+        assert_eq!(s.fill[0].as_deref(), Some("#FF4136FF"));
+        assert_eq!(s.stroke[0], None);
+        assert_eq!(s.fill[1], None);
+        assert_eq!(s.stroke[1].as_deref(), Some("#000000FF"));
+        assert_eq!(kinds(&scene), vec!["path", "polyline"]);
     }
 
     #[test]
     fn clipped_groups_record_their_clip_region() {
         let (_, scene) = scene_of("#box(clip: true, width: 5pt)[HHH] H");
         assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
-        let c = &scene.clips;
-        assert!(c.owner.iter().all(|&o| o == 1));
-        let max_x = c.x.iter().copied().fold(f64::NEG_INFINITY, f64::max);
+        assert_eq!(scene.clips.point, vec![1]);
+        assert_eq!(
+            usize::try_from(scene.clips.n_points[0]).ok(),
+            Some(scene.clip_points.x.len())
+        );
+        let max_x = scene
+            .clip_points
+            .x
+            .iter()
+            .copied()
+            .fold(f64::NEG_INFINITY, f64::max);
         assert_close(max_x, 5.0);
-        // The three clipped glyphs, then the one after the box.
-        assert_eq!(scene.glyphs.clip, vec![1, 1, 1, 0]);
+        // The three clipped glyphs, then the one after the box: two runs in
+        // two segments.
+        let r = &scene.runs;
+        assert_eq!(r.clip, vec![1, 0]);
+        assert_eq!(r.n_rows, vec![3, 1]);
+        assert_eq!(r.segment, vec![1, 2]);
     }
 
     #[test]
@@ -1118,6 +1248,7 @@ mod tests {
 
         let (_, stroked) = scene_of("#text(stroke: 0.5pt + red)[H]");
         assert!(stroked.path_ok && !stroked.glyph_ok);
-        assert_eq!(stroked.glyphs.stroke[0], "#FF4136FF");
+        assert_eq!(stroked.glyphs.stroke[0].as_deref(), Some("#FF4136FF"));
+        assert_close(stroked.glyphs.lwd[0], 0.5 * LWD_PER_PT);
     }
 }

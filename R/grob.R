@@ -96,7 +96,6 @@ scene_typst_grob <- function(
 
   grid::gTree(
     scene = rendered$scene,
-    plan = scene_plan(rendered$scene),
     fallback = rendered$fallback,
     scale = scale,
     width_pt = width,
@@ -147,7 +146,6 @@ scene_children <- function(x, mode) {
   }
   entry$children <- scene_grobs(
     x$scene,
-    x$plan,
     mode,
     font_list,
     x$scale,
