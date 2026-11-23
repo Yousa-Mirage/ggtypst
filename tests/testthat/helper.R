@@ -257,3 +257,19 @@ Auto)",
   cells_plot(cells) +
     theme(plot.background = element_rect(fill = "grey85", colour = NA))
 }
+
+# Whether R's Cairo devices open. capabilities("cairo") can be TRUE where their
+# libraries are missing (macOS without XQuartz): the device then fails to open,
+# with only a warning.
+if_cairo_works <- function() {
+  before <- length(grDevices::dev.list())
+  suppressWarnings(try(
+    grDevices::png(tempfile(fileext = ".png"), type = "cairo"),
+    silent = TRUE
+  ))
+  opened <- length(grDevices::dev.list()) > before
+  if (opened) {
+    grDevices::dev.off()
+  }
+  opened
+}

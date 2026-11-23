@@ -20,6 +20,12 @@ VENDOR_DIR = $(CURDIR)/vendor
 # configure via tools/msrv.R.
 #
 # vendor.tar.xz, if present, is unzipped and used for offline compilation.
+#
+# On macOS, Rust (and the C code some crates compile) is built for R's
+# deployment target: R's -mmacosx-version-min if it has one, otherwise 11.0,
+# Rust's default for Apple silicon. Left unset, crates may target the SDK's
+# newer version, and the linker warns about objects built for a newer macOS
+# than the package. A MACOSX_DEPLOYMENT_TARGET set by the user is kept.
 $(STATLIB):
 
 	if [ -f ./rust/vendor.tar.xz ]; then \
@@ -30,6 +36,10 @@ $(STATLIB):
 
 	export CARGO_HOME=$(CARGOTMP) && \
 	export PATH="$(PATH):$(HOME)/.cargo/bin" && \
+	if [ "$$(uname -s)" = "Darwin" ] && [ -z "$${MACOSX_DEPLOYMENT_TARGET}" ]; then \
+		MACOSX_DEPLOYMENT_TARGET="$$(echo "$(CC) $(CFLAGS) $(LDFLAGS)" | sed -n 's/.*-mmacosx-version-min=\([0-9.]*\).*/\1/p')"; \
+		export MACOSX_DEPLOYMENT_TARGET="$${MACOSX_DEPLOYMENT_TARGET:-11.0}"; \
+	fi && \
 	@PANIC_EXPORTS@RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs" cargo build @CRAN_FLAGS@ --lib @PROFILE@ --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR) @TARGET@
 
 	# Always clean up CARGOTMP

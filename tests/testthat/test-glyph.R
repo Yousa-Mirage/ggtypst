@@ -242,7 +242,7 @@ test_that("auto draws glyphs where devices rasterize or embed fonts", {
         "glyph"
       )
     }
-    if (isTRUE(capabilities("cairo"))) {
+    if (if_cairo_works()) {
       expect_equal(
         mode_on(scene, function() grDevices::cairo_pdf(tempfile())),
         "glyph"
@@ -272,7 +272,7 @@ test_that("auto draws outlines when glyphs cannot express the text", {
 })
 
 test_that("ggsave() output gets outlines in pdf() and embedded fonts in cairo_pdf()", {
-  skip_if_not(isTRUE(capabilities("cairo")), "needs cairo")
+  skip_if_not(if_cairo_works(), "needs working Cairo devices")
 
   p <- ggplot() + annotate_typst("Hello $x^2$", x = 0, y = 0) + theme_void()
 
