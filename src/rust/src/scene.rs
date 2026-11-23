@@ -19,9 +19,7 @@ use std::sync::{LazyLock, Mutex};
 use extendr_api::prelude::{List, list};
 use typst::layout::{Abs, Frame, FrameItem, Point, Transform};
 use typst::text::{Font, FontStyle, TextItem};
-use typst::visualize::{
-    Curve, CurveItem, FillRule, FixedStroke, Geometry, LineCap, LineJoin, Paint,
-};
+use typst::visualize::{Curve, CurveItem, FillRule, Geometry, LineCap, LineJoin, Paint};
 use typst_kit::fonts::FontPath;
 
 use crate::fonts;
@@ -194,6 +192,7 @@ pub fn extract_scene(frame: &Frame) -> Scene {
         font_rows: HashMap::new(),
         next_outline_sub: 0,
         next_shape_sub: 0,
+        next_clip_sub: 0,
         next_z: 0,
         current_clip: 0,
         next_clip: 0,
@@ -208,6 +207,7 @@ struct SceneBuilder {
     font_rows: HashMap<usize, i32>,
     next_outline_sub: i32,
     next_shape_sub: i32,
+    next_clip_sub: i32,
     next_z: i32,
     /// Clip id of the group being walked, or 0.
     current_clip: i32,
@@ -247,8 +247,8 @@ impl SceneBuilder {
                             self.next_clip += 1;
                             let id = self.next_clip;
                             for subpath in curve_subpaths(clip, inner).0 {
-                                self.next_shape_sub += 1;
-                                let sub = self.next_shape_sub;
+                                self.next_clip_sub += 1;
+                                let sub = self.next_clip_sub;
                                 for point in subpath {
                                     push(&mut self.scene.clips, point, sub, id);
                                 }
@@ -277,7 +277,7 @@ impl SceneBuilder {
             Some(stroke) => {
                 // Native glyphs cannot be stroked.
                 self.unsupported(true, false, "stroked text");
-                match stroke_hex(stroke) {
+                match solid_hex(&stroke.paint) {
                     Some(hex) => (hex, stroke.thickness.to_pt() * max_scale(ts)),
                     None => {
                         self.unsupported(false, false, "non-solid text stroke");
@@ -321,7 +321,7 @@ impl SceneBuilder {
                 self.unsupported(false, true, "colour glyph");
             }
 
-            let row = i32::try_from(self.scene.glyphs.id.len() + 1).unwrap_or(i32::MAX);
+            let row = r_int(self.scene.glyphs.id.len() + 1);
             let mut outline = OutlineSink {
                 builder: self,
                 ts,
@@ -391,7 +391,7 @@ impl SceneBuilder {
             self.push_shape(&fill, &ShapeStroke::none(), rule, closed, &subpaths);
             return;
         };
-        let Some(hex) = stroke_hex(stroke) else {
+        let Some(hex) = solid_hex(&stroke.paint) else {
             self.unsupported(false, false, "non-solid shape stroke");
             return;
         };
@@ -434,7 +434,7 @@ impl SceneBuilder {
         subpaths: &[Vec<(f64, f64)>],
     ) {
         let z = self.next_z();
-        let row = i32::try_from(self.scene.shapes.fill.len() + 1).unwrap_or(i32::MAX);
+        let row = r_int(self.scene.shapes.fill.len() + 1);
         for subpath in subpaths {
             self.next_shape_sub += 1;
             let sub = self.next_shape_sub;
@@ -466,11 +466,9 @@ impl SceneBuilder {
         }
         let info = font.info();
         let f = &mut self.scene.fonts;
-        f.store_index
-            .push(i32::try_from(found.store_index).unwrap_or(i32::MAX));
+        f.store_index.push(r_int(found.store_index));
         f.path.push(found.path.clone());
-        f.collection_index
-            .push(i32::try_from(found.collection_index).unwrap_or(0));
+        f.collection_index.push(r_int(found.collection_index));
         f.cache_key.push(found.cache_key.clone());
         f.family.push(info.family.clone());
         f.weight.push(i32::from(info.variant.weight.to_number()));
@@ -482,7 +480,7 @@ impl SceneBuilder {
             }
             .to_string(),
         );
-        let row = i32::try_from(f.path.len()).unwrap_or(i32::MAX);
+        let row = r_int(f.path.len());
         self.font_rows.insert(found.store_index, row);
         row
     }
@@ -572,6 +570,11 @@ impl ShapeStroke {
             linejoin: "mitre",
         }
     }
+}
+
+/// `n` as an R integer, saturating at R's largest integer.
+fn r_int<T: TryInto<i32>>(n: T) -> i32 {
+    n.try_into().unwrap_or(i32::MAX)
 }
 
 fn push(points: &mut Points, p: (f64, f64), sub: i32, owner: i32) {
@@ -753,10 +756,6 @@ fn solid_hex(paint: &Paint) -> Option<String> {
         }
         _ => None,
     }
-}
-
-fn stroke_hex(stroke: &FixedStroke) -> Option<String> {
-    solid_hex(&stroke.paint)
 }
 
 /// Scale and counter-clockwise rotation (degrees) of a transform that only
@@ -993,7 +992,7 @@ mod tests {
             .shape_points
             .owner
             .iter()
-            .filter(|&&o| o == i32::try_from(rect + 1).unwrap_or(0))
+            .filter(|&&o| o == r_int(rect + 1))
             .count();
         assert_eq!(rect_points, 4);
     }
