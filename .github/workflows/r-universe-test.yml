@@ -13,18 +13,6 @@ on:
       - tests/**
       - vignettes/**
       - man/**
-  pull_request:
-    branches: [main, master]
-    paths:
-      - .github/workflows/r-universe-test.yml
-      - .Rbuildignore
-      - DESCRIPTION
-      - NAMESPACE
-      - R/**
-      - src/**
-      - tests/**
-      - vignettes/**
-      - man/**
   workflow_dispatch:
 
 jobs:
