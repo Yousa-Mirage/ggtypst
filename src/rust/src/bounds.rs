@@ -35,7 +35,7 @@ impl Bounds {
         self.max_y - self.min_y
     }
 
-    fn expand(self, by: f64) -> Self {
+    pub fn expand(self, by: f64) -> Self {
         Self {
             min_x: self.min_x - by,
             min_y: self.min_y - by,
@@ -81,20 +81,23 @@ fn frame_bounds(frame: &Frame, ts: Transform) -> Option<Bounds> {
         .filter_map(|(pos, item)| {
             // Same composition order as typst-svg: item position, then the
             // group's own transform.
-            let ts = ts.pre_concat(Transform::translate(pos.x, pos.y));
-            match item {
-                FrameItem::Group(group) => {
-                    frame_bounds(&group.frame, ts.pre_concat(group.transform))
-                }
-                FrameItem::Text(text) => text_bounds(text, ts),
-                FrameItem::Shape(shape, _) => Bounds::of_rect(shape.bbox(true), ts),
-                FrameItem::Image(_, size, _) => {
-                    Bounds::of_rect(Rect::from_pos_size(Point::zero(), *size), ts)
-                }
-                FrameItem::Link(..) | FrameItem::Tag(_) => None,
-            }
+            item_bounds(item, ts.pre_concat(Transform::translate(pos.x, pos.y)))
         })
         .reduce(Bounds::union)
+}
+
+/// Ink bounds of `item` drawn with transform `ts`, or `None` if it draws
+/// nothing.
+pub fn item_bounds(item: &FrameItem, ts: Transform) -> Option<Bounds> {
+    match item {
+        FrameItem::Group(group) => frame_bounds(&group.frame, ts.pre_concat(group.transform)),
+        FrameItem::Text(text) => text_bounds(text, ts),
+        FrameItem::Shape(shape, _) => Bounds::of_rect(shape.bbox(true), ts),
+        FrameItem::Image(_, size, _) => {
+            Bounds::of_rect(Rect::from_pos_size(Point::zero(), *size), ts)
+        }
+        FrameItem::Link(..) | FrameItem::Tag(_) => None,
+    }
 }
 
 fn text_bounds(text: &TextItem, ts: Transform) -> Option<Bounds> {

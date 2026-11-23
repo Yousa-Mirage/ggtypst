@@ -37,7 +37,12 @@ scene_grobs <- function(
   grobs <- lapply(seq_along(runs$kind), function(i) {
     rows <- seq(runs$row[i], length.out = runs$n_rows[i])
     points <- seq(runs$point[i], length.out = runs$n_points[i])
-    if (runs$kind[i] != "glyph") {
+    if (runs$only[i] == "path" && mode != "path") {
+      # The image of a colour glyph, which native glyphs draw themselves.
+      NULL
+    } else if (runs$kind[i] == "raster") {
+      raster_grob(scene$rasters, rows, scale)
+    } else if (runs$kind[i] != "glyph") {
       shape_grob(scene, rows, points, runs$kind[i], scale)
     } else if (mode == "glyph") {
       glyph_run_grob(scene$glyphs, rows, font_list, scale, width, height)
@@ -62,6 +67,27 @@ scene_grobs <- function(
     ))
   })
   do.call(grid::gList, unlist(segments, recursive = FALSE))
+}
+
+# Image `i`: content grid cannot draw as glyphs or paths (gradients,
+# tilings, images, colour glyphs drawn as paths), drawn by Typst in Rust.
+raster_grob <- function(rasters, i, scale) {
+  image <- structure(
+    rasters$pixels[[i]],
+    dim = c(rasters$height_px[i], rasters$width_px[i]),
+    class = "nativeRaster",
+    channels = 4L
+  )
+  grid::rasterGrob(
+    image,
+    x = rasters$x[i] * scale,
+    y = rasters$y[i] * scale,
+    width = rasters$width[i] * scale,
+    height = rasters$height[i] * scale,
+    just = c(0, 0),
+    default.units = "bigpts",
+    interpolate = rasters$interpolate[i]
+  )
 }
 
 # A viewport over the layout box, clipped to clip region `id`.

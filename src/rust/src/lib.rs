@@ -5,17 +5,19 @@ mod error;
 mod fonts;
 mod mitex;
 mod outlines;
+mod raster;
 mod render;
 mod scene;
 mod world;
 
-/// Compile a Typst document and describe its first page for drawing.
+/// Compile a Typst document and describe its first page for drawing. Items
+/// grid cannot draw as glyphs or paths are drawn as images at `raster_dpi`.
 #[extendr]
-fn rs_typst_render(typst_code: &str) -> List {
+fn rs_typst_render(typst_code: &str, raster_dpi: f64) -> List {
     let fonts = fonts::get_fonts();
     let world = world::InMemoryWorld::new(typst_code.to_string(), fonts);
 
-    let result = world.render();
+    let result = world.render(raster_dpi);
 
     // Like typst-cli's watch mode, drop entries unused in the last 10 renders,
     // so nearby repeated labels still reuse their results.

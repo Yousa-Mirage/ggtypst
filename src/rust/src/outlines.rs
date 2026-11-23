@@ -63,6 +63,14 @@ pub fn glyph_outlines(fonts: &Fonts, glyphs: &Glyphs) -> Result<Outlines, Render
             .map_err(|_| unavailable(format!("glyph {} has no valid id", i + 1)))?;
 
         let first = out.points.x.len();
+
+        // Colour glyphs are drawn as images, not by their outline.
+        if glyphs.colour.get(i).copied().unwrap_or(false) {
+            out.point.push(r_int(first + 1));
+            out.n_points.push(0);
+            continue;
+        }
+
         let mut sink = OutlineSink {
             out: &mut out,
             sub: &mut sub,
@@ -136,6 +144,7 @@ pub fn from_r(fonts: &List, glyphs: &List) -> Result<(Fonts, Glyphs), RenderErro
         xy: doubles(glyphs, "xy")?,
         yx: doubles(glyphs, "yx")?,
         yy: doubles(glyphs, "yy")?,
+        colour: logicals(glyphs, "colour")?,
         ..Glyphs::default()
     };
 
@@ -157,6 +166,7 @@ pub fn from_r(fonts: &List, glyphs: &List) -> Result<(Fonts, Glyphs), RenderErro
             glyphs.xy.len(),
             glyphs.yx.len(),
             glyphs.yy.len(),
+            glyphs.colour.len(),
         ]
         .iter()
         .all(|&len| len == m);
@@ -185,6 +195,13 @@ fn doubles(list: &List, name: &str) -> Result<Vec<f64>, RenderError> {
     column(list, name)?
         .as_real_vector()
         .ok_or_else(|| unavailable(format!("column `{name}` is not a double vector")))
+}
+
+fn logicals(list: &List, name: &str) -> Result<Vec<bool>, RenderError> {
+    column(list, name)?
+        .as_logical_vector()
+        .map(|values| values.iter().map(|value| value.is_true()).collect())
+        .ok_or_else(|| unavailable(format!("column `{name}` is not a logical vector")))
 }
 
 fn strings(list: &List, name: &str) -> Result<Vec<String>, RenderError> {
@@ -284,7 +301,7 @@ mod tests {
         let Some(page) = doc.pages().first() else {
             panic!("document should have a page");
         };
-        (page.frame.clone(), extract_scene(&page.frame))
+        (page.frame.clone(), extract_scene(page, 300.0))
     }
 
     fn outlines_of(scene: &Scene) -> Outlines {

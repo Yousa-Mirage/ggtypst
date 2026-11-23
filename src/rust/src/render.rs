@@ -64,8 +64,9 @@ impl FallbackSvg {
 }
 
 impl InMemoryWorld {
-    /// Compile the document and describe its first page.
-    pub fn render(&self) -> Result<RenderedPage, RenderError> {
+    /// Compile the document and describe its first page. Items that grid
+    /// cannot draw as glyphs or paths are drawn as images at `raster_dpi`.
+    pub fn render(&self, raster_dpi: f64) -> Result<RenderedPage, RenderError> {
         let Warned { output, warnings } = compile::<PagedDocument>(&self);
 
         let warnings: Vec<RenderDiagnostic> = warnings.iter().map(RenderDiagnostic::from).collect();
@@ -83,7 +84,7 @@ impl InMemoryWorld {
             return Err(RenderError::EmptyPage);
         }
 
-        let scene = extract_scene(&page.frame);
+        let scene = extract_scene(page, raster_dpi);
 
         // Only generate an SVG fallback if the scene cannot be drawn with paths.
         let fallback = if scene.path_ok {
@@ -166,7 +167,7 @@ mod tests {
 
     fn compile_source(source: &str) -> Result<RenderedPage, RenderError> {
         let world = InMemoryWorld::new(source.to_string(), fonts::get_fonts());
-        world.render()
+        world.render(300.0)
     }
 
     fn compile_latex(latex_source: &str) -> Result<RenderedPage, RenderError> {
@@ -178,6 +179,9 @@ mod tests {
         );
         compile_source(&typst_source)
     }
+
+    /// Nested clip regions, which paths cannot draw yet.
+    const NESTED_CLIPS: &str = "#box(clip: true, width: 8pt)[#box(clip: true, width: 5pt)[HHH]]";
 
     fn fallback_of(source: &str) -> FallbackSvg {
         let Ok(RenderedPage {
@@ -217,8 +221,8 @@ mod tests {
         };
         assert!(plain.fallback.is_none());
 
-        let gradient = fallback_of("#text(fill: gradient.linear(red, blue))[Hello]");
-        let svg = String::from_utf8_lossy(&gradient.svg);
+        let nested = fallback_of(NESTED_CLIPS);
+        let svg = String::from_utf8_lossy(&nested.svg);
         assert!(svg.trim_start().starts_with("<svg"), "{svg}");
     }
 
@@ -226,7 +230,7 @@ mod tests {
     fn test_fallback_canvas_hugs_the_page_when_no_ink_overhangs() {
         let source = concat!(
             "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
-            "#box(width: 20.5pt, height: 10.25pt, fill: gradient.linear(red, blue))"
+            "#box(clip: true)[#box(clip: true)[#box(width: 20.5pt, height: 10.25pt, fill: black)]]"
         );
         let fallback = fallback_of(source);
 
@@ -247,13 +251,13 @@ mod tests {
         let source = concat!(
             "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
             "#set text(size: 40pt)\n",
-            "#text(style: \"italic\", fill: gradient.linear(red, blue))[f]"
+            "#box(clip: true)[#box(clip: true)[#text(style: \"italic\")[f]]]"
         );
         let Ok(rendered) = compile_source(source) else {
             panic!("italic text should render successfully");
         };
         let Some(fallback) = &rendered.fallback else {
-            panic!("gradient text should have an SVG fallback");
+            panic!("nested clips should have an SVG fallback");
         };
 
         // The italic f overhangs its advance box on both sides.

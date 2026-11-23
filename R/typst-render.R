@@ -15,7 +15,7 @@
 #'   - `warnings`: Typst warnings.
 #' @noRd
 typst_render <- function(text) {
-  result <- rs_typst_render(text)
+  result <- rs_typst_render(text, raster_dpi())
 
   if (inherits(result, "typst_error")) {
     abort_typst_errors(result)
@@ -25,4 +25,17 @@ typst_render <- function(text) {
   }
 
   result
+}
+
+# Resolution of the images a scene draws content grid cannot (see
+# `ggtypst-options`).
+raster_dpi <- function() {
+  dpi <- getOption("ggtypst.raster_dpi", 600)
+  if (!is.numeric(dpi) || length(dpi) != 1L || !is.finite(dpi) || dpi <= 0) {
+    cli::cli_abort(c(
+      "Option {.code ggtypst.raster_dpi} must be a positive number.",
+      "x" = "It is {.val {dpi}}."
+    ))
+  }
+  as.numeric(dpi)
 }

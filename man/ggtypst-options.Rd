@@ -25,6 +25,15 @@ Text that native glyphs cannot express, such as text with a stroke, is
 always drawn as outlines. On R older than 4.5, the same applies to a
 label whose glyphs have different angles, such as a label with one
 rotated word in it. A label rotated as a whole still uses native glyphs.
+\item \code{ggtypst.raster_dpi}: resolution, in dots per inch, of the images that
+draw content grid cannot draw as text or lines: gradients, tilings,
+images, and colour glyphs (emoji) when text is drawn as outlines. Defaults
+to 600, twice the usual print resolution: an image drawn into an output
+of the same resolution is resampled and looks slightly soft, while one of
+twice the resolution looks the same as the vector original. Each image is
+limited to 4 million pixels; larger content gets a lower resolution. The
+images are made when the label is created, so set the option before
+creating the plot.
 \item \code{ggtypst.font_cache}: directory where fonts built into ggtypst (Typst's
 default fonts) are written so that graphics devices can load them for
 native glyphs. Defaults to a directory in \code{\link[=tempdir]{tempdir()}}, written once per

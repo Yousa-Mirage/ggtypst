@@ -146,7 +146,7 @@ test_that("justification is relative to the Typst layout box, not the padded can
 
 test_that("content paths cannot draw falls back to the SVG", {
   scene <- typst_test_grob(
-    r"(#text(fill: gradient.linear(red, blue))[Hello])"
+    r"(#box(clip: true)[#box(clip: true)[Hello]])"
   )$children[[1]]
   expect_false(scene$scene$path_ok)
 
@@ -163,19 +163,19 @@ test_that("the SVG fallback is placed like the scene", {
   skip_if_not_installed("ragg")
   skip_if_not_installed("png")
 
-  # The italic f overhangs its layout box, so the SVG canvas is larger than it.
-  code <- r"(#text(style: "italic", fill: FILL)[Hxf])"
-  ink <- function(fill, hjust, vjust) {
+  # Nested clip regions need the SVG; a single one is drawn as paths.
+  code <- r"(#box(clip: CLIP)[#box(clip: true)[#text(style: "italic")[Hxf]]])"
+  ink <- function(clip, hjust, vjust) {
     rendered <- typst_render(build_typst_source(
-      sub("FILL", fill, code),
+      sub("CLIP", clip, code),
       size = 30
     ))
     raster_ink(positioned_typst_grob(rendered, hjust = hjust, vjust = vjust))
   }
 
   for (just in list(c(0, 0), c(1, 1), c(0.5, 0.3))) {
-    fallback <- ink("gradient.linear(black, luma(20%))", just[1], just[2])
-    paths <- ink("black", just[1], just[2])
+    fallback <- ink("true", just[1], just[2])
+    paths <- ink("false", just[1], just[2])
     expect_lt(max(abs(fallback - paths)), 0.3)
   }
 })
@@ -183,7 +183,7 @@ test_that("the SVG fallback is placed like the scene", {
 test_that("without rsvg, the fallback warns once and draws what it can", {
   local_mocked_bindings(svg_fallback_installed = function() FALSE)
   scene <- typst_test_grob(
-    r"(#text(fill: gradient.linear(red, blue))[Hello] plain)"
+    r"(#box(clip: true)[#box(clip: true)[Hello]] plain)"
   )$children[[1]]
 
   rlang::reset_message_verbosity("ggtypst_svg_fallback")
@@ -191,5 +191,5 @@ test_that("without rsvg, the fallback warns once and draws what it can", {
   expect_no_warning(grid::makeContent(scene))
 
   # The plain text is still drawn as outlines.
-  expect_s3_class(children[[1]], "pathgrob")
+  expect_s3_class(children[[length(children)]], "pathgrob")
 })

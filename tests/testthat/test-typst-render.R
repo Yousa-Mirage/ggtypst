@@ -16,7 +16,7 @@ test_that("typst_render returns the page size and scene", {
 
 test_that("typst_render returns SVG only for content paths cannot draw", {
   res <- typst_render(build_typst_source(
-    "#text(fill: gradient.linear(red, blue))[Hello]"
+    "#box(clip: true)[#box(clip: true)[Hello]]"
   ))
   expect_false(res$scene$path_ok)
 
@@ -29,7 +29,7 @@ test_that("the fallback SVG canvas covers the page and any overhanging ink", {
   # A box on the baseline, lower than the cap height, stays inside the layout
   # box: the canvas is the page, rounded up to whole points.
   res <- typst_render(build_typst_source(
-    "#box(width: 20.5pt, height: 4pt, fill: gradient.linear(red, blue))",
+    "#box(clip: true)[#box(clip: true)[#box(width: 20.5pt, height: 4pt, fill: black)]]",
     size = 12
   ))
   expect_identical(res$fallback$offset_x_pt, 0)
@@ -39,7 +39,7 @@ test_that("the fallback SVG canvas covers the page and any overhanging ink", {
 
   # An italic f overhangs its advance box on both sides.
   res <- typst_render(build_typst_source(
-    '#text(style: "italic", fill: gradient.linear(red, blue))[f]',
+    '#box(clip: true)[#box(clip: true)[#text(style: "italic")[f]]]',
     size = 40
   ))
   expect_gt(res$fallback$offset_x_pt, 0)

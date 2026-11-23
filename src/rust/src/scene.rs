@@ -24,12 +24,17 @@ use std::sync::{LazyLock, Mutex};
 
 use extendr_api::prelude::{List, list};
 use typst::foundations::Bytes;
+use typst::foundations::Smart;
 use typst::layout::{Abs, Frame, FrameItem, Point, Transform};
 use typst::text::{Font, FontInstance, FontStyle, TextItem};
-use typst::visualize::{Curve, CurveItem, FillRule, Geometry, LineCap, LineJoin, Paint};
+use typst::visualize::{
+    Curve, CurveItem, FillRule, Geometry, ImageScaling, LineCap, LineJoin, Paint,
+};
 use typst_kit::fonts::FontPath;
+use typst_layout::Page;
 
 use crate::fonts;
+use crate::raster::{Rasters, rasterize};
 
 /// Maximum distance, in points, between a flattened curve and the true curve.
 const FLATTEN_TOLERANCE_PT: f64 = 0.005;
@@ -63,6 +68,10 @@ pub struct Glyphs {
     pub stroke: Vec<Option<String>>,
     /// Stroke width as grid's `lwd`.
     pub lwd: Vec<f64>,
+    /// Whether the glyph is a colour glyph (emoji). Native glyphs draw it;
+    /// as paths it is drawn by an image (a raster run that only applies to
+    /// paths), not by its outline.
+    pub colour: Vec<bool>,
 }
 
 /// Points of flattened subpaths.
@@ -102,8 +111,9 @@ pub struct Clips {
 /// What to draw, in Typst's drawing order: one grob per run.
 #[derive(Debug, Default)]
 pub struct Runs {
-    /// `"glyph"` (consecutive glyphs), `"path"` (a closed or filled shape), or
-    /// `"polyline"` (an open line).
+    /// `"glyph"` (consecutive glyphs), `"path"` (a closed or filled shape),
+    /// `"polyline"` (an open line), or `"raster"` (an image, row of
+    /// `rasters`).
     pub kind: Vec<String>,
     /// First row in `glyphs` or `shapes`, and how many rows the run draws.
     pub row: Vec<i32>,
@@ -116,6 +126,9 @@ pub struct Runs {
     pub clip: Vec<i32>,
     /// Consecutive runs in the same clip region share a segment.
     pub segment: Vec<i32>,
+    /// `"path"` for a run only drawn when text is drawn as paths (the image of
+    /// a colour glyph), otherwise empty.
+    pub only: Vec<String>,
 }
 
 /// Font files used by the glyphs, one row per font.
@@ -145,6 +158,7 @@ pub struct Scene {
     pub clips: Clips,
     pub clip_points: Points,
     pub runs: Runs,
+    pub rasters: Rasters,
     pub fonts: Fonts,
     /// Everything can be drawn from glyph outlines and `shapes`.
     pub path_ok: bool,
@@ -163,6 +177,7 @@ impl Scene {
             clips: c,
             clip_points: cp,
             runs: r,
+            rasters,
             fonts: f,
             path_ok,
             glyph_ok,
@@ -182,7 +197,8 @@ impl Scene {
                 yy = g.yy,
                 fill = g.fill,
                 stroke = g.stroke,
-                lwd = g.lwd
+                lwd = g.lwd,
+                colour = g.colour
             ),
             shapes = list!(
                 fill = s.fill,
@@ -202,8 +218,10 @@ impl Scene {
                 point = r.point,
                 n_points = r.n_points,
                 clip = r.clip,
-                segment = r.segment
+                segment = r.segment,
+                only = r.only
             ),
+            rasters = rasters.into_r_list(),
             fonts = list!(
                 store_index = f.store_index,
                 path = f.path,
@@ -221,8 +239,10 @@ impl Scene {
     }
 }
 
-/// Describe everything `frame` draws.
-pub fn extract_scene(frame: &Frame) -> Scene {
+/// Describe everything `page` draws. Items that grid can draw neither as
+/// glyphs nor as paths are drawn as images at `raster_dpi`.
+pub fn extract_scene(page: &Page, raster_dpi: f64) -> Scene {
+    let frame = &page.frame;
     let mut builder = SceneBuilder {
         scene: Scene {
             path_ok: true,
@@ -230,6 +250,8 @@ pub fn extract_scene(frame: &Frame) -> Scene {
             ..Scene::default()
         },
         font_rows: HashMap::new(),
+        page: page.clone(),
+        raster_dpi,
         next_shape_sub: 0,
         next_clip_sub: 0,
         current_clip: 0,
@@ -244,6 +266,7 @@ pub fn extract_scene(frame: &Frame) -> Scene {
         &mut scene.glyphs.y,
         &mut scene.shape_points.y,
         &mut scene.clip_points.y,
+        &mut scene.rasters.y,
     ] {
         y.iter_mut().for_each(|y| *y = height - *y);
     }
@@ -258,6 +281,9 @@ struct SceneBuilder {
     next_clip_sub: i32,
     /// Clip region of the group being walked, or 0.
     current_clip: i32,
+    /// The page, for rendering items as images with its settings.
+    page: Page,
+    raster_dpi: f64,
 }
 
 impl SceneBuilder {
@@ -304,34 +330,39 @@ impl SceneBuilder {
                         }
                     }
                 }
-                FrameItem::Text(text) => self.text(text, ts),
-                FrameItem::Shape(shape, _) => self.shape(shape, ts),
-                FrameItem::Image(..) => self.unsupported(false, false, "image"),
+                FrameItem::Text(text) => self.text(text, ts, item),
+                FrameItem::Shape(shape, _) => self.shape(shape, ts, item),
+                FrameItem::Image(image, ..) => {
+                    let pixelated = image.scaling() == Smart::Custom(ImageScaling::Pixelated);
+                    self.raster(item, ts, "", !pixelated);
+                }
                 FrameItem::Link(..) | FrameItem::Tag(_) => {}
             }
         }
     }
 
-    fn text(&mut self, text: &TextItem, ts: Transform) {
-        let Some(fill) = solid_hex(&text.fill) else {
-            self.unsupported(false, false, "non-solid text fill");
+    fn text(&mut self, text: &TextItem, ts: Transform, item: &FrameItem) {
+        let stroke = match &text.stroke {
+            None => Some(None),
+            Some(stroke) => solid_hex(&stroke.paint).map(|hex| Some((hex, stroke))),
+        };
+        // Text painted with a gradient or tiling, or in a font outside the font
+        // store, is drawn as an image.
+        let (Some(fill), Some(stroke), Some(font_row)) =
+            (solid_hex(&text.fill), stroke, self.font_row(&text.font))
+        else {
+            self.raster(item, ts, "", true);
             return;
         };
-        let (stroke, lwd) = match &text.stroke {
+        let (stroke, lwd) = match stroke {
             None => (None, 0.0),
-            Some(stroke) => {
+            Some((hex, stroke)) => {
                 // Native glyphs cannot be stroked.
                 self.unsupported(true, false, "stroked text");
-                match solid_hex(&stroke.paint) {
-                    Some(hex) => (
-                        Some(hex),
-                        stroke.thickness.to_pt() * max_scale(ts) * LWD_PER_PT,
-                    ),
-                    None => {
-                        self.unsupported(false, false, "non-solid text stroke");
-                        return;
-                    }
-                }
+                (
+                    Some(hex),
+                    stroke.thickness.to_pt() * max_scale(ts) * LWD_PER_PT,
+                )
             }
         };
 
@@ -344,7 +375,6 @@ impl SceneBuilder {
             }
         };
 
-        let font_row = self.font_row(&text.font);
         let ttf = text.font.ttf();
         // The linear part of the transform, from points down the page to
         // points per em up it.
@@ -355,6 +385,7 @@ impl SceneBuilder {
         let mut y = 0.0;
         for glyph in &text.glyphs {
             let id = ttf_parser::GlyphId(glyph.id);
+            let advanced = Transform::translate(Abs::pt(x), Abs::pt(-y));
             let origin = Point::new(
                 Abs::pt(x + glyph.x_offset.at(text.size).to_pt()),
                 Abs::pt(-(y + glyph.y_offset.at(text.size).to_pt())),
@@ -367,8 +398,16 @@ impl SceneBuilder {
                 || ttf.is_color_glyph(id);
             if colour {
                 // Bitmap, SVG, and layered colour glyphs (emoji) have no
-                // monochrome outline to draw as a path.
-                self.unsupported(false, true, "colour glyph");
+                // monochrome outline to draw as a path: paths draw an image of
+                // the glyph instead.
+                let mut alone = text.clone();
+                alone.glyphs = vec![glyph.clone()];
+                self.raster(
+                    &FrameItem::Text(alone),
+                    ts.pre_concat(advanced),
+                    "path",
+                    true,
+                );
             } else if ttf.glyph_bounding_box(id).is_none() {
                 // Whitespace draws nothing.
                 continue;
@@ -389,6 +428,7 @@ impl SceneBuilder {
             g.fill.push(fill.clone());
             g.stroke.push(stroke.clone());
             g.lwd.push(lwd);
+            g.colour.push(colour);
             self.add_glyph_to_run();
         }
     }
@@ -405,12 +445,23 @@ impl SceneBuilder {
             return;
         }
         let row = self.scene.glyphs.id.len();
-        self.begin_run("glyph", row, 0, 0);
+        self.begin_run("glyph", row, 0, 0, "");
+    }
+
+    /// Draw `item`, transformed by `ts`, as an image, in a raster run that
+    /// applies to `only` (`"path"`, or empty for both ways of drawing text).
+    fn raster(&mut self, item: &FrameItem, ts: Transform, only: &str, interpolate: bool) {
+        let Some(raster) = rasterize(item, ts, &self.page, self.raster_dpi) else {
+            return;
+        };
+        self.scene.rasters.push(raster, interpolate);
+        let row = self.scene.rasters.x.len();
+        self.begin_run("raster", row, 0, 0, only);
     }
 
     /// Start a run drawing one row from `row` and `n_points` points from
-    /// `point` (both 1-based; 0 for no points).
-    fn begin_run(&mut self, kind: &str, row: usize, point: usize, n_points: usize) {
+    /// `point` (both 1-based; 0 for no points), for `only` (see `Runs`).
+    fn begin_run(&mut self, kind: &str, row: usize, point: usize, n_points: usize, only: &str) {
         let clip = self.current_clip;
         let runs = &mut self.scene.runs;
         let segment = match (runs.segment.last(), runs.clip.last()) {
@@ -425,19 +476,24 @@ impl SceneBuilder {
         runs.n_points.push(r_int(n_points));
         runs.clip.push(clip);
         runs.segment.push(segment);
+        runs.only.push(only.to_string());
     }
 
-    fn shape(&mut self, shape: &typst::visualize::Shape, ts: Transform) {
-        let fill = match &shape.fill {
-            None => None,
-            Some(paint) => match solid_hex(paint) {
-                Some(hex) => Some(hex),
-                None => {
-                    self.unsupported(false, false, "non-solid shape fill");
-                    return;
-                }
-            },
-        };
+    fn shape(&mut self, shape: &typst::visualize::Shape, ts: Transform, item: &FrameItem) {
+        // Shapes painted with a gradient or tiling are drawn as an image.
+        let solid_fill = shape
+            .fill
+            .as_ref()
+            .is_none_or(|paint| solid_hex(paint).is_some());
+        let solid_stroke = shape
+            .stroke
+            .as_ref()
+            .is_none_or(|stroke| solid_hex(&stroke.paint).is_some());
+        if !(solid_fill && solid_stroke) {
+            self.raster(item, ts, "", true);
+            return;
+        }
+        let fill = shape.fill.as_ref().and_then(solid_hex);
         let rule = match shape.fill_rule {
             FillRule::NonZero => "winding",
             FillRule::EvenOdd => "evenodd",
@@ -466,7 +522,6 @@ impl SceneBuilder {
             return;
         };
         let Some(hex) = solid_hex(&stroke.paint) else {
-            self.unsupported(false, false, "non-solid shape stroke");
             return;
         };
         let scale = max_scale(ts);
@@ -534,18 +589,15 @@ impl SceneBuilder {
         s.lineend.push(stroke.lineend.to_string());
         s.linejoin.push(stroke.linejoin.to_string());
         let row = s.fill.len();
-        self.begin_run(kind, row, first + 1, n_points);
+        self.begin_run(kind, row, first + 1, n_points, "");
     }
 
-    /// Row of `instance` in the scene's font table, adding it if needed.
-    fn font_row(&mut self, instance: &FontInstance) -> i32 {
+    /// Row of `instance` in the scene's font table, adding it if needed, or
+    /// `None` for a font outside the global font store, which neither glyphs
+    /// nor outlines can find again.
+    fn font_row(&mut self, instance: &FontInstance) -> Option<i32> {
         let font = instance.font();
-        let Some(found) = lookup_font(font) else {
-            // Not from the global store: neither glyphs nor outlines can find
-            // it again.
-            self.unsupported(false, false, "font outside the font store");
-            return 0;
-        };
+        let found = lookup_font(font)?;
         let variations = instance
             .variations()
             .0
@@ -555,7 +607,7 @@ impl SceneBuilder {
             .join(",");
         let key = (found.store_index, variations);
         if let Some(row) = self.font_rows.get(&key) {
-            return *row;
+            return Some(*row);
         }
         let info = font.info();
         let f = &mut self.scene.fonts;
@@ -576,7 +628,7 @@ impl SceneBuilder {
         f.variations.push(key.1.clone());
         let row = r_int(f.path.len());
         self.font_rows.insert(key, row);
-        row
+        Some(row)
     }
 }
 
@@ -981,7 +1033,7 @@ mod tests {
         let Some(page) = doc.pages().first() else {
             panic!("document should have a page");
         };
-        let scene = extract_scene(&page.frame);
+        let scene = extract_scene(page, 300.0);
         (page.frame.clone(), scene)
     }
 
@@ -1249,14 +1301,105 @@ mod tests {
         assert_eq!(r.segment, vec![1, 2]);
     }
 
+    /// The pixel of raster `i` at the fraction `(u, v)` of its width and
+    /// height from the top-left, as `[r, g, b, a]`.
+    fn pixel(scene: &Scene, i: usize, u: f64, v: f64) -> [u8; 4] {
+        let r = &scene.rasters;
+        let (Ok(w), Ok(h)) = (
+            usize::try_from(r.width_px[i]),
+            usize::try_from(r.height_px[i]),
+        ) else {
+            panic!("raster {i} should have a size");
+        };
+        let (col, row) = ((u * w as f64) as usize, (v * h as f64) as usize);
+        r.pixels[i][row.min(h - 1) * w + col.min(w - 1)].to_le_bytes()
+    }
+
+    fn assert_colour(actual: [u8; 4], expected: [u8; 4]) {
+        assert!(
+            actual
+                .iter()
+                .zip(&expected)
+                .all(|(a, e)| a.abs_diff(*e) <= 3),
+            "expected {expected:?}, got {actual:?}"
+        );
+    }
+
+    #[test]
+    fn gradients_are_drawn_as_images_like_typst() {
+        let (_, scene) = scene_of(
+            "#rect(width: 40pt, height: 10pt, stroke: none, fill: gradient.linear(rgb(\"#ff0000\"), rgb(\"#0000ff\")))",
+        );
+        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        assert_eq!(kinds(&scene), vec!["raster"]);
+        assert_eq!(scene.runs.only, vec![""]);
+        let r = &scene.rasters;
+        // The shape plus a pixel of margin on each side, at 300 dpi.
+        let margin = 72.0 / 300.0;
+        assert_close(r.width[0], 40.0 + 2.0 * margin);
+        assert_close(r.height[0], 10.0 + 2.0 * margin);
+        assert_eq!(
+            r.width_px[0],
+            r_int((r.width[0] * 300.0 / 72.0).round() as i64)
+        );
+        assert!(r.interpolate[0]);
+        // Typst mixes gradients in Oklab: red and blue meet at #8C53A2, not at
+        // the sRGB mix #800080.
+        assert_colour(pixel(&scene, 0, 0.5, 0.5), [0x8C, 0x53, 0xA2, 0xFF]);
+    }
+
+    #[test]
+    fn painted_text_is_drawn_as_an_image() {
+        let (_, scene) = scene_of("H #text(fill: gradient.linear(red, blue))[ello] H");
+        assert_eq!(kinds(&scene), vec!["glyph", "raster", "glyph"]);
+        assert_eq!(scene.glyphs.id.len(), 2);
+    }
+
+    #[test]
+    fn large_images_are_capped() {
+        let (_, scene) =
+            scene_of("#rect(width: 1000pt, height: 1000pt, fill: gradient.radial(red, blue))");
+        let r = &scene.rasters;
+        let pixels = f64::from(r.width_px[0]) * f64::from(r.height_px[0]);
+        assert!(pixels <= crate::raster::MAX_PIXELS * 1.01, "{pixels}");
+        assert!(pixels > crate::raster::MAX_PIXELS * 0.9, "{pixels}");
+    }
+
+    #[test]
+    fn images_are_drawn_as_images() {
+        let svg = "<svg xmlns='http://www.w3.org/2000/svg' width='10' height='10'><rect width='10' height='10' fill='red'/></svg>";
+        for (scaling, smooth) in [("smooth", true), ("pixelated", false)] {
+            let (_, scene) = scene_of(&format!(
+                "#image(bytes(\"{svg}\"), format: \"svg\", width: 10pt, scaling: \"{scaling}\")"
+            ));
+            assert_eq!(kinds(&scene), vec!["raster"]);
+            assert_eq!(scene.rasters.interpolate, vec![smooth]);
+            assert_colour(pixel(&scene, 0, 0.5, 0.5), [0xFF, 0x00, 0x00, 0xFF]);
+        }
+    }
+
+    #[test]
+    fn colour_glyphs_get_an_image_for_paths() {
+        let (_, scene) = scene_of("H \u{1F600}");
+        // Only on systems with a colour emoji font.
+        if !scene.glyphs.colour.contains(&true) {
+            return;
+        }
+        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        // The emoji is a native glyph, and an image for drawing as paths.
+        assert_eq!(scene.glyphs.colour, vec![false, true]);
+        let raster = scene.runs.kind.iter().position(|k| k == "raster");
+        let Some(raster) = raster else {
+            panic!("the emoji should have an image");
+        };
+        assert_eq!(scene.runs.only[raster], "path");
+    }
+
     #[test]
     fn unsupported_content_is_flagged() {
         let (_, nested) =
             scene_of("#box(clip: true, width: 8pt)[#box(clip: true, width: 5pt)[HHH]]");
         assert!(!nested.path_ok && !nested.glyph_ok);
-
-        let (_, gradient) = scene_of("#text(fill: gradient.linear(red, blue))[H]");
-        assert!(!gradient.path_ok);
 
         let (_, stroked) = scene_of("#text(stroke: 0.5pt + red)[H]");
         assert!(stroked.path_ok && !stroked.glyph_ok);

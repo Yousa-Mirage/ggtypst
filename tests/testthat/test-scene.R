@@ -114,3 +114,65 @@ test_that("outlines are found again for a scene from another session", {
     class = "ggtypst_typst_error"
   )
 })
+
+test_that("gradients are drawn as images in place of the text", {
+  skip_if_not_installed("ragg")
+  skip_if_not_installed("png")
+
+  code <- r"(#text(fill: FILL)[Hxample])"
+  label <- function(fill) {
+    rendered <- typst_render(build_typst_source(
+      sub("FILL", fill, code),
+      size = 30
+    ))
+    positioned_typst_grob(rendered)
+  }
+  gradient <- label("gradient.linear(black, luma(20%))")
+  scene <- gradient$children[[1]]
+  expect_true(scene$scene$path_ok)
+  expect_equal(scene$scene$runs$kind, "raster")
+
+  for (mode in c("glyph", "path")) {
+    children <- with_renderer(mode, grid::makeContent(scene))$children
+    expect_s3_class(children[[1]], "rastergrob")
+  }
+  # The image covers the text's ink, within a pixel at 300 dpi.
+  expect_lt(max(abs(raster_ink(gradient) - raster_ink(label("black")))), 0.3)
+})
+
+test_that("the resolution of images follows ggtypst.raster_dpi", {
+  code <- build_typst_source(
+    "#rect(width: 72pt, height: 36pt, fill: gradient.linear(red, blue))"
+  )
+  pixels <- function(dpi) {
+    old <- options(ggtypst.raster_dpi = dpi)
+    on.exit(options(old))
+    rasters <- typst_render(code)$scene$rasters
+    c(rasters$width_px, rasters$height_px)
+  }
+  # One inch wide, plus a pixel of margin on each side.
+  expect_equal(pixels(300)[1], 302)
+  expect_equal(pixels(150)[1], 152)
+
+  old <- options(ggtypst.raster_dpi = -1)
+  on.exit(options(old))
+  expect_error(typst_render(code), "ggtypst.raster_dpi")
+})
+
+test_that("colour glyphs are images only when text is drawn as paths", {
+  scene <- typst_test_grob("H \U0001F600")$children[[1]]
+  skip_if_not(
+    any(scene$scene$glyphs$colour),
+    "needs a colour emoji font"
+  )
+
+  kinds <- function(mode) {
+    children <- with_renderer(mode, grid::makeContent(scene))$children
+    vapply(children, function(child) class(child)[1], character(1))
+  }
+  expect_false("rastergrob" %in% kinds("glyph"))
+  expect_true("rastergrob" %in% kinds("path"))
+  # As paths, the emoji is not also drawn by its outline.
+  outlines <- glyph_outlines(scene$scene)
+  expect_equal(outlines$n_points[scene$scene$glyphs$colour], 0L)
+})
