@@ -272,7 +272,9 @@ outline_run_grob <- function(outlines, glyphs, points, scale) {
     gp = grid::gpar(
       fill = glyphs$fill[owners],
       col = glyphs$stroke[owners],
-      lwd = glyphs$lwd[owners] * scale
+      lwd = glyphs$lwd[owners] * scale,
+      linejoin = glyphs$linejoin[owners[1]],
+      linemitre = glyphs$linemitre[owners[1]]
     )
   )
 }
@@ -288,7 +290,8 @@ shape_grob <- function(scene, row, points, kind, scale) {
     col = shapes$stroke[row],
     lwd = shapes$lwd[row] * scale,
     lineend = shapes$lineend[row],
-    linejoin = shapes$linejoin[row]
+    linejoin = shapes$linejoin[row],
+    linemitre = shapes$linemitre[row]
   )
   if (kind == "path") {
     grid::pathGrob(
