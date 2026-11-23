@@ -25,3 +25,15 @@ pub fn scene_of(body: &str) -> (Frame, Scene) {
     };
     (page.frame.clone(), extract_scene(page, 600.0))
 }
+
+/// The kinds of `scene`'s runs, in drawing order.
+pub fn kinds(scene: &Scene) -> Vec<&str> {
+    scene.runs.kind.iter().map(String::as_str).collect()
+}
+
+pub fn assert_close(actual: f64, expected: f64) {
+    assert!(
+        (actual - expected).abs() < 1e-6,
+        "expected {expected}, got {actual}"
+    );
+}

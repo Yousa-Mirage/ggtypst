@@ -30,8 +30,7 @@ use typst::layout::{Abs, Frame, FrameItem, FrameKind, Point, Size, Transform};
 use typst::syntax::Span;
 use typst::text::{Font, FontInstance, FontStyle, TextItem};
 use typst::visualize::{
-    Curve, CurveItem, DashPattern, FillRule, Geometry, ImageScaling, LineCap, LineJoin, Paint,
-    Shape,
+    Curve, CurveItem, FillRule, Geometry, ImageScaling, LineCap, LineJoin, Paint, Shape,
 };
 use typst_kit::fonts::FontPath;
 use typst_layout::Page;
@@ -41,10 +40,6 @@ use crate::raster::{Rasters, rasterize};
 
 /// Maximum distance, in points, between a flattened curve and the true curve.
 const FLATTEN_TOLERANCE_PT: f64 = 0.005;
-
-/// Most dashes one shape may be cut into. Beyond that (dashes far shorter than
-/// the line), the shape is drawn as an image instead.
-const MAX_DASHES: f64 = 100_000.0;
 
 /// Grid line widths (`lwd`, 1/96 in) per Typst point (1/72 in).
 const LWD_PER_PT: f64 = 96.0 / 72.0;
@@ -527,17 +522,18 @@ impl SceneBuilder {
         let subpaths = geometry_subpaths(&shape.geometry, ts);
 
         // Dashes far too many to cut (much shorter than the line) are drawn as
-        // a solid stroke, as faint as the dashes cover it: neither cut here nor
-        // expanded by Typst's renderer.
-        let undashed;
-        let (shape, item) = match dense_dash_coverage(shape, &subpaths, ts) {
-            Some(coverage) => {
-                let solid = undash(shape, coverage);
-                undashed = FrameItem::Shape(solid.clone(), Span::detached());
-                (solid, &undashed)
-            }
-            None => (shape.clone(), item),
-        };
+        // a solid stroke, here and by Typst's renderer alike.
+        if let Some(dash) = shape
+            .stroke
+            .as_ref()
+            .and_then(|stroke| stroke.dash.as_ref())
+            && dash::too_many(&subpaths, dash, mean_scale(ts))
+        {
+            let solid = dash::without(shape);
+            let item = FrameItem::Shape(solid.clone(), Span::detached());
+            self.shape(&solid, ts, &item);
+            return;
+        }
 
         // Gradients and tilings, and strokes that are no longer one width
         // (skewed or unevenly scaled), are drawn as an image.
@@ -581,8 +577,7 @@ impl SceneBuilder {
             if fill.is_some() {
                 self.push_shape(fill, &ShapeStroke::none(), rule, "path", &subpaths);
             }
-            let array = dash_array(dash, scale);
-            let dashes = dash_subpaths(&subpaths, &array, dash.phase.to_pt() * scale);
+            let dashes = dash::cut(&subpaths, dash, scale);
             self.push_shape(None, &style, rule, "polyline", &dashes);
             return;
         }
@@ -720,45 +715,6 @@ fn geometry_subpaths(geometry: &Geometry, ts: Transform) -> Vec<Subpath> {
     c.subpaths
 }
 
-/// Dash and gap lengths of `dash` scaled by `scale`; an odd-length pattern
-/// repeats to make dash/gap pairs.
-fn dash_array(dash: &DashPattern<Abs, Abs>, scale: f64) -> Vec<f64> {
-    let mut array: Vec<f64> = dash.array.iter().map(|a| a.to_pt() * scale).collect();
-    if array.len() % 2 == 1 {
-        array.extend_from_within(..);
-    }
-    array
-}
-
-/// The fraction of `shape`'s stroke that its dashes cover, if they are more
-/// than `MAX_DASHES` along `subpaths` (already transformed by `ts`).
-fn dense_dash_coverage(shape: &Shape, subpaths: &[Subpath], ts: Transform) -> Option<f64> {
-    let dash = shape.stroke.as_ref()?.dash.as_ref()?;
-    let scale = mean_scale(ts);
-    let array = dash_array(dash, scale);
-    let period: f64 = array.iter().sum();
-    let length: f64 = subpaths.iter().map(Subpath::length).sum();
-    if period.is_nan() || period <= 0.0 || length / period * array.len() as f64 <= MAX_DASHES {
-        return None;
-    }
-    let on: f64 = array.iter().step_by(2).sum();
-    Some(on / period)
-}
-
-/// `shape` with a solid stroke covering `coverage` of what it did: a solid
-/// colour fades to match; other paints are kept.
-fn undash(shape: &Shape, coverage: f64) -> Shape {
-    let mut shape = shape.clone();
-    if let Some(stroke) = &mut shape.stroke {
-        stroke.dash = None;
-        if let Paint::Solid(color) = stroke.paint.clone() {
-            let alpha = color.alpha().unwrap_or(1.0) * coverage as f32;
-            stroke.paint = Paint::Solid(color.with_alpha(alpha));
-        }
-    }
-    shape
-}
-
 /// Grid's name for a line join.
 fn linejoin_name(join: LineJoin) -> &'static str {
     match join {
@@ -781,15 +737,15 @@ pub(crate) fn push(points: &mut Points, p: (f64, f64), sub: i32) {
 
 /// A flattened subpath in page coordinates.
 #[derive(Debug, Clone, Default)]
-struct Subpath {
-    points: Vec<(f64, f64)>,
+pub(crate) struct Subpath {
+    pub(crate) points: Vec<(f64, f64)>,
     /// Whether it ends by returning to its first point.
-    closed: bool,
+    pub(crate) closed: bool,
 }
 
 impl Subpath {
     /// Length of its outline, including the closing segment.
-    fn length(&self) -> f64 {
+    pub(crate) fn length(&self) -> f64 {
         let close = self
             .points
             .last()
@@ -881,73 +837,233 @@ fn curve_subpaths(curve: &Curve, ts: Transform) -> Vec<Subpath> {
     c.subpaths
 }
 
-/// Cut subpaths into open dashes: `array` alternates dash and gap lengths
-/// (an even number of them), starting `phase` into the pattern. Like SVG and
-/// PDF, the pattern restarts at each subpath.
-fn dash_subpaths(subpaths: &[Subpath], array: &[f64], phase: f64) -> Vec<Subpath> {
-    let period: f64 = array.iter().sum();
-    if array.is_empty() || period <= 0.0 || array.iter().any(|a| *a < 0.0) {
-        return subpaths.to_vec();
+/// Dashed strokes.
+///
+/// grid's own dashes (`lty`) cannot express Typst's: their lengths are whole
+/// multiples (1 to 15) of the line width, at most 8 of them, without a phase.
+/// So a dashed stroke is cut into its dashes here, each drawn by R as an open
+/// polyline where Typst places it.
+mod dash {
+    use typst::layout::Abs;
+    use typst::visualize::{DashPattern, Shape};
+
+    use super::Subpath;
+
+    /// Most dashes one shape may be cut into. Beyond that (dashes far shorter
+    /// than the line, too fine to see), the stroke is drawn solid.
+    const MAX_DASHES: f64 = 100_000.0;
+
+    /// Dash and gap lengths of `dash` scaled by `scale`; an odd-length pattern
+    /// repeats to make dash/gap pairs.
+    fn lengths(dash: &DashPattern<Abs, Abs>, scale: f64) -> Vec<f64> {
+        let mut array: Vec<f64> = dash.array.iter().map(|a| a.to_pt() * scale).collect();
+        if array.len() % 2 == 1 {
+            array.extend_from_within(..);
+        }
+        array
     }
-    let dash = |points| Subpath {
-        points,
-        closed: false,
-    };
 
-    let mut dashes = Vec::new();
-    for subpath in subpaths {
-        let mut points = subpath.points.clone();
-        if subpath.closed
-            && let Some(&first) = points.first()
-        {
-            points.push(first);
-        }
+    /// Whether `dash`, scaled by `scale`, would cut `subpaths` into more than
+    /// `MAX_DASHES` dashes.
+    pub(super) fn too_many(subpaths: &[Subpath], dash: &DashPattern<Abs, Abs>, scale: f64) -> bool {
+        let array = lengths(dash, scale);
+        let period: f64 = array.iter().sum();
+        let length: f64 = subpaths.iter().map(Subpath::length).sum();
+        period > 0.0 && length / period * array.len() as f64 > MAX_DASHES
+    }
 
-        // Find where in the pattern the subpath starts.
-        let mut index = 0;
-        let mut on = true;
-        let mut left = array[0];
-        let mut skip = phase.rem_euclid(period);
-        while skip > 0.0 && skip >= left {
-            skip -= left;
-            index = (index + 1) % array.len();
-            on = !on;
-            left = array[index];
+    /// `shape` with a solid stroke.
+    pub(super) fn without(shape: &Shape) -> Shape {
+        let mut shape = shape.clone();
+        if let Some(stroke) = &mut shape.stroke {
+            stroke.dash = None;
         }
-        left -= skip;
+        shape
+    }
 
-        let mut current: Vec<(f64, f64)> = Vec::new();
-        if on && let Some(&first) = points.first() {
-            current.push(first);
+    /// `subpaths` cut into the open dashes of `dash`, scaled by `scale`.
+    pub(super) fn cut(
+        subpaths: &[Subpath],
+        dash: &DashPattern<Abs, Abs>,
+        scale: f64,
+    ) -> Vec<Subpath> {
+        cut_into(subpaths, &lengths(dash, scale), dash.phase.to_pt() * scale)
+    }
+
+    /// `subpaths` cut into open dashes: `array` alternates dash and gap
+    /// lengths (an even number of them), starting `phase` into the pattern.
+    /// Like SVG and PDF, the pattern restarts at each subpath.
+    fn cut_into(subpaths: &[Subpath], array: &[f64], phase: f64) -> Vec<Subpath> {
+        let period: f64 = array.iter().sum();
+        if array.is_empty() || period <= 0.0 || array.iter().any(|a| *a < 0.0) {
+            return subpaths.to_vec();
         }
-        for pair in points.windows(2) {
-            let (a, b) = (pair[0], pair[1]);
-            let length = ((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)).sqrt();
-            let mut done = 0.0;
-            while length - done > left {
-                done += left;
-                let t = done / length;
-                let p = (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
-                if on {
-                    current.push(p);
-                    dashes.push(dash(std::mem::take(&mut current)));
-                } else {
-                    current = vec![p];
-                }
+        let dash = |points| Subpath {
+            points,
+            closed: false,
+        };
+
+        let mut dashes = Vec::new();
+        for subpath in subpaths {
+            let mut points = subpath.points.clone();
+            if subpath.closed
+                && let Some(&first) = points.first()
+            {
+                points.push(first);
+            }
+
+            // Find where in the pattern the subpath starts.
+            let mut index = 0;
+            let mut on = true;
+            let mut left = array[0];
+            let mut skip = phase.rem_euclid(period);
+            while skip > 0.0 && skip >= left {
+                skip -= left;
                 index = (index + 1) % array.len();
                 on = !on;
                 left = array[index];
             }
-            left -= length - done;
-            if on {
-                current.push(b);
+            left -= skip;
+
+            let mut current: Vec<(f64, f64)> = Vec::new();
+            if on && let Some(&first) = points.first() {
+                current.push(first);
+            }
+            for pair in points.windows(2) {
+                let (a, b) = (pair[0], pair[1]);
+                let length = ((b.0 - a.0).powi(2) + (b.1 - a.1).powi(2)).sqrt();
+                let mut done = 0.0;
+                while length - done > left {
+                    done += left;
+                    let t = done / length;
+                    let p = (a.0 + (b.0 - a.0) * t, a.1 + (b.1 - a.1) * t);
+                    if on {
+                        current.push(p);
+                        dashes.push(dash(std::mem::take(&mut current)));
+                    } else {
+                        current = vec![p];
+                    }
+                    index = (index + 1) % array.len();
+                    on = !on;
+                    left = array[index];
+                }
+                left -= length - done;
+                if on {
+                    current.push(b);
+                }
+            }
+            if on && current.len() > 1 {
+                dashes.push(dash(current));
             }
         }
-        if on && current.len() > 1 {
-            dashes.push(dash(current));
+        dashes
+    }
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+        use crate::testing::{assert_close, kinds, scene_of};
+
+        #[test]
+        fn dashed_strokes_are_cut_into_dashes() {
+            // A 30pt line with 4pt dashes and 2pt gaps: dashes start at 0, 6, ...
+            let (_, scene) = scene_of(
+                "#line(length: 30pt, stroke: (paint: black, thickness: 1pt, dash: (4pt, 2pt)))",
+            );
+            assert!(scene.unsupported.is_empty(), "{:?}", scene.unsupported);
+            let p = &scene.shape_points;
+            let mut starts = Vec::new();
+            let mut lengths = Vec::new();
+            let mut i = 0;
+            while i < p.sub.len() {
+                let j = p.sub[i..]
+                    .iter()
+                    .position(|&s| s != p.sub[i])
+                    .map_or(p.sub.len(), |k| i + k);
+                starts.push(p.x[i]);
+                lengths.push(p.x[j - 1] - p.x[i]);
+                i = j;
+            }
+            assert_eq!(starts.len(), 5);
+            for (k, (start, length)) in starts.iter().zip(&lengths).enumerate() {
+                assert_close(*start, 6.0 * k as f64);
+                assert_close(*length, 4.0);
+            }
+            assert_eq!(kinds(&scene), vec!["polyline"]);
+        }
+
+        #[test]
+        fn too_many_dashes_become_a_solid_stroke() {
+            // About 50 million dashes on a line, and as many on a rectangle:
+            // drawn as a solid stroke.
+            for (body, kind) in [
+                (
+                    "#line(length: 100pt, stroke: (thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
+                    "polyline",
+                ),
+                (
+                    "#rect(width: 40pt, height: 20pt, stroke: (thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
+                    "path",
+                ),
+            ] {
+                let (_, scene) = scene_of(body);
+                assert_eq!(kinds(&scene), vec![kind], "{body}");
+                assert_eq!(
+                    scene.shapes.stroke[0].as_deref(),
+                    Some("#000000FF"),
+                    "{body}"
+                );
+            }
+            // A gradient stroke is drawn solid as an image, without Typst
+            // expanding the dashes.
+            let (_, gradient) = scene_of(
+                "#line(length: 100pt, stroke: (paint: gradient.linear(red, blue), thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
+            );
+            assert_eq!(kinds(&gradient), vec!["raster"]);
+            assert!(
+                gradient.rasters.pixels[0]
+                    .iter()
+                    .any(|p| p.to_le_bytes()[3] == 255)
+            );
+        }
+
+        #[test]
+        fn dash_phase_and_odd_arrays_follow_svg() {
+            let line = vec![Subpath {
+                points: vec![(0.0, 0.0), (10.0, 0.0)],
+                closed: false,
+            }];
+            // A phase of 1 starts one point into the first dash.
+            let shifted = cut_into(&line, &[3.0, 1.0], 1.0);
+            assert_close(shifted[0].points[1].0, 2.0);
+            assert_close(shifted[1].points[0].0, 3.0);
+
+            // An odd array repeats: (3pt) is 3pt on, 3pt off, so a phase of 3pt
+            // starts in the gap. Dashes on a 12pt line: 3 to 6 and 9 to 12.
+            let (_, scene) = scene_of(
+                "#line(length: 12pt, stroke: (paint: black, dash: (array: (3pt,), phase: 3pt)))",
+            );
+            let p = &scene.shape_points;
+            assert_eq!(p.x.len(), 4, "{:?}", p.x);
+            for (x, expected) in p.x.iter().zip([3.0, 6.0, 9.0, 12.0]) {
+                assert_close(*x, expected);
+            }
+        }
+
+        #[test]
+        fn filled_dashed_shapes_keep_their_fill() {
+            let (_, scene) = scene_of(
+                "#rect(width: 10pt, height: 10pt, fill: red, stroke: (paint: black, dash: \"dotted\"))",
+            );
+            let s = &scene.shapes;
+            assert_eq!(s.fill.len(), 2);
+            assert_eq!(s.fill[0].as_deref(), Some("#FF4136FF"));
+            assert_eq!(s.stroke[0], None);
+            assert_eq!(s.fill[1], None);
+            assert_eq!(s.stroke[1].as_deref(), Some("#000000FF"));
+            assert_eq!(kinds(&scene), vec!["path", "polyline"]);
         }
     }
-    dashes
 }
 
 /// Flatten a cubic Bézier into line segments, appending the end points of the
@@ -1185,18 +1301,7 @@ pub fn write_embedded_font(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::testing::scene_of;
-
-    fn assert_close(actual: f64, expected: f64) {
-        assert!(
-            (actual - expected).abs() < 1e-6,
-            "expected {expected}, got {actual}"
-        );
-    }
-
-    fn kinds(scene: &Scene) -> Vec<&str> {
-        scene.runs.kind.iter().map(String::as_str).collect()
-    }
+    use crate::testing::{assert_close, kinds, scene_of};
 
     /// The 0-based range of a run's points.
     fn run_points(scene: &Scene, run: usize) -> std::ops::Range<usize> {
@@ -1372,34 +1477,6 @@ mod tests {
     }
 
     #[test]
-    fn dashed_strokes_are_cut_into_dashes() {
-        // A 30pt line with 4pt dashes and 2pt gaps: dashes start at 0, 6, ...
-        let (_, scene) = scene_of(
-            "#line(length: 30pt, stroke: (paint: black, thickness: 1pt, dash: (4pt, 2pt)))",
-        );
-        assert!(scene.unsupported.is_empty(), "{:?}", scene.unsupported);
-        let p = &scene.shape_points;
-        let mut starts = Vec::new();
-        let mut lengths = Vec::new();
-        let mut i = 0;
-        while i < p.sub.len() {
-            let j = p.sub[i..]
-                .iter()
-                .position(|&s| s != p.sub[i])
-                .map_or(p.sub.len(), |k| i + k);
-            starts.push(p.x[i]);
-            lengths.push(p.x[j - 1] - p.x[i]);
-            i = j;
-        }
-        assert_eq!(starts.len(), 5);
-        for (k, (start, length)) in starts.iter().zip(&lengths).enumerate() {
-            assert_close(*start, 6.0 * k as f64);
-            assert_close(*length, 4.0);
-        }
-        assert_eq!(kinds(&scene), vec!["polyline"]);
-    }
-
-    #[test]
     fn rotation_keeps_stroke_widths_and_dash_lengths() {
         for angle in ["0deg", "45deg"] {
             let (_, scene) = scene_of(&format!(
@@ -1469,40 +1546,6 @@ mod tests {
     }
 
     #[test]
-    fn too_many_dashes_become_a_faint_solid_stroke() {
-        // About 50 million dashes on a line, and as many on a rectangle: drawn as a
-        // solid stroke half as opaque, as the dashes cover half of it.
-        for (body, kind) in [
-            (
-                "#line(length: 100pt, stroke: (thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
-                "polyline",
-            ),
-            (
-                "#rect(width: 40pt, height: 20pt, stroke: (thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
-                "path",
-            ),
-        ] {
-            let (_, scene) = scene_of(body);
-            assert_eq!(kinds(&scene), vec![kind], "{body}");
-            assert_eq!(
-                scene.shapes.stroke[0].as_deref(),
-                Some("#00000080"),
-                "{body}"
-            );
-        }
-        // A gradient stroke cannot fade: drawn solid as an image.
-        let (_, gradient) = scene_of(
-            "#line(length: 100pt, stroke: (paint: gradient.linear(red, blue), thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
-        );
-        assert_eq!(kinds(&gradient), vec!["raster"]);
-        assert!(
-            gradient.rasters.pixels[0]
-                .iter()
-                .any(|p| p.to_le_bytes()[3] == 255)
-        );
-    }
-
-    #[test]
     fn glyph_runs_split_where_stroke_joins_change() {
         let (_, scene) = scene_of(
             "#text(stroke: 0.5pt + red)[A]#text(stroke: (paint: red, thickness: 0.5pt, join: \"bevel\"))[B]",
@@ -1540,43 +1583,6 @@ mod tests {
         );
         assert_eq!(kinds(&scene), vec!["raster"]);
         assert!(scene.rasters.width_px[0] < 300);
-    }
-
-    #[test]
-    fn dash_phase_and_odd_arrays_follow_svg() {
-        let line = vec![Subpath {
-            points: vec![(0.0, 0.0), (10.0, 0.0)],
-            closed: false,
-        }];
-        // A phase of 1 starts one point into the first dash.
-        let shifted = dash_subpaths(&line, &[3.0, 1.0], 1.0);
-        assert_close(shifted[0].points[1].0, 2.0);
-        assert_close(shifted[1].points[0].0, 3.0);
-
-        // An odd array repeats: (3pt) is 3pt on, 3pt off, so a phase of 3pt
-        // starts in the gap. Dashes on a 12pt line: 3 to 6 and 9 to 12.
-        let (_, scene) = scene_of(
-            "#line(length: 12pt, stroke: (paint: black, dash: (array: (3pt,), phase: 3pt)))",
-        );
-        let p = &scene.shape_points;
-        assert_eq!(p.x.len(), 4, "{:?}", p.x);
-        for (x, expected) in p.x.iter().zip([3.0, 6.0, 9.0, 12.0]) {
-            assert_close(*x, expected);
-        }
-    }
-
-    #[test]
-    fn filled_dashed_shapes_keep_their_fill() {
-        let (_, scene) = scene_of(
-            "#rect(width: 10pt, height: 10pt, fill: red, stroke: (paint: black, dash: \"dotted\"))",
-        );
-        let s = &scene.shapes;
-        assert_eq!(s.fill.len(), 2);
-        assert_eq!(s.fill[0].as_deref(), Some("#FF4136FF"));
-        assert_eq!(s.stroke[0], None);
-        assert_eq!(s.fill[1], None);
-        assert_eq!(s.stroke[1].as_deref(), Some("#000000FF"));
-        assert_eq!(kinds(&scene), vec!["path", "polyline"]);
     }
 
     #[test]
