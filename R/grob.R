@@ -46,11 +46,10 @@ positioned_typst_grob <- function(
 #'
 #' The Typst page has no margin, so it is exactly the content's layout box
 #' (`width_pt` x `height_pt`), and justification is relative to it, like grid
-#' text. The layout box becomes a viewport. Scene coordinates (Typst points, y
-#' pointing down from the box's top-left corner) are drawn in `"bigpts"` from
-#' its bottom-left corner, which also works for boxes of zero width or height
-#' (a bare `#line()`). Ink outside the box (overhangs, descenders) is drawn,
-#' not clipped.
+#' text. The layout box becomes a viewport. Scene coordinates (Typst points
+#' from the box's bottom-left corner, y pointing up) are drawn in `"bigpts"`,
+#' which also works for boxes of zero width or height (a bare `#line()`). Ink
+#' outside the box (overhangs, descenders) is drawn, not clipped.
 #'
 #' The grob's content is built when it is drawn (see
 #' `makeContent.typst_scene_grob()`), so it can draw text as native glyphs or

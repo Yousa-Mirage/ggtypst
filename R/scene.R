@@ -39,10 +39,10 @@ scene_grobs <- function(
   runs <- scene$runs
   grobs <- lapply(seq_along(runs$kind), function(i) {
     rows <- seq(runs$row[i], length.out = runs$n_rows[i])
-    points <- seq(runs$point[i], length.out = runs$n_points[i])
     if (runs$kind[i] == "raster") {
       raster_grob(scene$rasters, rows, scale)
     } else if (runs$kind[i] != "glyph") {
+      points <- seq(runs$point[i], length.out = runs$n_points[i])
       shape_grob(scene, rows, points, runs$kind[i], scale)
     } else if (mode == "glyph") {
       glyph_run_grob(scene$glyphs, rows, font_list, scale, width, height)

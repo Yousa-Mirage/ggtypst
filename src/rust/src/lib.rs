@@ -8,6 +8,8 @@ mod outlines;
 mod raster;
 mod render;
 mod scene;
+#[cfg(test)]
+mod testing;
 mod world;
 
 /// Compile a Typst document and describe its first page for drawing. Items

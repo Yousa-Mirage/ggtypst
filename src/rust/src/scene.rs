@@ -404,7 +404,7 @@ impl SceneBuilder {
             None => {
                 // Skewed or unevenly scaled text cannot be drawn as glyphs.
                 self.no_glyphs("skewed text");
-                (max_scale(ts), 0.0)
+                (mean_scale(ts), 0.0)
             }
         };
 
@@ -734,10 +734,7 @@ fn dash_array(dash: &DashPattern<Abs, Abs>, scale: f64) -> Vec<f64> {
 /// than `MAX_DASHES` along `subpaths` (already transformed by `ts`).
 fn dense_dash_coverage(shape: &Shape, subpaths: &[Subpath], ts: Transform) -> Option<f64> {
     let dash = shape.stroke.as_ref()?.dash.as_ref()?;
-    // How much `ts` scales lengths on average.
-    let scale = (ts.sx.get() * ts.sy.get() - ts.kx.get() * ts.ky.get())
-        .abs()
-        .sqrt();
+    let scale = mean_scale(ts);
     let array = dash_array(dash, scale);
     let period: f64 = array.iter().sum();
     let length: f64 = subpaths.iter().map(Subpath::length).sum();
@@ -1022,11 +1019,12 @@ fn similarity(ts: Transform) -> Option<(f64, f64)> {
     Some((scale, -b.atan2(a).to_degrees()))
 }
 
-/// Upper bound on how much `ts` stretches a length.
-fn max_scale(ts: Transform) -> f64 {
-    let column_x = ts.sx.get().abs() + ts.ky.get().abs();
-    let column_y = ts.kx.get().abs() + ts.sy.get().abs();
-    column_x.max(column_y)
+/// How much `ts` scales lengths on average: the scale of a similarity
+/// transform, and the square root of the area scale otherwise.
+fn mean_scale(ts: Transform) -> f64 {
+    (ts.sx.get() * ts.sy.get() - ts.kx.get() * ts.ky.get())
+        .abs()
+        .sqrt()
 }
 
 /// Where a font of the global store comes from.
@@ -1187,25 +1185,7 @@ pub fn write_embedded_font(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::world::InMemoryWorld;
-    use typst_layout::PagedDocument;
-
-    const PREAMBLE: &str = concat!(
-        "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
-        "#set text(size: 20pt, top-edge: \"cap-height\", bottom-edge: \"baseline\")\n"
-    );
-
-    fn scene_of(body: &str) -> (Frame, Scene) {
-        let world = InMemoryWorld::new(format!("{PREAMBLE}{body}"), fonts::get_fonts());
-        let Ok(doc) = typst::compile::<PagedDocument>(&world).output else {
-            panic!("source should compile: {body}");
-        };
-        let Some(page) = doc.pages().first() else {
-            panic!("document should have a page");
-        };
-        let scene = extract_scene(page, 600.0);
-        (page.frame.clone(), scene)
-    }
+    use crate::testing::scene_of;
 
     fn assert_close(actual: f64, expected: f64) {
         assert!(

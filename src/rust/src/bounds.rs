@@ -2,8 +2,9 @@
 //!
 //! Typst lays text out by advance widths, so glyph ink can extend past the
 //! page (italic overhangs, descender tails, content moved with `#move` or
-//! rotated without reflow). The renderer sizes the SVG canvas from these
-//! bounds so that nothing is cut off.
+//! rotated without reflow). Items drawn as images are sized from these
+//! bounds so that nothing is cut off. Bounds are in page points, y pointing
+//! down.
 
 use typst::layout::{Abs, Frame, FrameItem, Point, Ratio, Rect, Transform};
 use typst::text::TextItem;

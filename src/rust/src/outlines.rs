@@ -217,6 +217,15 @@ impl OutlineSink<'_> {
         )
     }
 
+    /// Flatten a cubic from the last point, in the scene's coordinates.
+    fn cubic(&mut self, c1: (f64, f64), c2: (f64, f64), p: (f64, f64)) {
+        let mut points = Vec::new();
+        flatten_cubic(self.last, c1, c2, p, 0, &mut points);
+        for point in points {
+            self.emit(point);
+        }
+    }
+
     fn emit(&mut self, p: (f64, f64)) {
         push(&mut self.out.points, p, *self.sub);
         self.out.owner.push(self.owner);
@@ -243,20 +252,12 @@ impl ttf_parser::OutlineBuilder for OutlineSink<'_> {
             p0.1 + 2.0 / 3.0 * (q.1 - p0.1),
         );
         let c2 = (p.0 + 2.0 / 3.0 * (q.0 - p.0), p.1 + 2.0 / 3.0 * (q.1 - p.1));
-        let mut points = Vec::new();
-        flatten_cubic(p0, c1, c2, p, 0, &mut points);
-        for point in points {
-            self.emit(point);
-        }
+        self.cubic(c1, c2, p);
     }
 
     fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
         let (c1, c2, p) = (self.map(x1, y1), self.map(x2, y2), self.map(x, y));
-        let mut points = Vec::new();
-        flatten_cubic(self.last, c1, c2, p, 0, &mut points);
-        for point in points {
-            self.emit(point);
-        }
+        self.cubic(c1, c2, p);
     }
 
     fn close(&mut self) {}
@@ -266,26 +267,9 @@ impl ttf_parser::OutlineBuilder for OutlineSink<'_> {
 mod tests {
     use super::*;
     use crate::fonts;
-    use crate::scene::{Scene, extract_scene};
-    use crate::world::InMemoryWorld;
+    use crate::scene::Scene;
+    use crate::testing::scene_of;
     use typst::layout::Frame;
-    use typst_layout::PagedDocument;
-
-    const PREAMBLE: &str = concat!(
-        "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
-        "#set text(size: 20pt, top-edge: \"cap-height\", bottom-edge: \"baseline\")\n"
-    );
-
-    fn scene_of(body: &str) -> (Frame, Scene) {
-        let world = InMemoryWorld::new(format!("{PREAMBLE}{body}"), fonts::get_fonts());
-        let Ok(doc) = typst::compile::<PagedDocument>(&world).output else {
-            panic!("source should compile: {body}");
-        };
-        let Some(page) = doc.pages().first() else {
-            panic!("document should have a page");
-        };
-        (page.frame.clone(), extract_scene(page, 600.0))
-    }
 
     fn outlines_of(scene: &Scene) -> Outlines {
         match glyph_outlines(&scene.fonts, &scene.glyphs) {
