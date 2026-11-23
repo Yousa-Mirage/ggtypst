@@ -6,7 +6,8 @@
 # The scene arrives ready to draw: its runs are in Typst's drawing order, each
 # with the range of rows and points it draws; coordinates are points from the
 # layout box's bottom-left corner; missing colours are `NA`; widths are `lwd`.
-# Only `scale` is applied here.
+# Only `scale` is applied here. Glyph outlines are not part of the scene: they
+# are computed by Rust only when text is drawn as paths (`glyph_outlines()`).
 
 #' Grid grobs drawing a scene, in Typst's drawing order
 #'
@@ -17,6 +18,8 @@
 #' @param scene The `scene` of a rendered Typst result.
 #' @param mode `"glyph"` or `"path"`, see `typst_render_mode()`.
 #' @param font_list The scene's fonts as a `glyphFontList`, for `"glyph"`.
+#' @param outlines The scene's glyph outlines, for `"path"`, see
+#'   `glyph_outlines()`.
 #' @param scale Scaling factor applied to the rendered output.
 #' @param width,height Size of the layout box in points.
 #' @return A `gList`.
@@ -25,6 +28,7 @@ scene_grobs <- function(
   scene,
   mode,
   font_list = NULL,
+  outlines = NULL,
   scale = 1,
   width,
   height
@@ -38,7 +42,10 @@ scene_grobs <- function(
     } else if (mode == "glyph") {
       glyph_run_grob(scene$glyphs, rows, font_list, scale, width, height)
     } else {
-      outline_run_grob(scene, points, scale)
+      # A run's glyphs have consecutive outlines.
+      first <- outlines$point[rows[1]]
+      points <- seq(first, length.out = sum(outlines$n_points[rows]))
+      outline_run_grob(outlines, scene$glyphs, points, scale)
     }
   })
 
@@ -130,14 +137,30 @@ glyph_font_list <- function(fonts, files = typst_font_files(fonts)) {
   font_list
 }
 
+#' Outlines of a scene's glyphs
+#'
+#' Computed by Rust from the scene's glyph table and fonts, for drawing text as
+#' paths. Fonts are found again by file or, for fonts built into ggtypst, by
+#' their cache key, so this also works for a scene saved in another session.
+#'
+#' @param scene The `scene` of a rendered Typst result.
+#' @return A list with the points `x`, `y`, `sub` (contour), and `owner` (glyph
+#'   row), and each glyph's first `point` and `n_points`.
+#' @noRd
+glyph_outlines <- function(scene) {
+  result <- rs_glyph_outlines(scene$fonts, scene$glyphs)
+  if (inherits(result, "typst_error")) {
+    abort_typst_errors(result)
+  }
+  result
+}
+
 # Outline points `points` of some glyphs as one path grob: one path per glyph
 # (`pathId`), made of its contours (`id`).
-outline_run_grob <- function(scene, points, scale) {
+outline_run_grob <- function(outlines, glyphs, points, scale) {
   if (length(points) == 0L) {
     return(NULL)
   }
-  outlines <- scene$outlines
-  glyphs <- scene$glyphs
   owners <- unique(outlines$owner[points])
   grid::pathGrob(
     x = outlines$x[points] * scale,

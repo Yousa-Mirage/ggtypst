@@ -4,8 +4,9 @@
 //! typst-svg does, and flattened into plain tables in page coordinates: points
 //! from the page's bottom-left corner, y pointing up, as grid draws them.
 //!
-//! - glyphs: which font and glyph to draw where, for drawing them natively;
-//! - outlines: the same glyphs as flattened outlines, for drawing them as paths;
+//! - glyphs: which font and glyph to draw where, and how it is transformed;
+//!   enough to draw them natively, or to compute their outlines (outlines.rs)
+//!   when they are drawn as paths;
 //! - shapes and their points: lines, rectangles, and curves, flattened;
 //! - clips and their points: the outlines of clip regions;
 //! - runs: what to draw, in Typst's drawing order, one grob each;
@@ -21,7 +22,7 @@ use std::sync::{LazyLock, Mutex};
 
 use extendr_api::prelude::{List, list};
 use typst::layout::{Abs, Frame, FrameItem, Point, Transform};
-use typst::text::{Font, FontStyle, TextItem};
+use typst::text::{Font, FontInstance, FontStyle, TextItem};
 use typst::visualize::{Curve, CurveItem, FillRule, Geometry, LineCap, LineJoin, Paint};
 use typst_kit::fonts::FontPath;
 
@@ -46,6 +47,13 @@ pub struct Glyphs {
     pub size: Vec<f64>,
     /// Rotation in degrees, counter-clockwise like grid's `rot`.
     pub rot: Vec<f64>,
+    /// The glyph's transform, in points per em from its origin: a point
+    /// `(u, v)` of the glyph, in ems, is drawn at
+    /// `(x + xx * u + xy * v, y + yx * u + yy * v)`.
+    pub xx: Vec<f64>,
+    pub xy: Vec<f64>,
+    pub yx: Vec<f64>,
+    pub yy: Vec<f64>,
     /// `#RRGGBBAA`.
     pub fill: Vec<String>,
     /// `#RRGGBBAA`, or `NA` for no stroke.
@@ -97,8 +105,8 @@ pub struct Runs {
     /// First row in `glyphs` or `shapes`, and how many rows the run draws.
     pub row: Vec<i32>,
     pub n_rows: Vec<i32>,
-    /// First point in `outlines` (glyph runs) or `shape_points` (shapes), and
-    /// how many points the run draws.
+    /// First point in `shape_points` and how many points the run draws; 0 for
+    /// glyph runs, whose outlines are computed on demand.
     pub point: Vec<i32>,
     pub n_points: Vec<i32>,
     /// Clip region (row of `clips`) the run is drawn in, or 0.
@@ -122,21 +130,20 @@ pub struct Fonts {
     pub weight: Vec<i32>,
     /// `"normal"`, `"italic"`, or `"oblique"`.
     pub style: Vec<String>,
+    /// Variable font coordinates, such as `"wght=700,wdth=100"`, or empty.
+    pub variations: Vec<String>,
 }
 
 #[derive(Debug, Default)]
 pub struct Scene {
     pub glyphs: Glyphs,
-    pub outlines: Points,
-    /// Row in `glyphs` of each outline point: one path per glyph.
-    pub outline_owner: Vec<i32>,
     pub shapes: Shapes,
     pub shape_points: Points,
     pub clips: Clips,
     pub clip_points: Points,
     pub runs: Runs,
     pub fonts: Fonts,
-    /// Everything can be drawn from `outlines` and `shapes`.
+    /// Everything can be drawn from glyph outlines and `shapes`.
     pub path_ok: bool,
     /// Everything can be drawn from `glyphs` and `shapes`.
     pub glyph_ok: bool,
@@ -148,8 +155,6 @@ impl Scene {
     pub fn into_r_list(self) -> List {
         let Scene {
             glyphs: g,
-            outlines: o,
-            outline_owner,
             shapes: s,
             shape_points: sp,
             clips: c,
@@ -168,11 +173,14 @@ impl Scene {
                 y = g.y,
                 size = g.size,
                 rot = g.rot,
+                xx = g.xx,
+                xy = g.xy,
+                yx = g.yx,
+                yy = g.yy,
                 fill = g.fill,
                 stroke = g.stroke,
                 lwd = g.lwd
             ),
-            outlines = list!(x = o.x, y = o.y, sub = o.sub, owner = outline_owner),
             shapes = list!(
                 fill = s.fill,
                 stroke = s.stroke,
@@ -200,7 +208,8 @@ impl Scene {
                 cache_key = f.cache_key,
                 family = f.family,
                 weight = f.weight,
-                style = f.style
+                style = f.style,
+                variations = f.variations
             ),
             path_ok = path_ok,
             glyph_ok = glyph_ok,
@@ -218,7 +227,6 @@ pub fn extract_scene(frame: &Frame) -> Scene {
             ..Scene::default()
         },
         font_rows: HashMap::new(),
-        next_outline_sub: 0,
         next_shape_sub: 0,
         next_clip_sub: 0,
         current_clip: 0,
@@ -231,7 +239,6 @@ pub fn extract_scene(frame: &Frame) -> Scene {
     let height = frame.height().to_pt();
     for y in [
         &mut scene.glyphs.y,
-        &mut scene.outlines.y,
         &mut scene.shape_points.y,
         &mut scene.clip_points.y,
     ] {
@@ -242,9 +249,8 @@ pub fn extract_scene(frame: &Frame) -> Scene {
 
 struct SceneBuilder {
     scene: Scene,
-    /// Store index -> row in `scene.fonts`.
-    font_rows: HashMap<usize, i32>,
-    next_outline_sub: i32,
+    /// (Store index, variations) -> row in `scene.fonts`.
+    font_rows: HashMap<(usize, String), i32>,
     next_shape_sub: i32,
     next_clip_sub: i32,
     /// Clip region of the group being walked, or 0.
@@ -335,18 +341,20 @@ impl SceneBuilder {
             }
         };
 
-        let font_row = self.font_row(text.font.font());
+        let font_row = self.font_row(&text.font);
         let ttf = text.font.ttf();
-        let units = text.size.to_pt() / text.font.units_per_em();
+        // The linear part of the transform, from points down the page to
+        // points per em up it.
+        let size = text.size.to_pt();
+        let (a, b, c, d) = (ts.sx.get(), ts.ky.get(), ts.kx.get(), ts.sy.get());
 
         let mut x = 0.0;
         let mut y = 0.0;
         for glyph in &text.glyphs {
             let id = ttf_parser::GlyphId(glyph.id);
-            // Fonts use a y-up coordinate system.
-            let origin = (
-                x + glyph.x_offset.at(text.size).to_pt(),
-                -(y + glyph.y_offset.at(text.size).to_pt()),
+            let origin = Point::new(
+                Abs::pt(x + glyph.x_offset.at(text.size).to_pt()),
+                Abs::pt(-(y + glyph.y_offset.at(text.size).to_pt())),
             );
             x += glyph.x_advance.at(text.size).to_pt();
             y += glyph.y_advance.at(text.size).to_pt();
@@ -358,68 +366,47 @@ impl SceneBuilder {
                 // Bitmap, SVG, and layered colour glyphs (emoji) have no
                 // monochrome outline to draw as a path.
                 self.unsupported(false, true, "colour glyph");
-            }
-
-            let first_point = self.scene.outlines.x.len();
-            let row = r_int(self.scene.glyphs.id.len() + 1);
-            let mut outline = OutlineSink {
-                builder: self,
-                ts,
-                units,
-                origin,
-                owner: row,
-                last: (0.0, 0.0),
-            };
-            let has_outline = ttf.outline_glyph(id, &mut outline).is_some();
-            if !has_outline && !colour {
+            } else if ttf.glyph_bounding_box(id).is_none() {
                 // Whitespace draws nothing.
-                self.truncate_outlines(first_point);
                 continue;
             }
 
-            let o = Point::new(Abs::pt(origin.0), Abs::pt(origin.1)).transform(ts);
+            let o = origin.transform(ts);
             let g = &mut self.scene.glyphs;
             g.font.push(font_row);
             g.id.push(i32::from(glyph.id));
             g.x.push(o.x.to_pt());
             g.y.push(o.y.to_pt());
-            g.size.push(text.size.to_pt() * scale);
+            g.size.push(size * scale);
             g.rot.push(rotation);
+            g.xx.push(a * size);
+            g.xy.push(-c * size);
+            g.yx.push(-b * size);
+            g.yy.push(d * size);
             g.fill.push(fill.clone());
             g.stroke.push(stroke.clone());
             g.lwd.push(lwd);
-
-            let n_points = self.scene.outlines.x.len() - first_point;
-            self.add_glyph_to_run(first_point, n_points);
+            self.add_glyph_to_run();
         }
     }
 
-    fn truncate_outlines(&mut self, len: usize) {
-        let o = &mut self.scene.outlines;
-        o.x.truncate(len);
-        o.y.truncate(len);
-        o.sub.truncate(len);
-        self.scene.outline_owner.truncate(len);
-    }
-
-    /// Draw the glyph just added, whose outline is `n_points` points from
-    /// `first_point` (0-based), with the glyphs before it if they form a run.
-    fn add_glyph_to_run(&mut self, first_point: usize, n_points: usize) {
+    /// Draw the glyph just added with the glyphs before it, if they form a
+    /// run.
+    fn add_glyph_to_run(&mut self) {
         let runs = &mut self.scene.runs;
         if let Some(last) = runs.kind.len().checked_sub(1)
             && runs.kind[last] == "glyph"
             && runs.clip[last] == self.current_clip
         {
             runs.n_rows[last] += 1;
-            runs.n_points[last] += r_int(n_points);
             return;
         }
         let row = self.scene.glyphs.id.len();
-        self.begin_run("glyph", row, first_point + 1, n_points);
+        self.begin_run("glyph", row, 0, 0);
     }
 
     /// Start a run drawing one row from `row` and `n_points` points from
-    /// `point` (both 1-based).
+    /// `point` (both 1-based; 0 for no points).
     fn begin_run(&mut self, kind: &str, row: usize, point: usize, n_points: usize) {
         let clip = self.current_clip;
         let runs = &mut self.scene.runs;
@@ -547,14 +534,24 @@ impl SceneBuilder {
         self.begin_run(kind, row, first + 1, n_points);
     }
 
-    /// Row of `font` in the scene's font table, adding it if needed.
-    fn font_row(&mut self, font: &Font) -> i32 {
+    /// Row of `instance` in the scene's font table, adding it if needed.
+    fn font_row(&mut self, instance: &FontInstance) -> i32 {
+        let font = instance.font();
         let Some(found) = lookup_font(font) else {
-            // Not from the global store: glyph mode needs a font file.
-            self.unsupported(true, false, "font without a file");
+            // Not from the global store: neither glyphs nor outlines can find
+            // it again.
+            self.unsupported(false, false, "font outside the font store");
             return 0;
         };
-        if let Some(row) = self.font_rows.get(&found.store_index) {
+        let variations = instance
+            .variations()
+            .0
+            .iter()
+            .map(|(tag, value)| format!("{}={}", String::from_utf8_lossy(&tag.to_bytes()), value.0))
+            .collect::<Vec<_>>()
+            .join(",");
+        let key = (found.store_index, variations);
+        if let Some(row) = self.font_rows.get(&key) {
             return *row;
         }
         let info = font.info();
@@ -573,78 +570,11 @@ impl SceneBuilder {
             }
             .to_string(),
         );
+        f.variations.push(key.1.clone());
         let row = r_int(f.path.len());
-        self.font_rows.insert(found.store_index, row);
+        self.font_rows.insert(key, row);
         row
     }
-}
-
-/// Receives a glyph outline in font units and records it flattened in page
-/// coordinates.
-struct OutlineSink<'a> {
-    builder: &'a mut SceneBuilder,
-    ts: Transform,
-    /// Points per font unit.
-    units: f64,
-    origin: (f64, f64),
-    owner: i32,
-    last: (f64, f64),
-}
-
-impl OutlineSink<'_> {
-    fn map(&self, x: f32, y: f32) -> (f64, f64) {
-        let p = Point::new(
-            Abs::pt(self.origin.0 + f64::from(x) * self.units),
-            Abs::pt(self.origin.1 - f64::from(y) * self.units),
-        )
-        .transform(self.ts);
-        (p.x.to_pt(), p.y.to_pt())
-    }
-
-    fn emit(&mut self, p: (f64, f64)) {
-        let sub = self.builder.next_outline_sub;
-        push(&mut self.builder.scene.outlines, p, sub);
-        self.builder.scene.outline_owner.push(self.owner);
-        self.last = p;
-    }
-}
-
-impl ttf_parser::OutlineBuilder for OutlineSink<'_> {
-    fn move_to(&mut self, x: f32, y: f32) {
-        self.builder.next_outline_sub += 1;
-        let p = self.map(x, y);
-        self.emit(p);
-    }
-
-    fn line_to(&mut self, x: f32, y: f32) {
-        let p = self.map(x, y);
-        self.emit(p);
-    }
-
-    fn quad_to(&mut self, x1: f32, y1: f32, x: f32, y: f32) {
-        let (p0, q, p) = (self.last, self.map(x1, y1), self.map(x, y));
-        let c1 = (
-            p0.0 + 2.0 / 3.0 * (q.0 - p0.0),
-            p0.1 + 2.0 / 3.0 * (q.1 - p0.1),
-        );
-        let c2 = (p.0 + 2.0 / 3.0 * (q.0 - p.0), p.1 + 2.0 / 3.0 * (q.1 - p.1));
-        let mut points = Vec::new();
-        flatten_cubic(p0, c1, c2, p, 0, &mut points);
-        for point in points {
-            self.emit(point);
-        }
-    }
-
-    fn curve_to(&mut self, x1: f32, y1: f32, x2: f32, y2: f32, x: f32, y: f32) {
-        let (c1, c2, p) = (self.map(x1, y1), self.map(x2, y2), self.map(x, y));
-        let mut points = Vec::new();
-        flatten_cubic(self.last, c1, c2, p, 0, &mut points);
-        for point in points {
-            self.emit(point);
-        }
-    }
-
-    fn close(&mut self) {}
 }
 
 /// Stroke style of a shape row.
@@ -668,11 +598,11 @@ impl ShapeStroke {
 }
 
 /// `n` as an R integer, saturating at R's largest integer.
-fn r_int<T: TryInto<i32>>(n: T) -> i32 {
+pub(crate) fn r_int<T: TryInto<i32>>(n: T) -> i32 {
     n.try_into().unwrap_or(i32::MAX)
 }
 
-fn push(points: &mut Points, p: (f64, f64), sub: i32) {
+pub(crate) fn push(points: &mut Points, p: (f64, f64), sub: i32) {
     points.x.push(p.0);
     points.y.push(p.1);
     points.sub.push(sub);
@@ -804,7 +734,7 @@ fn dash_subpaths(
 /// Flatten a cubic Bézier into line segments, appending the end points of the
 /// segments (not `p0`), by subdividing until both control points are within
 /// the tolerance of the chord.
-fn flatten_cubic(
+pub(crate) fn flatten_cubic(
     p0: (f64, f64),
     p1: (f64, f64),
     p2: (f64, f64),
@@ -876,19 +806,19 @@ fn max_scale(ts: Transform) -> f64 {
 
 /// Where a font of the global store comes from.
 #[derive(Debug, Clone)]
-struct FontRef {
-    store_index: usize,
+pub(crate) struct FontRef {
+    pub store_index: usize,
     /// File path, or empty for a font embedded in the binary.
-    path: String,
-    collection_index: u32,
-    cache_key: String,
+    pub path: String,
+    pub collection_index: u32,
+    pub cache_key: String,
 }
 
 static FONT_REFS: LazyLock<Mutex<HashMap<Font, FontRef>>> =
     LazyLock::new(|| Mutex::new(HashMap::new()));
 
 /// Find `font` in the global font store.
-fn lookup_font(font: &Font) -> Option<FontRef> {
+pub(crate) fn lookup_font(font: &Font) -> Option<FontRef> {
     if let Some(found) = FONT_REFS
         .lock()
         .ok()
@@ -1030,8 +960,7 @@ mod tests {
         assert_eq!((r.row[0], r.n_rows[0]), (1, 1));
         assert_eq!((r.row[1], r.n_rows[1]), (1, 3));
         assert_eq!(r.segment, vec![1, 1]);
-        // The glyph run covers every outline point.
-        assert_eq!(run_points(&scene, 1), 0..scene.outlines.x.len());
+        assert_eq!((r.point[1], r.n_points[1]), (0, 0));
     }
 
     #[test]
@@ -1039,35 +968,6 @@ mod tests {
         let (_, scene) = scene_of("H H");
         assert_eq!(scene.glyphs.id.len(), 2);
         assert_eq!(scene.runs.n_rows, vec![2]);
-    }
-
-    #[test]
-    fn outlines_belong_to_their_glyphs_and_match_the_ink() {
-        let (frame, scene) = scene_of("Hxgy");
-        let o = &scene.outlines;
-        assert!(!o.x.is_empty());
-        let owners: std::collections::BTreeSet<i32> = scene.outline_owner.iter().copied().collect();
-        assert_eq!(owners.into_iter().collect::<Vec<_>>(), vec![1, 2, 3, 4]);
-
-        let Some(ink) = crate::bounds::ink_bounds(&frame) else {
-            panic!("text should have ink");
-        };
-        // Font bounding boxes include Bézier control points, so the outline
-        // lies inside them, a little within the box. Ink bounds have y down
-        // from the top; the outlines y up from the bottom.
-        let height = frame.height().to_pt();
-        let min_x = o.x.iter().copied().fold(f64::INFINITY, f64::min);
-        let min_y = o.y.iter().copied().fold(f64::INFINITY, f64::min);
-        let lowest = height - ink.max_y;
-        assert!(
-            min_x >= ink.min_x - 1e-6 && min_x - ink.min_x < 0.1,
-            "{min_x} vs {}",
-            ink.min_x
-        );
-        assert!(
-            min_y >= lowest - 1e-6 && min_y - lowest < 0.1,
-            "{min_y} vs {lowest}"
-        );
     }
 
     #[test]
@@ -1082,6 +982,12 @@ mod tests {
     fn scaled_text_reports_its_effective_size() {
         let (_, scene) = scene_of("#scale(200%, reflow: true)[H]");
         assert_close(scene.glyphs.size[0], 40.0);
+        // 20pt text at 200%: 40pt per em, y up.
+        let g = &scene.glyphs;
+        assert_close(g.xx[0], 40.0);
+        assert_close(g.yy[0], 40.0);
+        assert_close(g.xy[0], 0.0);
+        assert_close(g.yx[0], 0.0);
 
         let (_, skewed) = scene_of("#scale(x: 200%, y: 100%, reflow: true)[H]");
         assert!(skewed.path_ok);
@@ -1147,6 +1053,7 @@ mod tests {
         );
         assert_eq!(f.weight[0], 400);
         assert_eq!(f.style[0], "normal");
+        assert_eq!(f.variations[0], "");
         let Ok(store_index) = usize::try_from(f.store_index[0]) else {
             panic!("store index should be non-negative");
         };

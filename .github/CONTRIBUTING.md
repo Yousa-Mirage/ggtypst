@@ -110,6 +110,8 @@ entry points:
 - `rs_typst_render()` compiles Typst and returns the page’s size, scene,
   and diagnostics, plus its SVG when the scene cannot be drawn with
   paths
+- `rs_glyph_outlines()` computes the outlines of a scene’s glyphs, only
+  when its text is drawn as paths
 - `rs_typst_font_data()` returns the data of a font built into the
   binary, to write it to a file for native glyphs
 - `rs_convert_latex_to_typst()` converts LaTeX-style input through MiTeX
@@ -120,8 +122,10 @@ Important modules include:
   files
 - `render.rs`: compiles Typst documents and describes the first page
   (size, scene, and SVG for the fallback)
-- `scene.rs`: walks the laid-out page into a scene of glyphs, outlines,
-  shapes, clip regions, and fonts
+- `scene.rs`: walks the laid-out page into a draw-ready scene of glyphs,
+  shapes, clip regions, drawing runs, and fonts
+- `outlines.rs`: computes glyph outlines from a scene’s glyph table and
+  fonts, for drawing text as paths
 - `bounds.rs`: ink bounds and font descent of a page
 - `mitex.rs`: bridges LaTeX-style input through MiTeX
 - `error.rs`: translates Rust-side failures into structured R errors

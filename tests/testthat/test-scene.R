@@ -77,3 +77,40 @@ test_that("clipped groups are clipped", {
   expect_lt(ink[["right"]] - ink[["left"]], 5.2)
   expect_gt(ink[["right"]] - ink[["left"]], 4)
 })
+
+test_that("glyph outlines are computed only when text is drawn as paths", {
+  scene <- typst_test_grob("Hello $x^2$")$children[[1]]
+  expect_null(scene$scene$outlines)
+
+  count <- new.env()
+  count$calls <- 0
+  compute <- rs_glyph_outlines
+  local_mocked_bindings(
+    rs_glyph_outlines = function(...) {
+      count$calls <- count$calls + 1
+      compute(...)
+    }
+  )
+
+  with_renderer("glyph", grid::makeContent(scene))
+  expect_equal(count$calls, 0)
+  with_renderer("path", grid::makeContent(scene))
+  with_renderer("path", grid::makeContent(scene))
+  expect_equal(count$calls, 1)
+})
+
+test_that("outlines are found again for a scene from another session", {
+  scene <- typst_render(build_typst_source("Hxg"))$scene
+  expected <- glyph_outlines(scene)
+
+  # Font store indices from another session no longer point at the font.
+  scene$fonts$store_index <- .Machine$integer.max
+  expect_equal(glyph_outlines(scene), expected)
+
+  scene$fonts$cache_key <- "Missing-0-0000000000000000"
+  expect_error(
+    glyph_outlines(scene),
+    "Cannot draw glyph outlines",
+    class = "ggtypst_typst_error"
+  )
+})

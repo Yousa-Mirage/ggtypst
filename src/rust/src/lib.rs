@@ -4,6 +4,7 @@ mod bounds;
 mod error;
 mod fonts;
 mod mitex;
+mod outlines;
 mod render;
 mod scene;
 mod world;
@@ -22,6 +23,17 @@ fn rs_typst_render(typst_code: &str) -> List {
 
     match result {
         Ok(rendered) => rendered.into_r_list(),
+        Err(err) => err.to_typst_error(),
+    }
+}
+
+/// Outlines of a scene's glyphs, for drawing its text as paths.
+#[extendr]
+fn rs_glyph_outlines(fonts: List, glyphs: List) -> List {
+    let outlines = outlines::from_r(&fonts, &glyphs)
+        .and_then(|(fonts, glyphs)| outlines::glyph_outlines(&fonts, &glyphs));
+    match outlines {
+        Ok(outlines) => outlines.into_r_list(),
         Err(err) => err.to_typst_error(),
     }
 }
@@ -50,6 +62,7 @@ fn rs_convert_latex_to_typst(latex_code: &str) -> Robj {
 extendr_module! {
     mod ggtypst;
     fn rs_typst_render;
+    fn rs_glyph_outlines;
     fn rs_typst_font_data;
     fn rs_convert_latex_to_typst;
 }

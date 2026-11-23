@@ -41,10 +41,17 @@ impl RenderDiagnostic {
 
 #[derive(Debug)]
 pub enum RenderError {
-    CompilationFailed { diagnostics: Vec<RenderDiagnostic> },
+    CompilationFailed {
+        diagnostics: Vec<RenderDiagnostic>,
+    },
     NoPagesGenerated,
     EmptyPage,
-    MitexConversionFailed { message: String },
+    MitexConversionFailed {
+        message: String,
+    },
+    OutlinesUnavailable {
+        message: String,
+    },
 }
 
 impl std::error::Error for RenderError {}
@@ -56,6 +63,7 @@ impl RenderError {
             RenderError::NoPagesGenerated => "NoPagesGenerated",
             RenderError::EmptyPage => "EmptyPage",
             RenderError::MitexConversionFailed { .. } => "MitexConversionFailed",
+            RenderError::OutlinesUnavailable { .. } => "OutlinesUnavailable",
         }
     }
 
@@ -65,6 +73,7 @@ impl RenderError {
             RenderError::NoPagesGenerated => List::new(0),
             RenderError::EmptyPage => List::new(0),
             RenderError::MitexConversionFailed { .. } => List::new(0),
+            RenderError::OutlinesUnavailable { .. } => List::new(0),
         };
 
         let mut err = list!(
@@ -89,6 +98,9 @@ impl std::fmt::Display for RenderError {
             RenderError::EmptyPage => write!(f, "Typst output has nothing to draw"),
             RenderError::MitexConversionFailed { message } => {
                 write!(f, "MiTeX conversion failed: {message}")
+            }
+            RenderError::OutlinesUnavailable { message } => {
+                write!(f, "Cannot draw glyph outlines: {message}")
             }
         }
     }

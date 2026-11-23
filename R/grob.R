@@ -139,15 +139,21 @@ scene_children <- function(x, mode) {
   }
 
   font_list <- NULL
-  if (mode == "glyph" && length(x$scene$glyphs$id) > 0L) {
-    entry$font_dir <- font_cache_dir()
-    entry$font_files <- typst_font_files(x$scene$fonts)
-    font_list <- glyph_font_list(x$scene$fonts, entry$font_files)
+  outlines <- NULL
+  if (length(x$scene$glyphs$id) > 0L) {
+    if (mode == "glyph") {
+      entry$font_dir <- font_cache_dir()
+      entry$font_files <- typst_font_files(x$scene$fonts)
+      font_list <- glyph_font_list(x$scene$fonts, entry$font_files)
+    } else {
+      outlines <- glyph_outlines(x$scene)
+    }
   }
   entry$children <- scene_grobs(
     x$scene,
     mode,
     font_list,
+    outlines,
     x$scale,
     x$width_pt,
     x$height_pt
