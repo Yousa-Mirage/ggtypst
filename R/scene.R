@@ -61,10 +61,7 @@ scene_grobs <- function(
     if (id == 0L || length(children) == 0L) {
       return(children)
     }
-    list(grid::gTree(
-      children = do.call(grid::gList, children),
-      vp = clip_viewport(scene, id, scale)
-    ))
+    list(clipped_grob(scene, id, do.call(grid::gList, children), scale))
   })
   do.call(grid::gList, unlist(segments, recursive = FALSE))
 }
@@ -88,6 +85,24 @@ raster_grob <- function(rasters, i, scale) {
     default.units = "bigpts",
     interpolate = rasters$interpolate[i]
   )
+}
+
+# `children` clipped by clip region `id` and every region around it.
+#
+# Clipping viewports inside each other does not intersect their clip regions:
+# grid uses the innermost one. Drawing the clipped content as a group and
+# clipping the group to the outer region does intersect them.
+clipped_grob <- function(scene, id, children, scale) {
+  grob <- grid::gTree(children = children, vp = clip_viewport(scene, id, scale))
+  outer <- scene$clips$parent[id]
+  while (outer != 0L) {
+    grob <- grid::gTree(
+      children = grid::gList(grid::groupGrob(grob)),
+      vp = clip_viewport(scene, outer, scale)
+    )
+    outer <- scene$clips$parent[outer]
+  }
+  grob
 }
 
 # A viewport over the layout box, clipped to clip region `id`.

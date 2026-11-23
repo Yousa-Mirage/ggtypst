@@ -106,6 +106,9 @@ pub struct Shapes {
 pub struct Clips {
     pub point: Vec<i32>,
     pub n_points: Vec<i32>,
+    /// The clip region this one is inside (row of `clips`), or 0. Content is
+    /// drawn clipped by its region and all regions around it.
+    pub parent: Vec<i32>,
 }
 
 /// What to draw, in Typst's drawing order: one grob per run.
@@ -209,7 +212,7 @@ impl Scene {
                 linejoin = s.linejoin
             ),
             shape_points = list!(x = sp.x, y = sp.y, sub = sp.sub),
-            clips = list!(point = c.point, n_points = c.n_points),
+            clips = list!(point = c.point, n_points = c.n_points, parent = c.parent),
             clip_points = list!(x = cp.x, y = cp.y, sub = cp.sub),
             runs = list!(
                 kind = r.kind,
@@ -305,10 +308,6 @@ impl SceneBuilder {
                     let inner = ts.pre_concat(group.transform);
                     match &group.clip {
                         None => self.frame(&group.frame, inner),
-                        Some(_) if self.current_clip != 0 => {
-                            self.unsupported(false, false, "nested clipped group");
-                            self.frame(&group.frame, inner);
-                        }
                         Some(clip) => {
                             // The clip outline is in the group's own coordinates.
                             let first = self.scene.clip_points.x.len();
@@ -323,10 +322,12 @@ impl SceneBuilder {
                             clips
                                 .n_points
                                 .push(r_int(self.scene.clip_points.x.len() - first));
+                            clips.parent.push(self.current_clip);
 
+                            let outer = self.current_clip;
                             self.current_clip = r_int(clips.point.len());
                             self.frame(&group.frame, inner);
-                            self.current_clip = 0;
+                            self.current_clip = outer;
                         }
                     }
                 }
@@ -1396,11 +1397,19 @@ mod tests {
     }
 
     #[test]
-    fn unsupported_content_is_flagged() {
-        let (_, nested) =
-            scene_of("#box(clip: true, width: 8pt)[#box(clip: true, width: 5pt)[HHH]]");
-        assert!(!nested.path_ok && !nested.glyph_ok);
+    fn nested_clip_regions_know_their_parent() {
+        let (_, scene) =
+            scene_of("#box(clip: true, width: 8pt)[H #box(clip: true, width: 5pt)[HHH] H] H");
+        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        assert_eq!(scene.clips.parent, vec![0, 1]);
+        // Glyphs in the outer region, the inner one, the outer one again, and
+        // outside both.
+        assert_eq!(scene.runs.clip, vec![1, 2, 1, 0]);
+        assert_eq!(scene.runs.segment, vec![1, 2, 3, 4]);
+    }
 
+    #[test]
+    fn unsupported_content_is_flagged() {
         let (_, stroked) = scene_of("#text(stroke: 0.5pt + red)[H]");
         assert!(stroked.path_ok && !stroked.glyph_ok);
         assert_eq!(stroked.glyphs.stroke[0].as_deref(), Some("#FF4136FF"));

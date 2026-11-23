@@ -14,38 +14,6 @@ test_that("typst_render returns the page size and scene", {
   expect_null(res$fallback)
 })
 
-test_that("typst_render returns SVG only for content paths cannot draw", {
-  res <- typst_render(build_typst_source(
-    "#box(clip: true)[#box(clip: true)[Hello]]"
-  ))
-  expect_false(res$scene$path_ok)
-
-  svg_txt <- rawToChar(res$fallback$svg)
-  expect_true(grepl("^\\s*<svg\\b", svg_txt))
-  expect_true(grepl("</svg>\\s*$", svg_txt))
-})
-
-test_that("the fallback SVG canvas covers the page and any overhanging ink", {
-  # A box on the baseline, lower than the cap height, stays inside the layout
-  # box: the canvas is the page, rounded up to whole points.
-  res <- typst_render(build_typst_source(
-    "#box(clip: true)[#box(clip: true)[#box(width: 20.5pt, height: 4pt, fill: black)]]",
-    size = 12
-  ))
-  expect_identical(res$fallback$offset_x_pt, 0)
-  expect_identical(res$fallback$offset_y_pt, 0)
-  expect_identical(res$fallback$width_pt, ceiling(res$width_pt))
-  expect_identical(res$fallback$height_pt, ceiling(res$height_pt))
-
-  # An italic f overhangs its advance box on both sides.
-  res <- typst_render(build_typst_source(
-    '#box(clip: true)[#box(clip: true)[#text(style: "italic")[f]]]',
-    size = 40
-  ))
-  expect_gt(res$fallback$offset_x_pt, 0)
-  expect_gt(res$fallback$width_pt, res$fallback$offset_x_pt + res$width_pt)
-})
-
 test_that("typst_render reports EmptyPage for empty-like Typst input", {
   empty_like_cases <- c(
     "",

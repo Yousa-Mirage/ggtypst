@@ -176,3 +176,21 @@ test_that("colour glyphs are images only when text is drawn as paths", {
   outlines <- glyph_outlines(scene$scene)
   expect_equal(outlines$n_points[scene$scene$glyphs$colour], 0L)
 })
+
+test_that("nested clip regions are intersected", {
+  skip_if_not_installed("ragg")
+  skip_if_not_installed("png")
+
+  # A tall clip region around a wide one: only their 30pt square shows.
+  grob <- typst_test_grob(
+    r"(#box(clip: true, width: 30pt, height: 50pt)[#box(clip: true, width: 50pt, height: 30pt)[#rect(width: 50pt, height: 50pt, fill: black)]])",
+    hjust = 0,
+    vjust = 0
+  )
+  for (mode in c("glyph", "path")) {
+    ink <- with_renderer(mode, raster_ink(grob))
+    expect_equal(unname(ink[["right"]] - ink[["left"]]), 30, tolerance = 0.01)
+    expect_equal(unname(ink[["bottom"]] - ink[["top"]]), 30, tolerance = 0.01)
+  }
+  expect_null(grob$children[[1]]$fallback)
+})
