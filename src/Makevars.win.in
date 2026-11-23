@@ -3,7 +3,9 @@ TARGET = $(subst 64,x86_64,$(subst 32,i686,$(WIN)))-pc-windows-gnu
 TARGET_DIR = ./rust/target
 LIBDIR = $(TARGET_DIR)/$(TARGET)/@LIBDIR@
 STATLIB = $(LIBDIR)/libggtypst.a
-PKG_LIBS = -L$(LIBDIR) -lggtypst -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll
+# Windows libraries Rust's standard library needs; synchronization provides
+# WaitOnAddress and WakeByAddress*, which its locks use.
+PKG_LIBS = -L$(LIBDIR) -lggtypst -lws2_32 -ladvapi32 -luserenv -lbcrypt -lntdll -lsynchronization
 
 all: $(SHLIB) rust_clean
 
