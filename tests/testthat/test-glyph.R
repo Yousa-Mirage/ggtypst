@@ -96,7 +96,12 @@ test_that("embedded fonts are written once to the font cache", {
   expect_equal(fonts$path, "")
 
   file <- typst_font_files(fonts)
-  expect_equal(dirname(file), cache)
+
+  expect_equal(
+    normalizePath(dirname(file), winslash = "/"),
+    normalizePath(cache, winslash = "/")
+  )
+
   # An OpenType font with CFF outlines (Libertinus) starts with "OTTO".
   expect_identical(readBin(file, "raw", 4), charToRaw("OTTO"))
   expect_length(list.files(cache, all.files = TRUE, no.. = TRUE), 1)
@@ -296,10 +301,22 @@ test_that("ggsave() output gets outlines in pdf() and embedded fonts in cairo_pd
   })
 })
 
-# Draw a rendered label with or without `glyphInfo(rot = )`.
-rotation_ink <- function(rendered, rot) {
-  local_mocked_bindings(glyph_rot_supported = function() rot)
+# Ink of a rendered label drawn as native glyphs without `glyphInfo(rot = )`,
+# as on R before 4.5, and as outlines, which do not depend on R's version.
+turned_ink <- function(rendered) {
+  local_mocked_bindings(glyph_rot_supported = function() FALSE)
   with_renderer("glyph", raster_ink(positioned_typst_grob(rendered)))
+}
+
+outline_ink <- function(rendered) {
+  with_renderer("path", raster_ink(positioned_typst_grob(rendered)))
+}
+
+# How a scene is drawn on a device that draws glyphs, with or without
+# `glyphInfo(rot = )`.
+mode_with_rot <- function(scene, rot) {
+  local_mocked_bindings(glyph_rot_supported = function() rot)
+  with_renderer("glyph", typst_render_mode(scene))
 }
 
 test_that("without per-glyph rotation, a rotated label is drawn in a turned viewport", {
@@ -311,7 +328,7 @@ test_that("without per-glyph rotation, a rotated label is drawn in a turned view
       build_typst_source("Hxample", size = 20, angle = angle)
     )
     expect_lt(
-      max(abs(rotation_ink(rendered, FALSE) - rotation_ink(rendered, TRUE))),
+      max(abs(turned_ink(rendered) - outline_ink(rendered))),
       0.15
     )
   }
@@ -332,13 +349,12 @@ test_that("without per-glyph rotation, unrotated text needs no viewport", {
 
 test_that("without per-glyph rotation, labels mixing angles are drawn as outlines", {
   scene <- scene_grob("H #box(rotate(30deg)[H]) H")$scene
-  expect_equal(with_renderer("glyph", typst_render_mode(scene)), "glyph")
+  expect_equal(mode_with_rot(scene, TRUE), "glyph")
+  expect_equal(mode_with_rot(scene, FALSE), "path")
 
-  local_mocked_bindings(glyph_rot_supported = function() FALSE)
-  expect_equal(with_renderer("glyph", typst_render_mode(scene)), "path")
   # A label rotated as a whole keeps native glyphs.
   rotated <- scene_grob("Hxample", angle = 90)$scene
-  expect_equal(with_renderer("glyph", typst_render_mode(rotated)), "glyph")
+  expect_equal(mode_with_rot(rotated, FALSE), "glyph")
 })
 
 test_that("visual: annotations, geoms, and theme elements as native glyphs", {
