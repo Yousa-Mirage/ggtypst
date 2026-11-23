@@ -1,10 +1,6 @@
 # Native glyph rendering, requested with options(ggtypst.renderer = "glyph").
 # The rest of the suite draws text as outlines (see helper.R).
 
-skip_if_no_glyphs <- function() {
-  skip_if_not(glyphs_supported(), "native glyphs need R >= 4.3")
-}
-
 with_renderer <- function(renderer, code) {
   old <- options(ggtypst.renderer = renderer)
   on.exit(options(old))
@@ -16,8 +12,6 @@ scene_grob <- function(code, ...) {
 }
 
 test_that("the renderer option chooses glyphs or outlines", {
-  skip_if_no_glyphs()
-
   scene <- scene_grob("Hello $x^2/2$")
   glyph <- with_renderer("glyph", grid::makeContent(scene))$children
   path <- with_renderer("path", grid::makeContent(scene))$children
@@ -29,8 +23,6 @@ test_that("the renderer option chooses glyphs or outlines", {
 })
 
 test_that("text glyphs cannot express falls back to outlines", {
-  skip_if_no_glyphs()
-
   scene <- scene_grob("#text(stroke: 0.3pt + red)[Hello]")
   expect_false(scene$scene$glyph_ok)
   children <- with_renderer("glyph", grid::makeContent(scene))$children
@@ -38,7 +30,6 @@ test_that("text glyphs cannot express falls back to outlines", {
 })
 
 test_that("glyphs are drawn where the outlines are", {
-  skip_if_no_glyphs()
   skip_if_not_installed("ragg")
   skip_if_not_installed("png")
 
@@ -52,7 +43,6 @@ test_that("glyphs are drawn where the outlines are", {
 })
 
 test_that("glyphs rasterize like grid text, unlike outlines", {
-  skip_if_no_glyphs()
   skip_if_not_installed("ragg")
   skip_if_not_installed("png")
   skip_if_not_installed("systemfonts")
@@ -81,8 +71,6 @@ test_that("glyphs rasterize like grid text, unlike outlines", {
 })
 
 test_that("embedded fonts are written once to the font cache", {
-  skip_if_no_glyphs()
-
   cache <- tempfile("font-cache")
   old <- options(ggtypst.font_cache = cache)
   on.exit(options(old), add = TRUE)
@@ -111,8 +99,6 @@ mode_on <- function(scene, open_device) {
 }
 
 test_that("auto draws glyphs where devices rasterize or embed fonts", {
-  skip_if_no_glyphs()
-
   scene <- scene_grob("Hello")$scene
   with_renderer("auto", {
     expect_equal(mode_on(scene, function() grDevices::pdf(NULL)), "path")
@@ -134,24 +120,13 @@ test_that("auto draws glyphs where devices rasterize or embed fonts", {
 })
 
 test_that("auto draws outlines when glyphs cannot express the text", {
-  skip_if_no_glyphs()
   skip_if_not_installed("ragg")
 
   scene <- scene_grob("#text(stroke: 0.3pt + red)[Hello]")$scene
   with_renderer("auto", expect_equal(mode_on(scene, function() ragg::agg_png(tempfile())), "path"))
 })
 
-test_that("R before 4.3 always draws outlines", {
-  local_mocked_bindings(glyphs_supported = function() FALSE)
-  scene <- scene_grob("Hello")$scene
-
-  expect_equal(with_renderer("glyph", typst_render_mode(scene)), "path")
-  skip_if_not_installed("ragg")
-  expect_equal(with_renderer("auto", mode_on(scene, function() ragg::agg_png(tempfile()))), "path")
-})
-
 test_that("ggsave() output gets outlines in pdf() and embedded fonts in cairo_pdf()", {
-  skip_if_no_glyphs()
   skip_if_not(isTRUE(capabilities("cairo")), "needs cairo")
 
   p <- ggplot() + annotate_typst("Hello $x^2$", x = 0, y = 0) + theme_void()

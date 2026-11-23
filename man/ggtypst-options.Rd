@@ -21,8 +21,8 @@ drawn as outlines so it looks the same on every computer.
 \item \code{"path"}: outlines on every device.
 }
 
-Native glyphs need R 4.3 or later. Text they cannot express, such as text
-with a stroke, is always drawn as outlines.
+Text that native glyphs cannot express, such as text with a stroke, is
+always drawn as outlines.
 \item \code{ggtypst.font_cache}: directory where fonts built into ggtypst (Typst's
 default fonts) are written so that graphics devices can load them for
 native glyphs. Defaults to a directory in \code{\link[=tempdir]{tempdir()}}, written once per

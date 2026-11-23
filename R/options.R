@@ -16,8 +16,8 @@
 #'   - `"glyph"`: native glyphs on every device.
 #'   - `"path"`: outlines on every device.
 #'
-#'   Native glyphs need R 4.3 or later. Text they cannot express, such as text
-#'   with a stroke, is always drawn as outlines.
+#'   Text that native glyphs cannot express, such as text with a stroke, is
+#'   always drawn as outlines.
 #' - `ggtypst.font_cache`: directory where fonts built into ggtypst (Typst's
 #'   default fonts) are written so that graphics devices can load them for
 #'   native glyphs. Defaults to a directory in [tempdir()], written once per

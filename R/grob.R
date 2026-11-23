@@ -180,9 +180,9 @@ svg_fallback_available <- function() {
 #' Follows `getOption("ggtypst.renderer")` (see [ggtypst-options]). With
 #' `"auto"`, text is drawn as native glyphs on devices that rasterize or embed
 #' fonts, and as outlines on devices that only reference fonts by name (such as
-#' [grDevices::pdf()]), where glyphs could be shown in the wrong font. Native
-#' glyphs need R 4.3 or later and a scene that glyphs can express (no stroked or
-#' skewed text, ...); otherwise text is always drawn as outlines.
+#' [grDevices::pdf()]), where glyphs could be shown in the wrong font. Scenes
+#' that glyphs cannot express (stroked or skewed text, ...) are always drawn as
+#' outlines.
 #'
 #' Called when the grob is drawn, so the device in use decides.
 #'
@@ -197,7 +197,7 @@ typst_render_mode <- function(scene) {
       "x" = "It is {.val {renderer}}."
     ))
   }
-  if (renderer == "path" || !glyphs_supported() || !isTRUE(scene$glyph_ok)) {
+  if (renderer == "path" || !isTRUE(scene$glyph_ok)) {
     return("path")
   }
   if (renderer == "glyph" || device_draws_glyphs()) "glyph" else "path"
@@ -224,12 +224,6 @@ device_draws_glyphs <- function() {
   name <- names(grDevices::dev.cur())
   known <- startsWith(name, "agg_") || name %in% glyph_devices
   known && isTRUE(grDevices::dev.capabilities("glyphs")$glyphs)
-}
-
-# Native glyph rendering (grDevices::glyphInfo(), grid::glyphGrob()) arrived
-# in R 4.3.
-glyphs_supported <- function() {
-  getRversion() >= "4.3.0"
 }
 
 #' Grid grobs drawing a scene, in Typst's drawing order

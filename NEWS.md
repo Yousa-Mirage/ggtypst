@@ -1,5 +1,7 @@
 # ggtypst 0.2.0
 
+- **(BREAKING)** ggtypst now requires R >= 4.3, which added the native glyph
+  rendering (`grid::glyphGrob()`) used to draw Typst text.
 - **(BREAKING)** `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`
   now require optional arguments after `x` and `y` to be named, so misplaced
   positional inputs and misspelled argument names fail fast.
@@ -30,7 +32,7 @@
   it is no longer heavier than `element_text()` on screen and `cairo_pdf()`
   embeds the real fonts. On `pdf()` and `postscript()`, which only reference
   fonts by name, text is drawn as outlines so it looks the same everywhere.
-  See `?ggtypst-options` to choose (native glyphs need R >= 4.3).
+  See `?ggtypst-options` to choose.
 - `rsvg` and `grImport2` are no longer required. They are only used, when
   installed, to draw Typst content that ggtypst cannot draw with grid yet
   (gradients, images, and color glyphs drawn as outlines), so most

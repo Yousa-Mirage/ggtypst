@@ -24,7 +24,7 @@ Config/rextendr/version: 0.5.0
 Config/Needs/website: pkgdown, pkgload
 SystemRequirements: Cargo (Rust's package manager), rustc >= 1.89.0
 Depends: 
-    R (>= 4.2),
+    R (>= 4.3),
     ggplot2
 Imports:
     S7,

@@ -148,7 +148,7 @@ test_that("justification is relative to the Typst layout box, not the padded can
 test_that("text and shapes are drawn in Typst's order", {
   scene <- typst_test_grob("#box(fill: yellow)[Hi] H")$children[[1]]
 
-  for (mode in c("path", if (glyphs_supported()) "glyph")) {
+  for (mode in c("path", "glyph")) {
     old <- options(ggtypst.renderer = mode)
     children <- grid::makeContent(scene)$children
     options(old)

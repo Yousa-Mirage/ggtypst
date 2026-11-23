@@ -14,7 +14,7 @@ together.
 
 You will need:
 
-- R \>= 4.2
+- R \>= 4.3
 - Rust \>= 1.89 with `cargo` and `rustc`, better with `rust-analyzer`
 - [`Air`](https://posit-dev.github.io/air/) for formatting R code and
   [`Jarl`](https://jarl.etiennebacher.com/) for checking R code
