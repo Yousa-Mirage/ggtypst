@@ -1,10 +1,10 @@
-use extendr_api::prelude::{IntoRobj, List, list};
+use extendr_api::prelude::{List, list};
 use typst::compile;
 use typst::diag::Warned;
-use typst::layout::{Abs, FrameItem, Point, Size};
-use typst_layout::{Page, PagedDocument};
+use typst::layout::FrameItem;
+use typst_layout::PagedDocument;
 
-use crate::bounds::{Bounds, ink_bounds, max_descent_pt};
+use crate::bounds::max_descent_pt;
 use crate::error::{RenderDiagnostic, RenderError, diagnostics_to_r_list};
 use crate::scene::{Scene, extract_scene};
 use crate::world::InMemoryWorld;
@@ -17,48 +17,17 @@ pub struct RenderedPage {
     pub height_pt: f64,
     pub descent_pt: f64,
     pub scene: Scene,
-    /// The page as SVG, only when the scene cannot be drawn with paths.
-    pub fallback: Option<FallbackSvg>,
     pub warnings: Vec<RenderDiagnostic>,
 }
 
 impl RenderedPage {
     pub fn into_r_list(self) -> List {
-        let fallback = self
-            .fallback
-            .map_or_else(|| ().into_robj(), |f| f.into_r_list().into_robj());
         list!(
             width_pt = self.width_pt,
             height_pt = self.height_pt,
             descent_pt = self.descent_pt,
             scene = self.scene.into_r_list(),
-            fallback = fallback,
             warnings = diagnostics_to_r_list(&self.warnings)
-        )
-    }
-}
-
-/// The SVG fallback for a page, when the scene cannot be drawn with paths.
-#[derive(Debug)]
-pub struct FallbackSvg {
-    /// The page as SVG, encoded as UTF-8 bytes.
-    pub svg: Vec<u8>,
-    /// The canvas size in points.
-    pub width_pt: f64,
-    pub height_pt: f64,
-    /// The page's top-left corner is at (`offset_x_pt`, `offset_y_pt`) on the canvas.
-    pub offset_x_pt: f64,
-    pub offset_y_pt: f64,
-}
-
-impl FallbackSvg {
-    fn into_r_list(self) -> List {
-        list!(
-            svg = self.svg,
-            width_pt = self.width_pt,
-            height_pt = self.height_pt,
-            offset_x_pt = self.offset_x_pt,
-            offset_y_pt = self.offset_y_pt
         )
     }
 }
@@ -84,53 +53,13 @@ impl InMemoryWorld {
             return Err(RenderError::EmptyPage);
         }
 
-        let scene = extract_scene(page, raster_dpi);
-
-        // Only generate an SVG fallback if the scene cannot be drawn with paths.
-        let fallback = if scene.path_ok {
-            None
-        } else {
-            Some(fallback_svg(page))
-        };
-
         Ok(RenderedPage {
             width_pt: page.frame.width().to_pt(),
             height_pt: page.frame.height().to_pt(),
             descent_pt: max_descent_pt(&page.frame),
-            scene,
-            fallback,
+            scene: extract_scene(page, raster_dpi),
             warnings,
         })
-    }
-}
-
-/// Render `page` as SVG on a canvas covering all of its ink.
-fn fallback_svg(page: &Page) -> FallbackSvg {
-    let page_bounds = Bounds {
-        min_x: 0.0,
-        min_y: 0.0,
-        max_x: page.frame.width().to_pt(),
-        max_y: page.frame.height().to_pt(),
-    };
-    let canvas = ink_bounds(&page.frame).map_or(page_bounds, |ink| ink.union(page_bounds));
-
-    let offset_x_pt = -canvas.min_x;
-    let offset_y_pt = -canvas.min_y;
-    let width_pt = canvas.width().ceil();
-    let height_pt = canvas.height().ceil();
-
-    let mut page = page.clone();
-    page.frame
-        .translate(Point::new(Abs::pt(offset_x_pt), Abs::pt(offset_y_pt)));
-    page.frame
-        .set_size(Size::new(Abs::pt(width_pt), Abs::pt(height_pt)));
-
-    FallbackSvg {
-        svg: typst_svg::svg(&page, &typst_svg::SvgOptions::default()).into_bytes(),
-        width_pt,
-        height_pt,
-        offset_x_pt,
-        offset_y_pt,
     }
 }
 
@@ -180,22 +109,6 @@ mod tests {
         compile_source(&typst_source)
     }
 
-    /// The SVG fallback of `source`'s page. No content needs it any more, so
-    /// it is made directly.
-    fn fallback_of(source: &str) -> (RenderedPage, FallbackSvg) {
-        let world = InMemoryWorld::new(source.to_string(), fonts::get_fonts());
-        let Ok(doc) = typst::compile::<PagedDocument>(&world).output else {
-            panic!("source should compile: {source}");
-        };
-        let Some(page) = doc.pages().first() else {
-            panic!("document should have a page");
-        };
-        let Ok(rendered) = compile_source(source) else {
-            panic!("source should render: {source}");
-        };
-        (rendered, fallback_svg(page))
-    }
-
     #[test]
     fn test_render_success_for_visible_text() {
         let result = compile_source("Hello, Typst!");
@@ -217,7 +130,7 @@ mod tests {
     }
 
     #[test]
-    fn test_render_needs_no_svg_for_content_grid_can_draw() {
+    fn test_render_describes_painted_and_clipped_content() {
         // Gradients are images and nested clip regions are grid groups.
         for source in [
             "Hello, Typst!",
@@ -227,44 +140,8 @@ mod tests {
             let Ok(rendered) = compile_source(source) else {
                 panic!("source should render: {source}");
             };
-            assert!(rendered.fallback.is_none(), "{source}");
+            assert!(rendered.scene.glyph_ok, "{source}");
         }
-    }
-
-    #[test]
-    fn test_fallback_canvas_hugs_the_page_when_no_ink_overhangs() {
-        let source = concat!(
-            "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
-            "#box(width: 20.5pt, height: 10.25pt, fill: black)"
-        );
-        let (_, fallback) = fallback_of(source);
-
-        assert_eq!(fallback.offset_x_pt, 0.0);
-        assert_eq!(fallback.offset_y_pt, 0.0);
-        assert_eq!(fallback.width_pt, 21.0);
-        assert_eq!(fallback.height_pt, 11.0);
-
-        let svg = String::from_utf8_lossy(&fallback.svg);
-        assert!(
-            svg.contains("viewBox=\"0 0 21 "),
-            "svg header should use the canvas"
-        );
-    }
-
-    #[test]
-    fn test_fallback_canvas_covers_overhanging_ink() {
-        let source = concat!(
-            "#set page(width: auto, height: auto, margin: 0pt, fill: none)\n",
-            "#set text(size: 40pt)\n",
-            "#text(style: \"italic\")[f]"
-        );
-        let (rendered, fallback) = fallback_of(source);
-
-        // The italic f overhangs its advance box on both sides.
-        assert!(fallback.offset_x_pt > 0.0, "{fallback:?}");
-        assert!(fallback.width_pt > fallback.offset_x_pt + rendered.width_pt);
-        assert_eq!(fallback.width_pt, fallback.width_pt.trunc());
-        assert_eq!(fallback.height_pt, fallback.height_pt.trunc());
     }
 
     #[test]

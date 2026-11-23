@@ -129,7 +129,6 @@ test_that("gradients are drawn as images in place of the text", {
   }
   gradient <- label("gradient.linear(black, luma(20%))")
   scene <- gradient$children[[1]]
-  expect_true(scene$scene$path_ok)
   expect_equal(scene$scene$runs$kind, "raster")
 
   for (mode in c("glyph", "path")) {
@@ -192,5 +191,4 @@ test_that("nested clip regions are intersected", {
     expect_equal(unname(ink[["right"]] - ink[["left"]]), 30, tolerance = 0.01)
     expect_equal(unname(ink[["bottom"]] - ink[["top"]]), 30, tolerance = 0.01)
   }
-  expect_null(grob$children[[1]]$fallback)
 })

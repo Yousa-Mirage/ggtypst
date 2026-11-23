@@ -68,8 +68,7 @@ Other R files include:
 - `diagnostic.R`: formats Rust/Typst diagnostics into structured `cli` warnings and errors.
 - `typst-render.R`: thin R wrapper around the Rust renderer entrypoint.
 - `grob.R`: turns rendered output into measured grid grobs that choose native glyphs or outlines when drawn, and caches
-  what they drew; content the scene cannot describe yet (gradients, images) falls back to importing the SVG with the
-  optional `rsvg` and `grImport2` packages.
+  what they drew.
 - `scene.R`: draws a rendered scene with grid (glyph runs, outlines, shapes, clip regions) and provides the font files
   native glyphs need.
 - `helper.R`: shared validators, alias resolution, face normalization, unit conversion, and small utility helpers.
@@ -84,8 +83,7 @@ Other R files include:
 
 The Rust crate lives in `src/rust/` and currently exposes three exported entry points:
 
-- `rs_typst_render()` compiles Typst and returns the page's size, scene, and diagnostics, plus its SVG when the scene
-  cannot be drawn with paths
+- `rs_typst_render()` compiles Typst and returns the page's size, scene, and diagnostics
 - `rs_glyph_outlines()` computes the outlines of a scene's glyphs, only when its text is drawn as paths
 - `rs_typst_write_font()` writes a font built into the binary to a file, so devices can load it for native glyphs
 - `rs_convert_latex_to_typst()` converts LaTeX-style input through MiTeX
@@ -93,7 +91,7 @@ The Rust crate lives in `src/rust/` and currently exposes three exported entry p
 Important modules include:
 
 - `world.rs`: builds the in-memory Typst world and serves embedded Typst files
-- `render.rs`: compiles Typst documents and describes the first page (size, scene, and SVG for the fallback)
+- `render.rs`: compiles Typst documents and describes the first page (size and scene)
 - `scene.rs`: walks the laid-out page into a draw-ready scene of glyphs, shapes, clip regions, drawing runs, and fonts
 - `raster.rs`: draws what grid cannot (gradients, tilings, images, colour glyphs drawn as paths) as images with
   Typst's own renderer, `typst-render`

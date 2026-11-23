@@ -34,13 +34,11 @@ Imports:
     rlang
 Suggests: 
     ggtext,
-    grImport2,
     knitr,
     pkgdown,
     png,
     ragg,
     rmarkdown,
-    rsvg,
     spelling,
     svglite,
     systemfonts,

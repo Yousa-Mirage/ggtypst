@@ -20,7 +20,6 @@ typst-kit = { version = "0.15.0", features = [
 ], default-features = false }
 typst-layout = "0.15.0"
 typst-render = "0.15.0"
-typst-svg = "0.15.0"
 
 [lints.rust]
 warnings = "deny"

@@ -722,7 +722,6 @@ dependencies = [
  "typst-kit",
  "typst-layout",
  "typst-render",
- "typst-svg",
 ]
 
 [[package]]

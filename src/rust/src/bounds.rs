@@ -71,6 +71,7 @@ impl Bounds {
 }
 
 /// Ink bounds of everything `frame` draws, or `None` if it draws nothing.
+#[cfg(test)]
 pub fn ink_bounds(frame: &Frame) -> Option<Bounds> {
     frame_bounds(frame, Transform::identity())
 }

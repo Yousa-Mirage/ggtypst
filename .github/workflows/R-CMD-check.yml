@@ -59,11 +59,6 @@ jobs:
           use-public-rspm: true
           extra-repositories: https://community.r-multiverse.org
 
-      - name: Install Linux system dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y librsvg2-dev
 
       - name: Install Rust toolchain (Unix)
         if: runner.os != 'Windows'

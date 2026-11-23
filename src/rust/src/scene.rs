@@ -13,8 +13,9 @@
 //! - fonts: the font files the glyphs come from.
 //!
 //! Rows and points are numbered from 1, so R can index with them directly.
-//! Content that a mode cannot express clears `path_ok` or `glyph_ok`, so R can
-//! fall back to another way of drawing the page.
+//! Text that native glyphs cannot draw (stroked or skewed) clears `glyph_ok`,
+//! so R draws it as paths. Everything else can be drawn either way: content
+//! grid cannot draw at all (gradients, tilings, images) is drawn as images.
 
 use std::any::Any;
 use std::collections::HashMap;
@@ -163,11 +164,9 @@ pub struct Scene {
     pub runs: Runs,
     pub rasters: Rasters,
     pub fonts: Fonts,
-    /// Everything can be drawn from glyph outlines and `shapes`.
-    pub path_ok: bool,
     /// Everything can be drawn from `glyphs` and `shapes`.
     pub glyph_ok: bool,
-    /// Why a mode is unavailable, for diagnostics.
+    /// Why native glyphs cannot draw the scene, for diagnostics.
     pub unsupported: Vec<String>,
 }
 
@@ -182,7 +181,6 @@ impl Scene {
             runs: r,
             rasters,
             fonts: f,
-            path_ok,
             glyph_ok,
             unsupported,
         } = self;
@@ -235,7 +233,6 @@ impl Scene {
                 style = f.style,
                 variations = f.variations
             ),
-            path_ok = path_ok,
             glyph_ok = glyph_ok,
             unsupported = unsupported
         )
@@ -248,7 +245,6 @@ pub fn extract_scene(page: &Page, raster_dpi: f64) -> Scene {
     let frame = &page.frame;
     let mut builder = SceneBuilder {
         scene: Scene {
-            path_ok: true,
             glyph_ok: true,
             ..Scene::default()
         },
@@ -290,9 +286,9 @@ struct SceneBuilder {
 }
 
 impl SceneBuilder {
-    fn unsupported(&mut self, path: bool, glyph: bool, reason: &str) {
-        self.scene.path_ok &= path;
-        self.scene.glyph_ok &= glyph;
+    /// Note that native glyphs cannot draw the scene, and why.
+    fn no_glyphs(&mut self, reason: &str) {
+        self.scene.glyph_ok = false;
         if !self.scene.unsupported.iter().any(|r| r == reason) {
             self.scene.unsupported.push(reason.to_string());
         }
@@ -359,7 +355,7 @@ impl SceneBuilder {
             None => (None, 0.0),
             Some((hex, stroke)) => {
                 // Native glyphs cannot be stroked.
-                self.unsupported(true, false, "stroked text");
+                self.no_glyphs("stroked text");
                 (
                     Some(hex),
                     stroke.thickness.to_pt() * max_scale(ts) * LWD_PER_PT,
@@ -371,7 +367,7 @@ impl SceneBuilder {
             Some(st) => st,
             None => {
                 // Skewed or unevenly scaled text cannot be drawn as glyphs.
-                self.unsupported(true, false, "skewed text");
+                self.no_glyphs("skewed text");
                 (max_scale(ts), 0.0)
             }
         };
@@ -1075,7 +1071,7 @@ mod tests {
         assert_close(g.rot[0], 0.0);
         assert_eq!(g.fill[0], "#000000FF");
         assert_eq!(g.stroke[0], None);
-        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        assert!(scene.glyph_ok, "{:?}", scene.unsupported);
     }
 
     #[test]
@@ -1118,7 +1114,6 @@ mod tests {
         assert_close(g.yx[0], 0.0);
 
         let (_, skewed) = scene_of("#scale(x: 200%, y: 100%, reflow: true)[H]");
-        assert!(skewed.path_ok);
         assert!(!skewed.glyph_ok);
     }
 
@@ -1229,7 +1224,7 @@ mod tests {
         let (_, scene) = scene_of(
             "#line(length: 30pt, stroke: (paint: black, thickness: 1pt, dash: (4pt, 2pt)))",
         );
-        assert!(scene.path_ok, "{:?}", scene.unsupported);
+        assert!(scene.unsupported.is_empty(), "{:?}", scene.unsupported);
         let p = &scene.shape_points;
         let mut starts = Vec::new();
         let mut lengths = Vec::new();
@@ -1281,7 +1276,7 @@ mod tests {
     #[test]
     fn clipped_groups_record_their_clip_region() {
         let (_, scene) = scene_of("#box(clip: true, width: 5pt)[HHH] H");
-        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        assert!(scene.glyph_ok, "{:?}", scene.unsupported);
         assert_eq!(scene.clips.point, vec![1]);
         assert_eq!(
             usize::try_from(scene.clips.n_points[0]).ok(),
@@ -1331,7 +1326,7 @@ mod tests {
         let (_, scene) = scene_of(
             "#rect(width: 40pt, height: 10pt, stroke: none, fill: gradient.linear(rgb(\"#ff0000\"), rgb(\"#0000ff\")))",
         );
-        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        assert!(scene.glyph_ok, "{:?}", scene.unsupported);
         assert_eq!(kinds(&scene), vec!["raster"]);
         assert_eq!(scene.runs.only, vec![""]);
         let r = &scene.rasters;
@@ -1386,7 +1381,7 @@ mod tests {
         if !scene.glyphs.colour.contains(&true) {
             return;
         }
-        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        assert!(scene.glyph_ok, "{:?}", scene.unsupported);
         // The emoji is a native glyph, and an image for drawing as paths.
         assert_eq!(scene.glyphs.colour, vec![false, true]);
         let raster = scene.runs.kind.iter().position(|k| k == "raster");
@@ -1400,7 +1395,7 @@ mod tests {
     fn nested_clip_regions_know_their_parent() {
         let (_, scene) =
             scene_of("#box(clip: true, width: 8pt)[H #box(clip: true, width: 5pt)[HHH] H] H");
-        assert!(scene.path_ok && scene.glyph_ok, "{:?}", scene.unsupported);
+        assert!(scene.glyph_ok, "{:?}", scene.unsupported);
         assert_eq!(scene.clips.parent, vec![0, 1]);
         // Glyphs in the outer region, the inner one, the outer one again, and
         // outside both.
@@ -1411,7 +1406,7 @@ mod tests {
     #[test]
     fn unsupported_content_is_flagged() {
         let (_, stroked) = scene_of("#text(stroke: 0.5pt + red)[H]");
-        assert!(stroked.path_ok && !stroked.glyph_ok);
+        assert!(!stroked.glyph_ok);
         assert_eq!(stroked.glyphs.stroke[0].as_deref(), Some("#FF4136FF"));
         assert_close(stroked.glyphs.lwd[0], 0.5 * LWD_PER_PT);
     }

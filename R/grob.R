@@ -54,8 +54,7 @@ positioned_typst_grob <- function(
 #'
 #' The grob's content is built when it is drawn (see
 #' `makeContent.typst_scene_grob()`), so it can draw text as native glyphs or
-#' as outlines to suit the device, and fall back to importing the SVG for
-#' content neither can express.
+#' as outlines to suit the device.
 #'
 #' @param rendered A rendered Typst result from `typst_render()`.
 #' @param x,y Position of the anchor.
@@ -96,7 +95,6 @@ scene_typst_grob <- function(
 
   grid::gTree(
     scene = rendered$scene,
-    fallback = rendered$fallback,
     scale = scale,
     width_pt = width,
     height_pt = height,
@@ -125,18 +123,6 @@ makeContent.typst_scene_grob <- function(x) {
 # can be reused.
 scene_children <- function(x, mode) {
   entry <- list(scale = x$scale, font_dir = NULL, font_files = character())
-
-  # Content grid paths cannot draw yet (gradients, images, colour glyphs):
-  # import the SVG, placed on the layout box this viewport spans. Without the
-  # optional packages it needs, warn once and draw what grid paths can.
-  if (mode == "path" && !is.null(x$fallback)) {
-    if (svg_fallback_installed()) {
-      svg <- svg_typst_grob(x$fallback, x$height_pt, x$scale)
-      entry$children <- grid::gList(svg)
-      return(entry)
-    }
-    warn_svg_fallback_missing()
-  }
 
   font_list <- NULL
   outlines <- NULL
@@ -171,23 +157,6 @@ scene_children_valid <- function(entry, scale) {
   is.null(entry$font_dir) ||
     (identical(entry$font_dir, font_cache_dir()) &&
       all(file.exists(entry$font_files)))
-}
-
-# The SVG fallback needs rsvg and grImport2, which are optional.
-svg_fallback_installed <- function() {
-  requireNamespace("rsvg", quietly = TRUE) &&
-    requireNamespace("grImport2", quietly = TRUE)
-}
-
-warn_svg_fallback_missing <- function() {
-  cli::cli_warn(
-    c(
-      "Some Typst content (gradients, images, or colour glyphs) cannot be drawn as outlines.",
-      "i" = "Install {.pkg rsvg} and {.pkg grImport2} to draw it, or draw text as native glyphs (see {.topic ggtypst::ggtypst-options})."
-    ),
-    .frequency = "once",
-    .frequency_id = "ggtypst_svg_fallback"
-  )
 }
 
 #' Choose how to draw a scene's text: `"glyph"` or `"path"`
@@ -252,59 +221,6 @@ device_draws_glyphs <- function() {
   name <- names(grDevices::dev.cur())
   known <- startsWith(name, "agg_") || name %in% glyph_devices
   known && isTRUE(grDevices::dev.capabilities("glyphs")$glyphs)
-}
-
-#' Import Typst SVG output as a picture grob
-#'
-#' Fallback for pages the scene cannot draw with paths. Imports the SVG through
-#' `grImport2` and returns a `pictureGrob` drawn at exactly 1:1 (times `scale`)
-#' with Typst's point coordinates, with the layout box's bottom-left corner at
-#' the bottom-left corner of the current viewport.
-#'
-#' The SVG canvas covers the layout box and any ink drawn outside it (italic
-#' overhangs, descender tails, moved or rotated content), rounded up to whole
-#' points; the layout box's top-left corner sits at (`offset_x_pt`,
-#' `offset_y_pt`) on it.
-#'
-#' @param fallback The `fallback` of a rendered Typst result.
-#' @param height Height of the layout box in points.
-#' @param scale Scaling factor applied to the rendered output.
-#' @return A `grImport2` picture grob of class `"typst_svg_fallback"`.
-#' @noRd
-svg_typst_grob <- function(fallback, height, scale = 1) {
-  # grImport2 only reads Cairo-generated SVG, so re-render it with rsvg. Pass
-  # the whole-point canvas size explicitly so rsvg neither truncates nor
-  # rescales the drawing. It is oversampled by an integer factor (so the size
-  # stays exact) because grImport2 flattens curves with a fixed number of
-  # segments per canvas unit: at 1:1 glyph outlines look faceted when zoomed.
-  canonical_svg <- rsvg::rsvg_svg(
-    fallback$svg,
-    width = fallback$width_pt * 8L,
-    height = fallback$height_pt * 8L
-  )
-
-  # readPicture() hands its argument to XML::xmlParse(), which parses a string
-  # starting with "<" as XML content.
-  picture <- grImport2::readPicture(rawToChar(canonical_svg), warn = FALSE)
-
-  grob <- grImport2::pictureGrob(
-    picture,
-    x = 0,
-    y = 0,
-    width = grid::unit(fallback$width_pt * scale, "bigpts"),
-    height = grid::unit(fallback$height_pt * scale, "bigpts"),
-    # Anchor the canvas at the layout box's bottom-left corner, given as a
-    # fraction of the canvas (grid's vjust counts from the bottom).
-    hjust = fallback$offset_x_pt / fallback$width_pt,
-    vjust = (fallback$height_pt - fallback$offset_y_pt - height) /
-      fallback$height_pt,
-    # pictureGrob() pads the picture by 5% per side by default, which would
-    # draw Typst output at 1 / 1.1 of its size.
-    expansion = 0,
-    ext = "clipbbox"
-  )
-  class(grob) <- c("typst_svg_fallback", class(grob))
-  grob
 }
 
 #' @noRd

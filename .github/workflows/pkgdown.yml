@@ -33,10 +33,6 @@ jobs:
           use-public-rspm: true
           extra-repositories: https://community.r-multiverse.org
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y librsvg2-dev
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

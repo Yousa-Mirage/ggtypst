@@ -4,14 +4,12 @@ test_that("typst_render returns the page size and scene", {
   expect_type(res, "list")
   expect_named(
     res,
-    c("width_pt", "height_pt", "descent_pt", "scene", "fallback", "warnings")
+    c("width_pt", "height_pt", "descent_pt", "scene", "warnings")
   )
   expect_type(res$width_pt, "double")
   expect_type(res$height_pt, "double")
   expect_type(res$scene, "list")
   expect_type(res$warnings, "list")
-  # Paths can draw plain text, so there is no SVG to fall back on.
-  expect_null(res$fallback)
 })
 
 test_that("typst_render reports EmptyPage for empty-like Typst input", {
