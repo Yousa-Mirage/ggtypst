@@ -167,7 +167,13 @@ GeomTypst <- ggplot2::ggproto(
     data
   },
 
-  draw_panel = function(data, panel_params, coord, na.rm = FALSE, size.unit = "pt") {
+  draw_panel = function(
+    data,
+    panel_params,
+    coord,
+    na.rm = FALSE,
+    size.unit = "pt"
+  ) {
     if (nrow(data) == 0) {
       return(ggplot2::zeroGrob())
     }
@@ -188,7 +194,18 @@ GeomTypst <- ggplot2::ggproto(
     data <- ggplot2::remove_missing(
       data,
       na.rm = na.rm,
-      vars = c("x", "y", "label", "scale", "size", "hjust", "vjust", "colour", "face", "family"),
+      vars = c(
+        "x",
+        "y",
+        "label",
+        "scale",
+        "size",
+        "hjust",
+        "vjust",
+        "colour",
+        "face",
+        "family"
+      ),
       name = "geom_typst"
     )
 
@@ -278,7 +295,10 @@ geom_typst_row_grob <- function(
         face = face,
         family = normalize_optional_string(family, empty_is_null = TRUE),
         lineheight = normalize_optional_number(lineheight),
-        math_family = normalize_optional_string(math_family, empty_is_null = TRUE),
+        math_family = normalize_optional_string(
+          math_family,
+          empty_is_null = TRUE
+        ),
         angle = normalize_optional_number(angle),
         hjust = hjust
       )

@@ -85,8 +85,16 @@ test_that("annotate_math_mitex normalization yields equivalent layer parameters"
       x = c(gp$xmin, gp$xmax),
       y = c(gp$ymin, gp$ymax),
       grob_class = class(grob),
-      width_pt = grid::convertWidth(grid::grobWidth(grob), "pt", valueOnly = TRUE),
-      height_pt = grid::convertHeight(grid::grobHeight(grob), "pt", valueOnly = TRUE)
+      width_pt = grid::convertWidth(
+        grid::grobWidth(grob),
+        "pt",
+        valueOnly = TRUE
+      ),
+      height_pt = grid::convertHeight(
+        grid::grobHeight(grob),
+        "pt",
+        valueOnly = TRUE
+      )
     )
   }
 

@@ -40,19 +40,32 @@ ink_extent <- function(grob) {
   grDevices::dev.off()
   svg <- as.character(s())
 
-  num <- function(x) as.numeric(unlist(regmatches(x, gregexpr("-?[0-9]+(\\.[0-9]+)?", x))))
-  attr_num <- function(el, name) num(regmatches(el, regexpr(sprintf("\\s%s='[^']+'", name), el)))
+  num <- function(x) {
+    as.numeric(unlist(regmatches(x, gregexpr("-?[0-9]+(\\.[0-9]+)?", x))))
+  }
+  attr_num <- function(el, name) {
+    num(regmatches(el, regexpr(sprintf("\\s%s='[^']+'", name), el)))
+  }
 
-  clip_ids <- regmatches(svg, gregexpr("(?<=<clipPath id=')[^']+", svg, perl = TRUE))[[1]]
+  clip_ids <- regmatches(
+    svg,
+    gregexpr("(?<=<clipPath id=')[^']+", svg, perl = TRUE)
+  )[[1]]
   clips <- lapply(clip_ids, function(id) {
-    el <- regmatches(svg, regexpr(sprintf("<clipPath id='%s'>\\s*<rect[^>]+>", id), svg))
+    el <- regmatches(
+      svg,
+      regexpr(sprintf("<clipPath id='%s'>\\s*<rect[^>]+>", id), svg)
+    )
     x <- attr_num(el, "x")
     y <- attr_num(el, "y")
     c(x, x + attr_num(el, "width"), y, y + attr_num(el, "height"))
   })
   names(clips) <- clip_ids
 
-  groups <- regmatches(svg, gregexpr("<g clip-path='url\\(#[^)]+\\)'>.*?</g>", svg))[[1]]
+  groups <- regmatches(
+    svg,
+    gregexpr("<g clip-path='url\\(#[^)]+\\)'>.*?</g>", svg)
+  )[[1]]
   boxes <- lapply(groups, function(g) {
     clip <- clips[[regmatches(g, regexpr("(?<=url\\(#)[^)]+", g, perl = TRUE))]]
     # Leading whitespace keeps `d=` from matching inside `id=`.
@@ -68,7 +81,12 @@ ink_extent <- function(grob) {
       c(x, x + attr_num(r, "width"), y, y + attr_num(r, "height"))
     })
     lapply(c(shape_boxes, rect_boxes), function(b) {
-      c(max(b[1], clip[1]), min(b[2], clip[2]), max(b[3], clip[3]), min(b[4], clip[4]))
+      c(
+        max(b[1], clip[1]),
+        min(b[2], clip[2]),
+        max(b[3], clip[3]),
+        min(b[4], clip[4])
+      )
     })
   })
   boxes <- do.call(rbind, unlist(boxes, recursive = FALSE))
@@ -100,9 +118,14 @@ drawn_subpaths <- function(grob) {
     v <- as.numeric(regmatches(txt, gregexpr("-?[0-9]+(\\.[0-9]+)?", txt))[[1]])
     matrix(v, ncol = 2, byrow = TRUE)
   }
-  points <- regmatches(svg, gregexpr("<(polygon|polyline) points='[^']+'", svg))[[1]]
+  points <- regmatches(
+    svg,
+    gregexpr("<(polygon|polyline) points='[^']+'", svg)
+  )[[1]]
   paths <- regmatches(svg, gregexpr("<path d='[^']+'", svg))[[1]]
-  subpaths <- unlist(lapply(paths, function(p) strsplit(sub("^<path d='", "", p), "(?=M)", perl = TRUE)[[1]]))
+  subpaths <- unlist(lapply(paths, function(p) {
+    strsplit(sub("^<path d='", "", p), "(?=M)", perl = TRUE)[[1]]
+  }))
   subpaths <- subpaths[grepl("[0-9]", subpaths)]
   lapply(c(points, subpaths), to_matrix)
 }
@@ -116,5 +139,7 @@ raster_ink <- function(grob) {
   ink <- (1 - png::readPNG(file)[,, 1]) > 0.3
   rows <- which(rowSums(ink) > 0)
   cols <- which(colSums(ink) > 0)
-  c(left = min(cols), right = max(cols), top = min(rows), bottom = max(rows)) * 72 / 600
+  c(left = min(cols), right = max(cols), top = min(rows), bottom = max(rows)) *
+    72 /
+    600
 }

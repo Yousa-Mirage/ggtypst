@@ -7,5 +7,7 @@ test_that("typst_render returns structured warnings for missing font family", {
 
   expect_type(res$warnings, "list")
   expect_gt(length(res$warnings), 0)
-  expect_true(all(c("severity", "message", "hints") %in% names(res$warnings[[1]])))
+  expect_true(all(
+    c("severity", "message", "hints") %in% names(res$warnings[[1]])
+  ))
 })

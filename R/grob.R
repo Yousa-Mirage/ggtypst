@@ -120,12 +120,16 @@ makeContent.typst_scene_grob <- function(x) {
     }
     warn_svg_fallback_missing()
   }
-  grid::setChildren(x, scene_grobs(x$scene, mode, x$scale, x$width_pt, x$height_pt))
+  grid::setChildren(
+    x,
+    scene_grobs(x$scene, mode, x$scale, x$width_pt, x$height_pt)
+  )
 }
 
 # The SVG fallback needs rsvg and grImport2, which are optional.
 svg_fallback_installed <- function() {
-  requireNamespace("rsvg", quietly = TRUE) && requireNamespace("grImport2", quietly = TRUE)
+  requireNamespace("rsvg", quietly = TRUE) &&
+    requireNamespace("grImport2", quietly = TRUE)
 }
 
 warn_svg_fallback_missing <- function() {
@@ -155,7 +159,11 @@ warn_svg_fallback_missing <- function() {
 #' @noRd
 typst_render_mode <- function(scene) {
   renderer <- getOption("ggtypst.renderer", "auto")
-  if (!is.character(renderer) || length(renderer) != 1L || !renderer %in% c("auto", "glyph", "path")) {
+  if (
+    !is.character(renderer) ||
+      length(renderer) != 1L ||
+      !renderer %in% c("auto", "glyph", "path")
+  ) {
     cli::cli_abort(c(
       "Option {.code ggtypst.renderer} must be {.val auto}, {.val glyph}, or {.val path}.",
       "x" = "It is {.val {renderer}}."
@@ -217,9 +225,14 @@ scene_grobs <- function(scene, mode, scale = 1, width, height) {
 
   # A new run starts at every shape, at every glyph that follows a shape, and
   # wherever the clip region changes.
-  changed <- c(TRUE, kind[-1] != kind[-length(kind)] | clip[-1] != clip[-length(clip)])
+  changed <- c(
+    TRUE,
+    kind[-1] != kind[-length(kind)] | clip[-1] != clip[-length(clip)]
+  )
   run <- cumsum(kind == "shape" | changed)
-  font_list <- if (mode == "glyph" && "glyph" %in% kind) glyph_font_list(scene$fonts)
+  font_list <- if (mode == "glyph" && "glyph" %in% kind) {
+    glyph_font_list(scene$fonts)
+  }
 
   runs <- split(seq_along(kind), run)
   grobs <- lapply(runs, function(i) {
@@ -289,7 +302,14 @@ glyph_run_grob <- function(glyphs, rows, font_list, scale, width, height) {
     col = glyphs$fill[rows],
     rot = glyphs$rot[rows]
   )
-  grid::glyphGrob(info, x = 0, y = 0, hjust = 0, vjust = 0, default.units = "npc")
+  grid::glyphGrob(
+    info,
+    x = 0,
+    y = 0,
+    hjust = 0,
+    vjust = 0,
+    default.units = "npc"
+  )
 }
 
 glyph_font_list <- function(fonts) {
@@ -297,7 +317,13 @@ glyph_font_list <- function(fonts) {
   do.call(
     grDevices::glyphFontList,
     lapply(seq_along(files), function(i) {
-      grDevices::glyphFont(files[i], fonts$collection_index[i], fonts$family[i], fonts$weight[i], fonts$style[i])
+      grDevices::glyphFont(
+        files[i],
+        fonts$collection_index[i],
+        fonts$family[i],
+        fonts$weight[i],
+        fonts$style[i]
+      )
     })
   )
 }
@@ -447,7 +473,8 @@ svg_typst_grob <- function(fallback, height, scale = 1) {
     # Anchor the canvas at the layout box's bottom-left corner, given as a
     # fraction of the canvas (grid's vjust counts from the bottom).
     hjust = fallback$offset_x_pt / fallback$width_pt,
-    vjust = (fallback$height_pt - fallback$offset_y_pt - height) / fallback$height_pt,
+    vjust = (fallback$height_pt - fallback$offset_y_pt - height) /
+      fallback$height_pt,
     # pictureGrob() pads the picture by 5% per side by default, which would
     # draw Typst output at 1 / 1.1 of its size.
     expansion = 0,

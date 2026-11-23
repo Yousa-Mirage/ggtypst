@@ -1,9 +1,24 @@
-required_packages <- c("ggplot2", "ggtypst", "grid", "hexSticker", "rsvg", "pkgdown", "cli", "sysfonts", "png")
-missing_packages <- required_packages[!vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)]
+required_packages <- c(
+  "ggplot2",
+  "ggtypst",
+  "grid",
+  "hexSticker",
+  "rsvg",
+  "pkgdown",
+  "cli",
+  "sysfonts",
+  "png"
+)
+missing_packages <- required_packages[
+  !vapply(required_packages, requireNamespace, logical(1), quietly = TRUE)
+]
 
 if (length(missing_packages) > 0) {
   stop(
-    sprintf("Missing required packages: %s", paste(missing_packages, collapse = ", ")),
+    sprintf(
+      "Missing required packages: %s",
+      paste(missing_packages, collapse = ", ")
+    ),
     call. = FALSE
   )
 }
@@ -33,7 +48,11 @@ typst_icon_path <- file.path(pkgdown_dir, "typst.svg")
 dir.create(dirname(logo_output_path), recursive = TRUE, showWarnings = FALSE)
 dir.create(favicon_dir, recursive = TRUE, showWarnings = FALSE)
 
-make_typst_logo_raster <- function(fill = "#FFFFFF", width = 420, height = 420) {
+make_typst_logo_raster <- function(
+  fill = "#FFFFFF",
+  width = 420,
+  height = 420
+) {
   svg <- paste(readLines(typst_icon_path, warn = FALSE), collapse = "")
   svg <- sub("<path ", sprintf("<path fill='%s' ", fill), svg, fixed = TRUE)
 
@@ -129,7 +148,12 @@ build_icon_plot <- function() {
       angle = -90,
       color = "#FFFFFF"
     ) +
-    ggplot2::coord_cartesian(xlim = c(1, 9), ylim = c(0.5, 9.5), expand = FALSE, clip = "off") +
+    ggplot2::coord_cartesian(
+      xlim = c(1, 9),
+      ylim = c(0.5, 9.5),
+      expand = FALSE,
+      clip = "off"
+    ) +
     ggplot2::theme_void() +
     ggplot2::theme(plot.margin = ggplot2::margin(0, 0, 0, 0))
 }

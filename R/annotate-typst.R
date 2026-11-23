@@ -60,7 +60,11 @@ annotate_typst <- function(
 ) {
   rlang::check_dots_empty()
 
-  typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
+  typst_code <- check_single_string(
+    typst_code,
+    "typst_code",
+    allow_null = FALSE
+  )
   x <- check_number(x, "x", allow_null = FALSE)
   y <- check_number(y, "y", allow_null = FALSE)
   hjust <- check_number(hjust, "hjust", allow_null = FALSE)

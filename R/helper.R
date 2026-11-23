@@ -116,7 +116,9 @@ resolve_arg_alias <- function(value, alias_value, arg, alias_arg) {
 #' @return The normalized face name.
 #' @noRd
 normalize_face <- function(face, arg = "face", allow_null = TRUE) {
-  if (is.null(face) || length(face) == 0 || (length(face) == 1 && is.na(face))) {
+  if (
+    is.null(face) || length(face) == 0 || (length(face) == 1 && is.na(face))
+  ) {
     if (allow_null) return(NULL)
   } else if (length(face) == 1) {
     if (is.numeric(face) && (face %in% 1:4)) {
@@ -301,7 +303,12 @@ transform_unique_values <- function(values, valid, rows, transform_fn) {
 #' @return `params` with aliases resolved and `face` normalized.
 #' @noRd
 normalize_face_param <- function(params, fn = NULL, supported = NULL) {
-  params$face <- resolve_arg_alias(params$face, params$fontface, "face", "fontface")
+  params$face <- resolve_arg_alias(
+    params$face,
+    params$fontface,
+    "face",
+    "fontface"
+  )
   params$fontface <- NULL
 
   if (!("face" %in% names(params))) {
@@ -321,7 +328,12 @@ normalize_face_param <- function(params, fn = NULL, supported = NULL) {
 #' @return `params` with color aliases resolved to `colour`.
 #' @noRd
 normalize_colour_param <- function(params) {
-  params$colour <- resolve_arg_alias(params$colour, params$color, "colour", "color")
+  params$colour <- resolve_arg_alias(
+    params$colour,
+    params$color,
+    "colour",
+    "color"
+  )
   params$color <- NULL
   params
 }
@@ -335,7 +347,13 @@ normalize_colour_param <- function(params) {
 #' @param rows Optional row indices for mapped aesthetics.
 #' @return Normalized face value(s).
 #' @noRd
-normalize_face_values <- function(face, fn = NULL, detail = NULL, supported = NULL, rows = NULL) {
+normalize_face_values <- function(
+  face,
+  fn = NULL,
+  detail = NULL,
+  supported = NULL,
+  rows = NULL
+) {
   if (is.null(face) || length(face) == 0) {
     return(face)
   }
@@ -569,7 +587,11 @@ validate_no_unescaped_dollar <- function(core, arg = "math_code") {
 #' @return The normalized inner LaTeX math code.
 #' @noRd
 as_latex_math_code <- function(latex_code) {
-  latex_code <- check_single_string(latex_code, "latex_math_code", allow_null = FALSE)
+  latex_code <- check_single_string(
+    latex_code,
+    "latex_math_code",
+    allow_null = FALSE
+  )
   core <- unwrap_math_dollar_delimiters(latex_code)
   validate_no_unescaped_dollar(core, arg = "latex_math_code")
 }
@@ -581,7 +603,11 @@ as_latex_math_code <- function(latex_code) {
 #' @return Typst math code wrapped with normalized outer dollar delimiters.
 #' @noRd
 as_typst_math_code <- function(typst_code, inline = FALSE) {
-  typst_code <- check_single_string(typst_code, "typst_math_code", allow_null = FALSE)
+  typst_code <- check_single_string(
+    typst_code,
+    "typst_math_code",
+    allow_null = FALSE
+  )
   inline <- check_bool(inline, "inline", allow_null = FALSE)
   core <- unwrap_math_dollar_delimiters(typst_code)
   validate_no_unescaped_dollar(core, arg = "typst_math_code")

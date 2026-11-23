@@ -31,7 +31,10 @@ warn_typst_warnings <- function(warnings) {
       hints <- diagnostic$hints
       if (length(hints) > 0) {
         msg <- c(msg, stats::setNames("{.strong Hint:}", "i"))
-        msg <- c(msg, stats::setNames(escape_cli(hints), rep(" ", length(hints))))
+        msg <- c(
+          msg,
+          stats::setNames(escape_cli(hints), rep(" ", length(hints)))
+        )
       }
 
       msg

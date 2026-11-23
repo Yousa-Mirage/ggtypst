@@ -20,7 +20,9 @@ test_that("Typst output is drawn at its exact size", {
 test_that("curved outlines are flattened finely enough to look smooth", {
   skip_if_not_installed("svglite")
 
-  outline <- drawn_subpaths(typst_test_grob("#circle(radius: 10pt, fill: black)"))[[1]]
+  outline <- drawn_subpaths(typst_test_grob(
+    "#circle(radius: 10pt, fill: black)"
+  ))[[1]]
   expect_gt(nrow(outline), 16)
 
   # Largest angle between consecutive outline vertices, seen from the centre.
@@ -55,9 +57,12 @@ test_that("lines of multi-line labels are aligned by hjust in every API", {
   }
 
   apis <- list(
-    annotate = function(h) annotate_typst(label, x = 0, y = 0, hjust = h)$geom_params$grob,
+    annotate = function(h) {
+      annotate_typst(label, x = 0, y = 0, hjust = h)$geom_params$grob
+    },
     geom = function(h) {
-      p <- ggplot(data.frame(x = 0, y = 0), aes(x, y)) + geom_typst(label = label, hjust = h)
+      p <- ggplot(data.frame(x = 0, y = 0), aes(x, y)) +
+        geom_typst(label = label, hjust = h)
       layer_grob(p)[[1]]
     },
     element = function(h) element_grob(element_typst(hjust = h), label = label)
@@ -104,8 +109,16 @@ test_that("baselines are 1.2 * lineheight font sizes apart", {
   # sits on the baseline.
   line_bottoms <- function(lineheight, prefix = "") {
     code <- paste0(prefix, "H #linebreak() H")
-    rendered <- typst_render(build_typst_source(code, size = 10, lineheight = lineheight))
-    vapply(drawn_subpaths(positioned_typst_grob(rendered)), function(m) max(m[, 2]), numeric(1))
+    rendered <- typst_render(build_typst_source(
+      code,
+      size = 10,
+      lineheight = lineheight
+    ))
+    vapply(
+      drawn_subpaths(positioned_typst_grob(rendered)),
+      function(m) max(m[, 2]),
+      numeric(1)
+    )
   }
 
   for (lineheight in c(1.2, 0.9, 0.5)) {
@@ -121,7 +134,10 @@ test_that("baselines are 1.2 * lineheight font sizes apart", {
 test_that("ink overhanging the layout box is drawn, not clipped", {
   skip_if_not_installed("svglite")
 
-  rendered <- typst_render(build_typst_source('#text(style: "italic")[f]', size = 40))
+  rendered <- typst_render(build_typst_source(
+    '#text(style: "italic")[f]',
+    size = 40
+  ))
   ink <- ink_extent(positioned_typst_grob(rendered, hjust = 0, vjust = 0.5))
 
   # With hjust = 0 the layout box starts at the device centre (144pt); the
@@ -136,7 +152,11 @@ test_that("justification is relative to the Typst layout box, not the padded can
   box <- "#box(width: 20pt, height: 10pt, fill: black)"
   rendered <- typst_render(build_typst_source(box))
 
-  bottom_left <- ink_extent(positioned_typst_grob(rendered, hjust = 0, vjust = 0))
+  bottom_left <- ink_extent(positioned_typst_grob(
+    rendered,
+    hjust = 0,
+    vjust = 0
+  ))
   top_right <- ink_extent(positioned_typst_grob(rendered, hjust = 1, vjust = 1))
 
   # Moving the anchor from one corner of the layout box to the other shifts the
@@ -155,14 +175,19 @@ test_that("text and shapes are drawn in Typst's order", {
     expect_length(children, 2)
     expect_s3_class(children[[1]], "pathgrob")
     expect_equal(children[[1]]$gp$fill, "#FFDC00FF")
-    expect_s3_class(children[[2]], if (mode == "glyph") "glyphgrob" else "pathgrob")
+    expect_s3_class(
+      children[[2]],
+      if (mode == "glyph") "glyphgrob" else "pathgrob"
+    )
   }
 })
 
 test_that("dashed strokes are drawn as separate dashes", {
   skip_if_not_installed("svglite")
 
-  grob <- typst_test_grob("#line(length: 30pt, stroke: (paint: black, dash: (4pt, 2pt)))")
+  grob <- typst_test_grob(
+    "#line(length: 30pt, stroke: (paint: black, dash: (4pt, 2pt)))"
+  )
   dashes <- drawn_subpaths(grob)
 
   expect_length(dashes, 5)
@@ -177,7 +202,11 @@ test_that("clipped groups are clipped", {
   skip_if_not_installed("png")
 
   # A 5pt wide clipped box holding much wider text.
-  grob <- typst_test_grob("#box(clip: true, width: 5pt, height: 8pt)[HHHHHH]", hjust = 0, vjust = 0)
+  grob <- typst_test_grob(
+    "#box(clip: true, width: 5pt, height: 8pt)[HHHHHH]",
+    hjust = 0,
+    vjust = 0
+  )
   ink <- raster_ink(grob)
 
   expect_lt(ink[["right"]] - ink[["left"]], 5.2)
@@ -185,7 +214,9 @@ test_that("clipped groups are clipped", {
 })
 
 test_that("content paths cannot draw falls back to the SVG", {
-  scene <- typst_test_grob(r"(#text(fill: gradient.linear(red, blue))[Hello])")$children[[1]]
+  scene <- typst_test_grob(
+    r"(#text(fill: gradient.linear(red, blue))[Hello])"
+  )$children[[1]]
   expect_false(scene$scene$path_ok)
 
   skip_if_not_installed("rsvg")
@@ -204,7 +235,10 @@ test_that("the SVG fallback is placed like the scene", {
   # The italic f overhangs its layout box, so the SVG canvas is larger than it.
   code <- r"(#text(style: "italic", fill: FILL)[Hxf])"
   ink <- function(fill, hjust, vjust) {
-    rendered <- typst_render(build_typst_source(sub("FILL", fill, code), size = 30))
+    rendered <- typst_render(build_typst_source(
+      sub("FILL", fill, code),
+      size = 30
+    ))
     raster_ink(positioned_typst_grob(rendered, hjust = hjust, vjust = vjust))
   }
 
@@ -217,7 +251,9 @@ test_that("the SVG fallback is placed like the scene", {
 
 test_that("without rsvg, the fallback warns once and draws what it can", {
   local_mocked_bindings(svg_fallback_installed = function() FALSE)
-  scene <- typst_test_grob(r"(#text(fill: gradient.linear(red, blue))[Hello] plain)")$children[[1]]
+  scene <- typst_test_grob(
+    r"(#text(fill: gradient.linear(red, blue))[Hello] plain)"
+  )$children[[1]]
 
   rlang::reset_message_verbosity("ggtypst_svg_fallback")
   expect_warning(children <- grid::makeContent(scene)$children, "rsvg")

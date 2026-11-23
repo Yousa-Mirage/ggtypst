@@ -33,7 +33,9 @@ merge_element_element_typst <- function(new, old, ...) {
   # Match ggplot2's element semantics: a concrete element overrides an existing
   # element_blank() at the same theme slot. inherit.blank is resolved later when
   # calc_element() combines parent and child theme elements.
-  if (inherits(old, "ggplot2::element_blank") || inherits(old, "element_blank")) {
+  if (
+    inherits(old, "ggplot2::element_blank") || inherits(old, "element_blank")
+  ) {
     return(new)
   }
 

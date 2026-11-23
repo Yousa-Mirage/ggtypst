@@ -95,8 +95,16 @@ test_that("element_typst scale changes rendered grob dimensions", {
     label = "Scale me"
   )
 
-  width_one <- grid::convertWidth(grid::grobWidth(grob_one), "pt", valueOnly = TRUE)
-  width_two <- grid::convertWidth(grid::grobWidth(grob_two), "pt", valueOnly = TRUE)
+  width_one <- grid::convertWidth(
+    grid::grobWidth(grob_one),
+    "pt",
+    valueOnly = TRUE
+  )
+  width_two <- grid::convertWidth(
+    grid::grobWidth(grob_two),
+    "pt",
+    valueOnly = TRUE
+  )
 
   expect_equal(width_two / width_one, 2, tolerance = 1e-6)
 })
@@ -224,8 +232,16 @@ test_that("element_grob.element_typst lineheight changes rendered height", {
   grob_loose <- element_typst(size = 12, lineheight = 1.8) |>
     element_grob(label = label)
 
-  height_tight <- grid::convertHeight(grid::grobHeight(grob_tight), "pt", valueOnly = TRUE)
-  height_loose <- grid::convertHeight(grid::grobHeight(grob_loose), "pt", valueOnly = TRUE)
+  height_tight <- grid::convertHeight(
+    grid::grobHeight(grob_tight),
+    "pt",
+    valueOnly = TRUE
+  )
+  height_loose <- grid::convertHeight(
+    grid::grobHeight(grob_loose),
+    "pt",
+    valueOnly = TRUE
+  )
 
   expect_gt(height_loose, height_tight)
 })
@@ -269,7 +285,11 @@ test_that("element_typst reserves the same height whatever the glyphs", {
   heights <- vapply(
     c("HHH", "ace", "Ågy"),
     function(label) {
-      grob <- element_grob(element_typst(size = 12), label = label, margin_y = TRUE)
+      grob <- element_grob(
+        element_typst(size = 12),
+        label = label,
+        margin_y = TRUE
+      )
       grid::convertHeight(grid::grobHeight(grob), "bigpts", valueOnly = TRUE)
     },
     numeric(1)
@@ -356,10 +376,17 @@ test_that("element_typst visual: subtitle caption debug size-unit", {
     theme(
       plot.title = element_typst(size = 14),
       plot.subtitle = element_typst(size = 8, size.unit = "mm", debug = TRUE),
-      plot.caption = element_typst(size = 10, face = "italic", colour = "#1E66F5")
+      plot.caption = element_typst(
+        size = 10,
+        face = "italic",
+        colour = "#1E66F5"
+      )
     )
 
-  vdiffr::expect_doppelganger("element-typst-subtitle-caption-debug-size-unit", p)
+  vdiffr::expect_doppelganger(
+    "element-typst-subtitle-caption-debug-size-unit",
+    p
+  )
 })
 
 test_that("element_typst visual: axis title y and legend text", {
@@ -368,7 +395,10 @@ test_that("element_typst visual: axis title y and legend text", {
   skip_on_cran()
 
   noto_cjk <- suppressWarnings(
-    typst_render(build_typst_source("probe 中文 ℃", family = "Noto Sans CJK SC"))
+    typst_render(build_typst_source(
+      "probe 中文 ℃",
+      family = "Noto Sans CJK SC"
+    ))
   )
 
   if (length(noto_cjk$warnings) > 0) {
@@ -410,7 +440,11 @@ test_that("element_typst visual: inherit blank on x title", {
     theme_minimal(base_size = 11) +
     theme(
       axis.title = element_blank(),
-      axis.title.x = element_typst(size = 12, debug = TRUE, inherit.blank = TRUE),
+      axis.title.x = element_typst(
+        size = 12,
+        debug = TRUE,
+        inherit.blank = TRUE
+      ),
       axis.title.y = element_typst(size = 12, colour = "#40A02B")
     )
 
@@ -425,8 +459,16 @@ test_that("element_typst visual: facet strip x and y", {
     facet_grid(vs ~ gear, labeller = label_both) +
     theme_minimal(base_size = 14) +
     theme(
-      strip.text.x = element_typst(size = 14, face = "bold", colour = "#1E66F5"),
-      strip.text.y = element_typst(size = 14, face = "italic", colour = "#D20F39")
+      strip.text.x = element_typst(
+        size = 14,
+        face = "bold",
+        colour = "#1E66F5"
+      ),
+      strip.text.y = element_typst(
+        size = 14,
+        face = "italic",
+        colour = "#D20F39"
+      )
     )
 
   vdiffr::expect_doppelganger("element-typst-facet-strip-x-y", p)
@@ -443,8 +485,16 @@ test_that("element_typst visual: multiline lineheight", {
     ) +
     theme_minimal(base_size = 11) +
     theme(
-      plot.title = element_typst(size = 14, lineheight = 0.8, colour = "#1E66F5"),
-      plot.subtitle = element_typst(size = 14, lineheight = 1.8, colour = "#D20F39")
+      plot.title = element_typst(
+        size = 14,
+        lineheight = 0.8,
+        colour = "#1E66F5"
+      ),
+      plot.subtitle = element_typst(
+        size = 14,
+        lineheight = 1.8,
+        colour = "#D20F39"
+      )
     )
 
   vdiffr::expect_doppelganger("element-typst-lineheight", p)

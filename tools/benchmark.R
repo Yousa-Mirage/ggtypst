@@ -25,9 +25,15 @@ if (!requireNamespace("ggtext", quietly = TRUE)) {
 
 suppressPackageStartupMessages(library(ggtext))
 
-build_typst_source_internal <- utils::getFromNamespace("build_typst_source", "ggtypst")
+build_typst_source_internal <- utils::getFromNamespace(
+  "build_typst_source",
+  "ggtypst"
+)
 typst_render_internal <- utils::getFromNamespace("typst_render", "ggtypst")
-convert_latex_to_typst_internal <- utils::getFromNamespace("convert_latex_to_typst", "ggtypst")
+convert_latex_to_typst_internal <- utils::getFromNamespace(
+  "convert_latex_to_typst",
+  "ggtypst"
+)
 
 # ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -201,23 +207,33 @@ out(divider())
 layer1_cases <- list(
   list(
     label = "plain_short",
-    expr = quote(typst_render_internal(build_typst_source_internal(typst_plain_short)))
+    expr = quote(typst_render_internal(build_typst_source_internal(
+      typst_plain_short
+    )))
   ),
   list(
     label = "plain_styled",
-    expr = quote(typst_render_internal(build_typst_source_internal(typst_plain_styled)))
+    expr = quote(typst_render_internal(build_typst_source_internal(
+      typst_plain_styled
+    )))
   ),
   list(
     label = "math_simple",
-    expr = quote(typst_render_internal(build_typst_source_internal(typst_math_simple)))
+    expr = quote(typst_render_internal(build_typst_source_internal(
+      typst_math_simple
+    )))
   ),
   list(
     label = "math_moderate",
-    expr = quote(typst_render_internal(build_typst_source_internal(typst_math_moderate)))
+    expr = quote(typst_render_internal(build_typst_source_internal(
+      typst_math_moderate
+    )))
   ),
   list(
     label = "math_complex",
-    expr = quote(typst_render_internal(build_typst_source_internal(typst_math_complex)))
+    expr = quote(typst_render_internal(build_typst_source_internal(
+      typst_math_complex
+    )))
   ),
   list(
     label = "mitex_simple",
@@ -260,7 +276,9 @@ cat("\nRunning Layer 2: Full Plot Performance...\n")
 out("\u2500\u2500 Layer 2: Full Plot Performance (End-to-End) \u2500\u2500")
 out("")
 out("  Measures build-and-draw time from already assembled ggplot objects,")
-out("  including Typst compilation, SVG import, and grid drawing to a null PDF device.")
+out(
+  "  including Typst compilation, SVG import, and grid drawing to a null PDF device."
+)
 out("")
 
 # ── 2A: API Type Comparison ─────────────────────────────────────────────────
@@ -288,9 +306,12 @@ make_geom_df <- function(n) {
   )
 }
 
-p_geom_1 <- base_plot + geom_math_typst(aes(x, y, label = label), data = make_geom_df(1), size = 12)
-p_geom_10 <- base_plot + geom_math_typst(aes(x, y, label = label), data = make_geom_df(10), size = 12)
-p_geom_50 <- base_plot + geom_math_typst(aes(x, y, label = label), data = make_geom_df(50), size = 12)
+p_geom_1 <- base_plot +
+  geom_math_typst(aes(x, y, label = label), data = make_geom_df(1), size = 12)
+p_geom_10 <- base_plot +
+  geom_math_typst(aes(x, y, label = label), data = make_geom_df(10), size = 12)
+p_geom_50 <- base_plot +
+  geom_math_typst(aes(x, y, label = label), data = make_geom_df(50), size = 12)
 
 # element
 p_element <- base_plot +
@@ -300,10 +321,30 @@ p_element <- base_plot +
 # 5 annotates on one plot
 p_annotate_5 <- base_plot +
   annotate_math_typst(r"(sum_(i=1)^n x_i)", x = 2.0, y = 33, size = 14) +
-  annotate_typst(r"(*Fuel efficiency model:* $hat(y) = beta_0 + beta_1 x$)", x = 4.0, y = 28, size = 12) +
-  annotate_math_mitex(r"(\int_0^1 x^2 \, dx = \frac{1}{3})", x = 2.5, y = 18, size = 14) +
-  annotate_typst(r"(*bold* _italic_ #linebreak() styled text)", x = 4.2, y = 14, size = 12) +
-  annotate_math_typst(r"(integral_0^1 frac(1, 1+x^2) dif x = pi / 4)", x = 3.0, y = 22, size = 13)
+  annotate_typst(
+    r"(*Fuel efficiency model:* $hat(y) = beta_0 + beta_1 x$)",
+    x = 4.0,
+    y = 28,
+    size = 12
+  ) +
+  annotate_math_mitex(
+    r"(\int_0^1 x^2 \, dx = \frac{1}{3})",
+    x = 2.5,
+    y = 18,
+    size = 14
+  ) +
+  annotate_typst(
+    r"(*bold* _italic_ #linebreak() styled text)",
+    x = 4.2,
+    y = 14,
+    size = 12
+  ) +
+  annotate_math_typst(
+    r"(integral_0^1 frac(1, 1+x^2) dif x = pi / 4)",
+    x = 3.0,
+    y = 22,
+    size = 13
+  )
 
 cases_2a <- list(
   list(label = "base plot", p = base_plot),
@@ -425,7 +466,9 @@ out("")
 out("\u2500\u2500 2D: ggtypst vs ggtext (styled text only) \u2500\u2500")
 out("")
 out("  These comparisons use equivalent bold/italic rich text content.")
-out("  ggtext layers disable background, outline, and padding to focus on text rendering cost.")
+out(
+  "  ggtext layers disable background, outline, and padding to focus on text rendering cost."
+)
 out("")
 
 styled_df <- function(n) {
@@ -570,7 +613,9 @@ p_geom_ggtext_text_50 <- do.call(
 
 out("\u2500\u2500 2D-1: Annotate comparison \u2500\u2500")
 out("")
-out("  Equivalent styled text: Typst '*Bold* _italic_ plain text' vs HTML '<b>Bold</b> <i>italic</i> plain text'")
+out(
+  "  Equivalent styled text: Typst '*Bold* _italic_ plain text' vs HTML '<b>Bold</b> <i>italic</i> plain text'"
+)
 out("")
 out(header_line())
 out(divider())
@@ -601,7 +646,9 @@ for (case in cases_2d_annotate) {
 out("")
 out("\u2500\u2500 2D-2: Geom comparison \u2500\u2500")
 out("")
-out("  Equivalent styled text repeated across rows with no label box styling on ggtext layers.")
+out(
+  "  Equivalent styled text repeated across rows with no label box styling on ggtext layers."
+)
 out("")
 out(header_line())
 out(divider())

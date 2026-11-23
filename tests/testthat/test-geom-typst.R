@@ -271,8 +271,14 @@ test_that("geom_typst system fonts visual check (local only)", {
   skip_on_ci()
   skip_on_cran()
 
-  arial <- suppressWarnings(typst_render(build_typst_source("probe", family = "Arial")))
-  courier <- suppressWarnings(typst_render(build_typst_source("probe", family = "Courier New")))
+  arial <- suppressWarnings(typst_render(build_typst_source(
+    "probe",
+    family = "Arial"
+  )))
+  courier <- suppressWarnings(typst_render(build_typst_source(
+    "probe",
+    family = "Courier New"
+  )))
 
   if (length(arial$warnings) > 0 || length(courier$warnings) > 0) {
     skip("Required system fonts are not available: Arial/Courier New")
@@ -287,7 +293,10 @@ test_that("geom_typst system fonts visual check (local only)", {
     vjust = c(0.5, 0)
   )
 
-  p <- ggplot(df, aes(x, y, label = label, family = family, hjust = hjust, vjust = vjust)) +
+  p <- ggplot(
+    df,
+    aes(x, y, label = label, family = family, hjust = hjust, vjust = vjust)
+  ) +
     geom_point(size = 1.1, alpha = 0.5, colour = "grey45") +
     geom_typst(size = 12) +
     coord_cartesian(xlim = c(1.5, 5.6), ylim = c(10, 35)) +
@@ -341,7 +350,17 @@ test_that("geom_typst visual: multiline lineheight", {
     hjust = c(0, 1)
   )
 
-  p <- ggplot(df, aes(x, y, label = label, lineheight = lineheight, colour = colour, hjust = hjust)) +
+  p <- ggplot(
+    df,
+    aes(
+      x,
+      y,
+      label = label,
+      lineheight = lineheight,
+      colour = colour,
+      hjust = hjust
+    )
+  ) +
     geom_point(size = 1.1, alpha = 0.5, colour = "grey45") +
     geom_typst(size = 12) +
     scale_colour_identity() +
@@ -376,7 +395,12 @@ test_that("geom_typst visual inward outward just with facets and legend", {
       panel = "Inward anchors"
     ),
     make_anchor_panel(
-      labels = c("$alpha$ outward", "$beta$ outward", "$gamma$ outward", "$delta$ outward"),
+      labels = c(
+        "$alpha$ outward",
+        "$beta$ outward",
+        "$gamma$ outward",
+        "$delta$ outward"
+      ),
       just = "outward",
       colour = "#D20F39",
       group = "Outward",
@@ -387,10 +411,16 @@ test_that("geom_typst visual inward outward just with facets and legend", {
   df$group <- factor(df$group, levels = c("Inward", "Outward"))
   df$panel <- factor(df$panel, levels = c("Inward anchors", "Outward anchors"))
 
-  p <- ggplot(df, aes(x, y, label = label, colour = group, hjust = hjust, vjust = vjust)) +
+  p <- ggplot(
+    df,
+    aes(x, y, label = label, colour = group, hjust = hjust, vjust = vjust)
+  ) +
     geom_point(size = 1.2, alpha = 0.5, show.legend = FALSE) +
     geom_typst(show.legend = TRUE, size = 14) +
-    scale_colour_manual(values = c(Inward = "#1E66F5", Outward = "#D20F39"), name = "Anchor mode") +
+    scale_colour_manual(
+      values = c(Inward = "#1E66F5", Outward = "#D20F39"),
+      name = "Anchor mode"
+    ) +
     coord_cartesian(xlim = c(0, 1), ylim = c(0, 1), clip = "off") +
     facet_wrap(~panel) +
     theme_minimal(base_size = 11) +

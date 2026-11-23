@@ -147,7 +147,10 @@ test_that("as_typst_math_code always returns single-dollar wrapped math", {
 
 test_that("as_typst_math_code supports inline mode", {
   expect_equal(as_typst_math_code("x^2 + y^2", inline = TRUE), "$x^2 + y^2$")
-  expect_equal(as_typst_math_code("$ x^2 + y^2 $", inline = TRUE), "$x^2 + y^2$")
+  expect_equal(
+    as_typst_math_code("$ x^2 + y^2 $", inline = TRUE),
+    "$x^2 + y^2$"
+  )
   expect_snapshot(as_typst_math_code("x^2", inline = NA), error = TRUE)
 })
 

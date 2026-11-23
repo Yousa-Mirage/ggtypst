@@ -1,5 +1,8 @@
 if (!requireNamespace("ragg", quietly = TRUE)) {
-  stop("Package 'ragg' is required to render showcase PNG files.", call. = FALSE)
+  stop(
+    "Package 'ragg' is required to render showcase PNG files.",
+    call. = FALSE
+  )
 }
 
 source("inst/examples/annotate-showcase.R", local = TRUE)

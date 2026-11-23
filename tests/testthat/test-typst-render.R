@@ -2,7 +2,10 @@ test_that("typst_render returns the page size and scene", {
   res <- typst_render("Hello, Typst!")
 
   expect_type(res, "list")
-  expect_named(res, c("width_pt", "height_pt", "descent_pt", "scene", "fallback", "warnings"))
+  expect_named(
+    res,
+    c("width_pt", "height_pt", "descent_pt", "scene", "fallback", "warnings")
+  )
   expect_type(res$width_pt, "double")
   expect_type(res$height_pt, "double")
   expect_type(res$scene, "list")
@@ -12,7 +15,9 @@ test_that("typst_render returns the page size and scene", {
 })
 
 test_that("typst_render returns SVG only for content paths cannot draw", {
-  res <- typst_render(build_typst_source("#text(fill: gradient.linear(red, blue))[Hello]"))
+  res <- typst_render(build_typst_source(
+    "#text(fill: gradient.linear(red, blue))[Hello]"
+  ))
   expect_false(res$scene$path_ok)
 
   svg_txt <- rawToChar(res$fallback$svg)
@@ -97,8 +102,14 @@ test_that("different font families produce different text widths", {
 
   sample_text <- "iiiiiiiiiiWWWWWWWWWW 12345"
 
-  arial <- suppressWarnings(typst_render(build_typst_source(sample_text, family = "Arial")))
-  courier <- suppressWarnings(typst_render(build_typst_source(sample_text, family = "Courier New")))
+  arial <- suppressWarnings(typst_render(build_typst_source(
+    sample_text,
+    family = "Arial"
+  )))
+  courier <- suppressWarnings(typst_render(build_typst_source(
+    sample_text,
+    family = "Courier New"
+  )))
 
   if (length(arial$warnings) > 0 || length(courier$warnings) > 0) {
     skip("Required system fonts are not available: Arial/Courier New")

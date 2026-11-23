@@ -2,7 +2,9 @@
 # The rest of the suite draws text as outlines (see helper.R).
 
 scene_grob <- function(code, ...) {
-  positioned_typst_grob(typst_render(build_typst_source(code, ...)))$children[[1]]
+  positioned_typst_grob(typst_render(build_typst_source(code, ...)))$children[[
+    1
+  ]]
 }
 
 test_that("the renderer option chooses glyphs or outlines", {
@@ -29,7 +31,11 @@ test_that("glyphs are drawn where the outlines are", {
   skip_if_not_installed("ragg")
   skip_if_not_installed("png")
 
-  for (code in c("Hxample long text", "$integral_0^1 x^2 dif x$", "#rotate(30deg)[Hxg]")) {
+  for (code in c(
+    "Hxample long text",
+    "$integral_0^1 x^2 dif x$",
+    "#rotate(30deg)[Hxg]"
+  )) {
     grob <- positioned_typst_grob(
       typst_render(
         build_typst_source(code, size = 14)
@@ -56,7 +62,10 @@ test_that("glyphs rasterize like grid text, unlike outlines", {
 
   # Make the font Typst used (embedded in ggtypst) available to grid text too.
   family <- "ggtypst test serif"
-  systemfonts::register_font(family, plain = typst_font_files(rendered$scene$fonts)[1])
+  systemfonts::register_font(
+    family,
+    plain = typst_font_files(rendered$scene$fonts)[1]
+  )
   on.exit(systemfonts::clear_registry(), add = TRUE)
 
   ink <- function(grob) {
@@ -66,7 +75,10 @@ test_that("glyphs rasterize like grid text, unlike outlines", {
     grDevices::dev.off()
     sum(1 - png::readPNG(file)[,, 1])
   }
-  text <- ink(grid::textGrob(label, gp = grid::gpar(fontfamily = family, fontsize = 11)))
+  text <- ink(grid::textGrob(
+    label,
+    gp = grid::gpar(fontfamily = family, fontsize = 11)
+  ))
   glyph <- with_renderer("glyph", ink(positioned_typst_grob(rendered)))
   path <- with_renderer("path", ink(positioned_typst_grob(rendered)))
 
@@ -111,16 +123,31 @@ test_that("auto draws glyphs where devices rasterize or embed fonts", {
   scene <- scene_grob("Hello")$scene
   with_renderer("auto", {
     expect_equal(mode_on(scene, function() grDevices::pdf(NULL)), "path")
-    expect_equal(mode_on(scene, function() grDevices::postscript(tempfile())), "path")
+    expect_equal(
+      mode_on(scene, function() grDevices::postscript(tempfile())),
+      "path"
+    )
     if (requireNamespace("ragg", quietly = TRUE)) {
-      expect_equal(mode_on(scene, function() ragg::agg_png(tempfile())), "glyph")
+      expect_equal(
+        mode_on(scene, function() ragg::agg_png(tempfile())),
+        "glyph"
+      )
     }
     if (requireNamespace("svglite", quietly = TRUE)) {
-      expect_equal(mode_on(scene, function() svglite::svglite(tempfile())), "glyph")
+      expect_equal(
+        mode_on(scene, function() svglite::svglite(tempfile())),
+        "glyph"
+      )
     }
     if (isTRUE(capabilities("cairo"))) {
-      expect_equal(mode_on(scene, function() grDevices::cairo_pdf(tempfile())), "glyph")
-      expect_equal(mode_on(scene, function() grDevices::png(tempfile(), type = "cairo")), "glyph")
+      expect_equal(
+        mode_on(scene, function() grDevices::cairo_pdf(tempfile())),
+        "glyph"
+      )
+      expect_equal(
+        mode_on(scene, function() grDevices::png(tempfile(), type = "cairo")),
+        "glyph"
+      )
     }
   })
 
@@ -148,7 +175,12 @@ test_that("ggsave() output gets outlines in pdf() and embedded fonts in cairo_pd
 
   # Search the bytes: a PDF is not text in any locale.
   has_font <- function(file) {
-    length(grepRaw("/FontFile", readBin(file, "raw", file.size(file)), fixed = TRUE)) > 0
+    length(grepRaw(
+      "/FontFile",
+      readBin(file, "raw", file.size(file)),
+      fixed = TRUE
+    )) >
+      0
   }
   with_renderer("auto", {
     pdf_file <- tempfile(fileext = ".pdf")
