@@ -1,7 +1,6 @@
 use extendr_api::prelude::{List, list};
 use typst::compile;
 use typst::diag::Warned;
-use typst::foundations::Smart;
 use typst::layout::FrameItem;
 use typst_layout::PagedDocument;
 
@@ -50,7 +49,7 @@ impl InMemoryWorld {
             .first()
             .ok_or(RenderError::NoPagesGenerated)?;
 
-        let filled = matches!(page.fill, Smart::Custom(Some(_)));
+        let filled = page.fill_or_white().is_some();
         if !filled && !has_visual_content(&page.frame) {
             return Err(RenderError::EmptyPage);
         }

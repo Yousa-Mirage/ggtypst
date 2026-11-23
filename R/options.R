@@ -16,11 +16,12 @@
 #'   - `"glyph"`: native glyphs on every device.
 #'   - `"path"`: outlines on every device.
 #'
-#'   Text that native glyphs cannot express, such as text with a stroke or in
-#'   a variable font (whose axes R's native glyphs cannot set), is always drawn
-#'   as outlines. On R older than 4.5, the same applies to a
-#'   label whose glyphs have different angles, such as a label with one
-#'   rotated word in it. A label rotated as a whole still uses native glyphs.
+#'   Text that native glyphs cannot express, such as text with a solid stroke
+#'   or in a variable font (whose axes R's native glyphs cannot set), is always
+#'   drawn as outlines; text with a dashed stroke is drawn as an image. On R
+#'   older than 4.5, outlines are also used for a label whose glyphs have
+#'   different angles, such as a label with one rotated word in it. A label
+#'   rotated as a whole still uses native glyphs.
 #' - `ggtypst.raster_dpi`: resolution, in dots per inch, of the images that
 #'   draw content grid cannot draw as text or lines: gradients, tilings,
 #'   images, and color glyphs (emoji). Defaults

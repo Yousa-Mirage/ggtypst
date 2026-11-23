@@ -104,7 +104,7 @@ Other R files include:
 
 ### Rust layer
 
-The Rust crate lives in `src/rust/` and currently exposes three exported
+The Rust crate lives in `src/rust/` and currently exposes four exported
 entry points:
 
 - `rs_typst_render()` compiles Typst and returns the page’s size, scene,

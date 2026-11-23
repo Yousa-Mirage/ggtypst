@@ -30,7 +30,8 @@ use typst::layout::{Abs, Frame, FrameItem, FrameKind, Point, Size, Transform};
 use typst::syntax::Span;
 use typst::text::{Font, FontInstance, FontStyle, TextItem};
 use typst::visualize::{
-    Curve, CurveItem, FillRule, Geometry, ImageScaling, LineCap, LineJoin, Paint,
+    Curve, CurveItem, DashPattern, FillRule, Geometry, ImageScaling, LineCap, LineJoin, Paint,
+    Shape,
 };
 use typst_kit::fonts::FontPath;
 use typst_layout::Page;
@@ -262,8 +263,8 @@ pub fn extract_scene(page: &Page, raster_dpi: f64) -> Scene {
     };
     // A page fill, which the preamble leaves out but the label's code may set,
     // is drawn behind everything else.
-    if let Smart::Custom(Some(paint)) = &page.fill {
-        let shape = Geometry::Rect(frame.size()).filled(paint.clone());
+    if let Some(paint) = page.fill_or_white() {
+        let shape = Geometry::Rect(frame.size()).filled(paint);
         let item = FrameItem::Shape(shape.clone(), Span::detached());
         builder.shape(&shape, Transform::identity(), &item);
     }
@@ -474,10 +475,17 @@ impl SceneBuilder {
     /// Draw the glyph just added with the glyphs before it, if they form a
     /// run.
     fn add_glyph_to_run(&mut self) {
+        // Outline runs share one stroke join and mitre limit.
+        let g = &self.scene.glyphs;
+        let n = g.id.len();
+        let same_style = n >= 2
+            && g.linejoin[n - 1] == g.linejoin[n - 2]
+            && g.linemitre[n - 1] == g.linemitre[n - 2];
         let runs = &mut self.scene.runs;
         if let Some(last) = runs.kind.len().checked_sub(1)
             && runs.kind[last] == "glyph"
             && runs.clip[last] == self.current_clip
+            && same_style
         {
             runs.n_rows[last] += 1;
             return;
@@ -515,57 +523,49 @@ impl SceneBuilder {
         runs.segment.push(segment);
     }
 
-    fn shape(&mut self, shape: &typst::visualize::Shape, ts: Transform, item: &FrameItem) {
-        // Shapes painted with a gradient or tiling are drawn as an image.
-        let solid_fill = shape
-            .fill
-            .as_ref()
-            .is_none_or(|paint| solid_hex(paint).is_some());
-        let solid_stroke = shape
-            .stroke
-            .as_ref()
-            .is_none_or(|stroke| solid_hex(&stroke.paint).is_some());
-        if !(solid_fill && solid_stroke) {
+    fn shape(&mut self, shape: &Shape, ts: Transform, item: &FrameItem) {
+        let subpaths = geometry_subpaths(&shape.geometry, ts);
+
+        // Dashes far too many to cut (much shorter than the line) are drawn as
+        // a solid stroke, as faint as the dashes cover it: neither cut here nor
+        // expanded by Typst's renderer.
+        let undashed;
+        let (shape, item) = match dense_dash_coverage(shape, &subpaths, ts) {
+            Some(coverage) => {
+                let solid = undash(shape, coverage);
+                undashed = FrameItem::Shape(solid.clone(), Span::detached());
+                (solid, &undashed)
+            }
+            None => (shape.clone(), item),
+        };
+
+        // Gradients and tilings, and strokes that are no longer one width
+        // (skewed or unevenly scaled), are drawn as an image.
+        let fill = match &shape.fill {
+            None => Some(None),
+            Some(paint) => solid_hex(paint).map(Some),
+        };
+        let stroke = match &shape.stroke {
+            None => Some(None),
+            Some(stroke) => similarity(ts).and_then(|(scale, _)| {
+                solid_hex(&stroke.paint).map(|hex| Some((stroke, hex, scale)))
+            }),
+        };
+        let (Some(fill), Some(stroke)) = (fill, stroke) else {
             self.raster(item, ts, true);
             return;
-        }
-        let fill = shape.fill.as_ref().and_then(solid_hex);
+        };
         let rule = match shape.fill_rule {
             FillRule::NonZero => "winding",
             FillRule::EvenOdd => "evenodd",
         };
 
-        let subpaths = match &shape.geometry {
-            Geometry::Line(end) => {
-                let mut c = PathCollector::new(ts);
-                c.move_to(Point::zero());
-                c.line_to(*end);
-                c.subpaths
-            }
-            Geometry::Rect(size) => {
-                let mut c = PathCollector::new(ts);
-                c.move_to(Point::zero());
-                c.line_to(Point::new(size.x, Abs::zero()));
-                c.line_to(Point::new(size.x, size.y));
-                c.line_to(Point::new(Abs::zero(), size.y));
-                c.close();
-                c.subpaths
-            }
-            Geometry::Curve(curve) => curve_subpaths(curve, ts),
-        };
-
-        let Some(stroke) = &shape.stroke else {
+        let Some((stroke, hex, scale)) = stroke else {
             self.push_shape(fill, &ShapeStroke::none(), rule, "path", &subpaths);
             return;
         };
-        // A stroke keeps one width only under rotation and uniform scaling;
-        // skewed or unevenly scaled strokes are drawn as an image.
-        let Some((scale, _)) = similarity(ts) else {
-            self.raster(item, ts, true);
-            return;
-        };
         let style = ShapeStroke {
-            colour: solid_hex(&stroke.paint),
+            colour: Some(hex),
             lwd: stroke.thickness.to_pt() * scale * LWD_PER_PT,
             lineend: match stroke.cap {
                 LineCap::Butt => "butt",
@@ -577,21 +577,11 @@ impl SceneBuilder {
         };
 
         if let Some(dash) = &stroke.dash {
-            let mut array: Vec<f64> = dash.array.iter().map(|a| a.to_pt() * scale).collect();
-            // An odd-length pattern repeats to make dash/gap pairs.
-            if array.len() % 2 == 1 {
-                array.extend_from_within(..);
-            }
-            let period: f64 = array.iter().sum();
-            let length: f64 = subpaths.iter().map(Subpath::length).sum();
-            if period > 0.0 && length / period * array.len() as f64 > MAX_DASHES {
-                self.raster(item, ts, true);
-                return;
-            }
             // Fill the shape, then stroke its outline cut into dashes.
             if fill.is_some() {
                 self.push_shape(fill, &ShapeStroke::none(), rule, "path", &subpaths);
             }
+            let array = dash_array(dash, scale);
             let dashes = dash_subpaths(&subpaths, &array, dash.phase.to_pt() * scale);
             self.push_shape(None, &style, rule, "polyline", &dashes);
             return;
@@ -710,6 +700,68 @@ impl ShapeStroke {
     }
 }
 
+/// The flattened subpaths of `geometry`, transformed by `ts`.
+fn geometry_subpaths(geometry: &Geometry, ts: Transform) -> Vec<Subpath> {
+    let mut c = PathCollector::new(ts);
+    match geometry {
+        Geometry::Line(end) => {
+            c.move_to(Point::zero());
+            c.line_to(*end);
+        }
+        Geometry::Rect(size) => {
+            c.move_to(Point::zero());
+            c.line_to(Point::new(size.x, Abs::zero()));
+            c.line_to(Point::new(size.x, size.y));
+            c.line_to(Point::new(Abs::zero(), size.y));
+            c.close();
+        }
+        Geometry::Curve(curve) => return curve_subpaths(curve, ts),
+    }
+    c.subpaths
+}
+
+/// Dash and gap lengths of `dash` scaled by `scale`; an odd-length pattern
+/// repeats to make dash/gap pairs.
+fn dash_array(dash: &DashPattern<Abs, Abs>, scale: f64) -> Vec<f64> {
+    let mut array: Vec<f64> = dash.array.iter().map(|a| a.to_pt() * scale).collect();
+    if array.len() % 2 == 1 {
+        array.extend_from_within(..);
+    }
+    array
+}
+
+/// The fraction of `shape`'s stroke that its dashes cover, if they are more
+/// than `MAX_DASHES` along `subpaths` (already transformed by `ts`).
+fn dense_dash_coverage(shape: &Shape, subpaths: &[Subpath], ts: Transform) -> Option<f64> {
+    let dash = shape.stroke.as_ref()?.dash.as_ref()?;
+    // How much `ts` scales lengths on average.
+    let scale = (ts.sx.get() * ts.sy.get() - ts.kx.get() * ts.ky.get())
+        .abs()
+        .sqrt();
+    let array = dash_array(dash, scale);
+    let period: f64 = array.iter().sum();
+    let length: f64 = subpaths.iter().map(Subpath::length).sum();
+    if period.is_nan() || period <= 0.0 || length / period * array.len() as f64 <= MAX_DASHES {
+        return None;
+    }
+    let on: f64 = array.iter().step_by(2).sum();
+    Some(on / period)
+}
+
+/// `shape` with a solid stroke covering `coverage` of what it did: a solid
+/// colour fades to match; other paints are kept.
+fn undash(shape: &Shape, coverage: f64) -> Shape {
+    let mut shape = shape.clone();
+    if let Some(stroke) = &mut shape.stroke {
+        stroke.dash = None;
+        if let Paint::Solid(color) = stroke.paint.clone() {
+            let alpha = color.alpha().unwrap_or(1.0) * coverage as f32;
+            stroke.paint = Paint::Solid(color.with_alpha(alpha));
+        }
+    }
+    shape
+}
+
 /// Grid's name for a line join.
 fn linejoin_name(join: LineJoin) -> &'static str {
     match join {
@@ -783,16 +835,29 @@ impl PathCollector {
         });
     }
 
+    /// The subpath to draw on: drawing on after a close starts a new, open
+    /// subpath at the closed one's start, as in SVG.
+    fn current(&mut self) -> Option<&mut Subpath> {
+        if let Some(closed) = self.subpaths.last().filter(|subpath| subpath.closed) {
+            let start = closed.points.first().copied()?;
+            self.subpaths.push(Subpath {
+                points: vec![start],
+                closed: false,
+            });
+        }
+        self.subpaths.last_mut()
+    }
+
     fn line_to(&mut self, p: Point) {
         let p = self.map(p);
-        if let Some(subpath) = self.subpaths.last_mut() {
+        if let Some(subpath) = self.current() {
             subpath.points.push(p);
         }
     }
 
     fn cubic_to(&mut self, c1: Point, c2: Point, p: Point) {
         let (c1, c2, p) = (self.map(c1), self.map(c2), self.map(p));
-        if let Some(subpath) = self.subpaths.last_mut() {
+        if let Some(subpath) = self.current() {
             let last = subpath.points.last().copied().unwrap_or(c1);
             flatten_cubic(last, c1, c2, p, 0, &mut subpath.points);
         }
@@ -1424,13 +1489,77 @@ mod tests {
     }
 
     #[test]
-    fn too_many_dashes_make_an_image() {
-        // About 50 million dashes: drawn by Typst's renderer, not cut here.
+    fn too_many_dashes_become_a_faint_solid_stroke() {
+        // About 50 million dashes on a line, and as many on a rectangle: drawn as a
+        // solid stroke half as opaque, as the dashes cover half of it.
+        for (body, kind) in [
+            (
+                "#line(length: 100pt, stroke: (thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
+                "polyline",
+            ),
+            (
+                "#rect(width: 40pt, height: 20pt, stroke: (thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
+                "path",
+            ),
+        ] {
+            let (_, scene) = scene_of(body);
+            assert_eq!(kinds(&scene), vec![kind], "{body}");
+            assert_eq!(
+                scene.shapes.stroke[0].as_deref(),
+                Some("#00000080"),
+                "{body}"
+            );
+        }
+        // A gradient stroke cannot fade: drawn solid as an image.
+        let (_, gradient) = scene_of(
+            "#line(length: 100pt, stroke: (paint: gradient.linear(red, blue), thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
+        );
+        assert_eq!(kinds(&gradient), vec!["raster"]);
+        assert!(
+            gradient.rasters.pixels[0]
+                .iter()
+                .any(|p| p.to_le_bytes()[3] == 255)
+        );
+    }
+
+    #[test]
+    fn glyph_runs_split_where_stroke_joins_change() {
         let (_, scene) = scene_of(
-            "#line(length: 100pt, stroke: (thickness: 1pt, dash: (0.000001pt, 0.000001pt)))",
+            "#text(stroke: 0.5pt + red)[A]#text(stroke: (paint: red, thickness: 0.5pt, join: \"bevel\"))[B]",
+        );
+        assert_eq!(kinds(&scene), vec!["glyph", "glyph"]);
+    }
+
+    #[test]
+    fn drawing_on_after_a_close_starts_an_open_outline() {
+        // After closing, a line continues from the contour's start, open.
+        let (_, scene) = scene_of(
+            "#curve(stroke: black, curve.move((0pt, 0pt)), curve.line((10pt, 0pt)), curve.line((10pt, 10pt)), curve.close(), curve.line((0pt, 20pt)))",
+        );
+        assert_eq!(kinds(&scene), vec!["path", "polyline"]);
+        let start = run_points(&scene, 1).start;
+        let p = &scene.shape_points;
+        assert_close(p.x[start], p.x[0]);
+        assert_close(p.y[start], p.y[0]);
+    }
+
+    #[test]
+    fn page_fill_auto_is_white() {
+        let (_, scene) = scene_of("#set page(fill: auto)\nHi");
+        assert_eq!(kinds(&scene), vec!["path", "glyph"]);
+        assert_eq!(scene.shapes.fill[0].as_deref(), Some("#FFFFFFFF"));
+    }
+
+    #[test]
+    fn gradients_in_huge_containers_stay_small() {
+        // Typst would render this gradient over the whole 10000pt container
+        // first (gigabytes at 600 dpi): it is painted relative to the
+        // rectangle instead.
+        let (_, scene) = scene_of(
+            "#box(width: 10000pt, height: 10000pt)[#rect(width: 10pt, height: 10pt, fill: gradient.linear(red, blue, relative: \"parent\"))]",
         );
         assert_eq!(kinds(&scene), vec!["raster"]);
-        assert!(scene.shape_points.x.is_empty());
+        assert!(scene.rasters.width_px[0] < 300);
     }
 
     #[test]
@@ -1579,14 +1708,14 @@ mod tests {
 
     #[test]
     fn long_thin_images_keep_to_the_pixel_cap() {
+        // 8 million pixels long at 600 dpi, and thinner than a pixel.
         let (_, scene) = scene_of(
-            "#line(length: 100000pt, stroke: (paint: gradient.linear(red, blue), thickness: 0.01pt))",
+            "#line(length: 1000000pt, stroke: (paint: gradient.linear(red, blue), thickness: 0.01pt))",
         );
         let r = &scene.rasters;
-        for i in 0..r.x.len() {
-            let pixels = f64::from(r.width_px[i]) * f64::from(r.height_px[i]);
-            assert!(pixels <= crate::raster::MAX_PIXELS, "{pixels}");
-        }
+        assert_eq!(r.x.len(), 1);
+        let pixels = f64::from(r.width_px[0]) * f64::from(r.height_px[0]);
+        assert!(pixels <= crate::raster::MAX_PIXELS, "{pixels}");
     }
 
     #[test]

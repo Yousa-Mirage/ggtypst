@@ -97,9 +97,12 @@ pub fn rasterize(
     if !(width > 0.0 && height > 0.0) {
         return None;
     }
-    // Typst renders whole pixels, at least one each way: limit those.
-    let pixels_at =
-        |per_pt: f64| (width * per_pt).round().max(1.0) * (height * per_pt).round().max(1.0);
+    // Typst renders whole pixels, at least one each way, computed in `f32`:
+    // limit those.
+    let pixels_at = |per_pt: f64| {
+        let side = |pt: f64| f64::from((per_pt as f32 * pt as f32).round().max(1.0));
+        side(width) * side(height)
+    };
     let mut per_pt = dpi / 72.0;
     for _ in 0..64 {
         let pixels = pixels_at(per_pt);
@@ -116,9 +119,18 @@ pub fn rasterize(
     // The item alone, moved so its ink bounds start at the image's corner,
     // inside a hard frame like its container so that paint relative to the
     // parent spans the same area as in Typst.
+    // Typst also renders a parent-relative gradient over the whole container
+    // first: for a container too large for that, paint relative to the item.
     let (container_size, container_ts) = container;
+    let container_pixels = {
+        let side = |pt: f64| f64::from((pt.abs() as f32 * per_pt as f32).ceil());
+        side(container_size.x.to_pt()) * side(container_size.y.to_pt())
+    };
     let shift = Transform::translate(Abs::pt(-bounds.min_x), Abs::pt(-bounds.min_y));
-    let content = match container_ts.invert() {
+    let into_container = container_ts
+        .invert()
+        .filter(|_| container_pixels <= MAX_PIXELS);
+    let content = match into_container {
         Some(into_container) => {
             let mut hard = Frame::hard(container_size);
             hard.push(
