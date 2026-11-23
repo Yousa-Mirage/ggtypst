@@ -96,10 +96,14 @@ scene_typst_grob <- function(
 
   grid::gTree(
     scene = rendered$scene,
+    plan = scene_plan(rendered$scene),
     fallback = rendered$fallback,
     scale = scale,
     width_pt = width,
     height_pt = height,
+    # Children built for each renderer, reused when the grob is drawn again
+    # (window resizes, display list replays, drawing on several devices).
+    cache = new.env(parent = emptyenv()),
     vp = vp,
     cl = "typst_scene_grob"
   )
@@ -110,20 +114,59 @@ scene_typst_grob <- function(
 #' @export
 makeContent.typst_scene_grob <- function(x) {
   mode <- typst_render_mode(x$scene)
+  entry <- x$cache[[mode]]
+  if (!scene_children_valid(entry, x$scale)) {
+    entry <- scene_children(x, mode)
+    assign(mode, entry, envir = x$cache)
+  }
+  grid::setChildren(x, entry$children)
+}
+
+# The children drawing scene grob `x` in `mode`, with what decides whether they
+# can be reused.
+scene_children <- function(x, mode) {
+  entry <- list(scale = x$scale, font_dir = NULL, font_files = character())
+
   # Content grid paths cannot draw yet (gradients, images, colour glyphs):
   # import the SVG, placed on the layout box this viewport spans. Without the
   # optional packages it needs, warn once and draw what grid paths can.
   if (mode == "path" && !is.null(x$fallback)) {
     if (svg_fallback_installed()) {
       svg <- svg_typst_grob(x$fallback, x$height_pt, x$scale)
-      return(grid::setChildren(x, grid::gList(svg)))
+      entry$children <- grid::gList(svg)
+      return(entry)
     }
     warn_svg_fallback_missing()
   }
-  grid::setChildren(
-    x,
-    scene_grobs(x$scene, mode, x$scale, x$width_pt, x$height_pt)
+
+  font_list <- NULL
+  if (mode == "glyph" && length(x$scene$glyphs$id) > 0L) {
+    entry$font_dir <- font_cache_dir()
+    entry$font_files <- typst_font_files(x$scene$fonts)
+    font_list <- glyph_font_list(x$scene$fonts, entry$font_files)
+  }
+  entry$children <- scene_grobs(
+    x$scene,
+    x$plan,
+    mode,
+    font_list,
+    x$scale,
+    x$width_pt,
+    x$height_pt
   )
+  entry
+}
+
+# Native glyphs refer to font files, so they are only reused while those files
+# are still there: a grob read back in a new session, a changed
+# `ggtypst.font_cache`, or a deleted font file rebuilds them.
+scene_children_valid <- function(entry, scale) {
+  if (is.null(entry) || !identical(entry$scale, scale)) {
+    return(FALSE)
+  }
+  is.null(entry$font_dir) ||
+    (identical(entry$font_dir, font_cache_dir()) &&
+      all(file.exists(entry$font_files)))
 }
 
 # The SVG fallback needs rsvg and grImport2, which are optional.
@@ -198,18 +241,20 @@ device_draws_glyphs <- function() {
   known && isTRUE(grDevices::dev.capabilities("glyphs")$glyphs)
 }
 
-#' Grid grobs drawing a scene, in Typst's drawing order
+#' Drawing plan of a scene, the same however its text is drawn
 #'
-#' Consecutive glyphs are drawn by one grob: native glyphs or their outlines,
-#' depending on `mode`. Each shape is drawn by its own grob.
+#' Glyphs and shapes are put in Typst's drawing order and cut into runs, each
+#' drawn by one grob: every shape on its own, consecutive glyphs in the same
+#' clip region together. Consecutive runs in the same clip region form a
+#' segment, drawn in a viewport clipped to it. The point tables are indexed by
+#' owner, so a run takes its points without scanning them.
 #'
 #' @param scene The `scene` of a rendered Typst result.
-#' @param mode `"glyph"` or `"path"`, see `typst_render_mode()`.
-#' @param scale Scaling factor applied to the rendered output.
-#' @param width,height Size of the layout box in points.
-#' @return A `gList`.
+#' @return A list with `runs` (each a list of `kind`, `rows`, and `clip`),
+#'   `segments` (the runs of each segment), and `outlines`, `shape_points`, and
+#'   `clips` (the point indices of each owner).
 #' @noRd
-scene_grobs <- function(scene, mode, scale = 1, width, height) {
+scene_plan <- function(scene) {
   glyphs <- scene$glyphs
   shapes <- scene$shapes
   kind <- rep(c("glyph", "shape"), c(length(glyphs$z), length(shapes$z)))
@@ -217,59 +262,95 @@ scene_grobs <- function(scene, mode, scale = 1, width, height) {
   order <- order(c(glyphs$z, shapes$z))
   kind <- kind[order]
   row <- row[order]
-  if (length(kind) == 0L) {
-    return(grid::gList())
-  }
-
   clip <- c(glyphs$clip, shapes$clip)[order]
 
-  # A new run starts at every shape, at every glyph that follows a shape, and
-  # wherever the clip region changes.
-  changed <- c(
-    TRUE,
-    kind[-1] != kind[-length(kind)] | clip[-1] != clip[-length(clip)]
-  )
-  run <- cumsum(kind == "shape" | changed)
-  font_list <- if (mode == "glyph" && "glyph" %in% kind) {
-    glyph_font_list(scene$fonts)
+  runs <- list()
+  segments <- list()
+  if (length(kind) > 0L) {
+    # A new run starts at every shape, at every glyph that follows a shape,
+    # and wherever the clip region changes.
+    changed <- c(
+      TRUE,
+      kind[-1] != kind[-length(kind)] | clip[-1] != clip[-length(clip)]
+    )
+    run <- cumsum(kind == "shape" | changed)
+    runs <- lapply(unname(split(seq_along(kind), run)), function(i) {
+      list(kind = kind[i[1]], rows = row[i], clip = clip[i[1]])
+    })
+    run_clip <- vapply(runs, function(r) r$clip, integer(1))
+    segment <- cumsum(c(TRUE, run_clip[-1] != run_clip[-length(run_clip)]))
+    segments <- unname(split(seq_along(runs), segment))
   }
 
-  runs <- split(seq_along(kind), run)
-  grobs <- lapply(runs, function(i) {
-    if (kind[i[1]] == "shape") {
-      shape_grob(scene, row[i], scale, height)
+  list(
+    runs = runs,
+    segments = segments,
+    outlines = index_by_owner(scene$outlines$owner, length(glyphs$z)),
+    shape_points = index_by_owner(scene$shape_points$owner, length(shapes$z)),
+    clips = index_by_owner(scene$clips$owner, max(c(0L, scene$clips$owner)))
+  )
+}
+
+# Indices of the points of each owner 1, ..., n.
+index_by_owner <- function(owner, n) {
+  unname(split(seq_along(owner), factor(owner, levels = seq_len(n))))
+}
+
+#' Grid grobs drawing a scene, in Typst's drawing order
+#'
+#' Each run of the plan becomes one grob: native glyphs or their outlines,
+#' depending on `mode`, or a shape.
+#'
+#' @param scene The `scene` of a rendered Typst result.
+#' @param plan Its drawing plan, see `scene_plan()`.
+#' @param mode `"glyph"` or `"path"`, see `typst_render_mode()`.
+#' @param font_list The scene's fonts as a `glyphFontList`, for `"glyph"`.
+#' @param scale Scaling factor applied to the rendered output.
+#' @param width,height Size of the layout box in points.
+#' @return A `gList`.
+#' @noRd
+scene_grobs <- function(
+  scene,
+  plan,
+  mode,
+  font_list = NULL,
+  scale = 1,
+  width,
+  height
+) {
+  grobs <- lapply(plan$runs, function(run) {
+    if (run$kind == "shape") {
+      shape_grob(scene, run$rows, plan$shape_points[[run$rows]], scale, height)
     } else if (mode == "glyph") {
-      glyph_run_grob(glyphs, row[i], font_list, scale, width, height)
+      glyph_run_grob(scene$glyphs, run$rows, font_list, scale, width, height)
     } else {
-      outline_run_grob(scene, row[i], scale, height)
+      points <- unlist(plan$outlines[run$rows], use.names = FALSE)
+      outline_run_grob(scene, points, scale, height)
     }
   })
 
-  # Wrap consecutive runs in the same clip region in a viewport clipped to it.
-  run_clip <- vapply(runs, function(i) clip[i[1]], integer(1))
-  segment <- cumsum(c(TRUE, run_clip[-1] != run_clip[-length(run_clip)]))
-  grobs <- lapply(split(seq_along(runs), segment), function(j) {
+  # Wrap the runs of each segment in a clip region in a viewport clipped to it.
+  segments <- lapply(plan$segments, function(j) {
     children <- Filter(Negate(is.null), grobs[j])
-    id <- run_clip[j[1]]
+    id <- plan$runs[[j[1]]]$clip
     if (id == 0L || length(children) == 0L) {
       return(children)
     }
     list(grid::gTree(
       children = do.call(grid::gList, children),
-      vp = clip_viewport(scene$clips, id, scale, height)
+      vp = clip_viewport(scene$clips, plan$clips[[id]], scale, height)
     ))
   })
-  do.call(grid::gList, unlist(grobs, recursive = FALSE))
+  do.call(grid::gList, unlist(segments, recursive = FALSE))
 }
 
-# A viewport over the layout box, clipped to clip region `id`.
-clip_viewport <- function(clips, id, scale, height) {
-  keep <- clips$owner == id
+# A viewport over the layout box, clipped to the clip region made of `points`.
+clip_viewport <- function(clips, points, scale, height) {
   grid::viewport(
     clip = grid::pathGrob(
-      x = scene_x(clips$x[keep], scale),
-      y = scene_y(clips$y[keep], scale, height),
-      id = clips$sub[keep],
+      x = scene_x(clips$x[points], scale),
+      y = scene_y(clips$y[points], scale, height),
+      id = clips$sub[points],
       default.units = "bigpts"
     )
   )
@@ -312,28 +393,44 @@ glyph_run_grob <- function(glyphs, rows, font_list, scale, width, height) {
   )
 }
 
-glyph_font_list <- function(fonts) {
-  files <- typst_font_files(fonts)
-  do.call(
-    grDevices::glyphFontList,
-    lapply(seq_along(files), function(i) {
-      grDevices::glyphFont(
-        files[i],
-        fonts$collection_index[i],
-        fonts$family[i],
-        fonts$weight[i],
-        fonts$style[i]
-      )
-    })
+# Font lists already built in this session, by their fonts, so that labels
+# using the same fonts share one.
+font_lists <- new.env(parent = emptyenv())
+
+glyph_font_list <- function(fonts, files = typst_font_files(fonts)) {
+  key <- paste(
+    files,
+    fonts$collection_index,
+    fonts$family,
+    fonts$weight,
+    fonts$style,
+    sep = "\t",
+    collapse = "\n"
   )
+  font_list <- font_lists[[key]]
+  if (is.null(font_list)) {
+    font_list <- do.call(
+      grDevices::glyphFontList,
+      lapply(seq_along(files), function(i) {
+        grDevices::glyphFont(
+          files[i],
+          fonts$collection_index[i],
+          fonts$family[i],
+          fonts$weight[i],
+          fonts$style[i]
+        )
+      })
+    )
+    assign(key, font_list, envir = font_lists)
+  }
+  font_list
 }
 
-# Outlines of some glyph rows as one path grob: one path per glyph (`pathId`),
-# made of its contours (`id`).
-outline_run_grob <- function(scene, rows, scale = 1, height) {
+# Outline points `keep` of some glyphs as one path grob: one path per glyph
+# (`pathId`), made of its contours (`id`).
+outline_run_grob <- function(scene, keep, scale = 1, height) {
   outlines <- scene$outlines
-  keep <- outlines$owner %in% rows
-  if (!any(keep)) {
+  if (length(keep) == 0L) {
     return(NULL)
   }
   glyphs <- scene$glyphs
@@ -353,12 +450,12 @@ outline_run_grob <- function(scene, rows, scale = 1, height) {
   )
 }
 
-# One shape: a path if it is closed or filled, otherwise a polyline.
-shape_grob <- function(scene, i, scale = 1, height) {
+# Shape `i`, made of shape points `keep`: a path if it is closed or filled,
+# otherwise a polyline.
+shape_grob <- function(scene, i, keep, scale = 1, height) {
   shapes <- scene$shapes
   points <- scene$shape_points
-  keep <- points$owner == i
-  if (!any(keep)) {
+  if (length(keep) == 0L) {
     return(NULL)
   }
   gp <- grid::gpar(
@@ -405,7 +502,7 @@ typst_font_files <- function(fonts) {
     return(files)
   }
 
-  dir <- getOption("ggtypst.font_cache", file.path(tempdir(), "ggtypst-fonts"))
+  dir <- font_cache_dir()
   dir.create(dir, recursive = TRUE, showWarnings = FALSE)
   for (i in embedded) {
     file <- file.path(dir, paste0(fonts$cache_key[i], ".otf"))
@@ -419,6 +516,10 @@ typst_font_files <- function(fonts) {
     files[i] <- file
   }
   files
+}
+
+font_cache_dir <- function() {
+  getOption("ggtypst.font_cache", file.path(tempdir(), "ggtypst-fonts"))
 }
 
 # Line width in grid's units (1/96 in) from Typst points (1/72 in).

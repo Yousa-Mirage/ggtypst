@@ -104,6 +104,82 @@ test_that("embedded fonts are written once to the font cache", {
   expect_equal(file.mtime(file), written)
 })
 
+# Count how often scene grobs are built, while still building them.
+count_builds <- function(env = parent.frame()) {
+  count <- new.env()
+  count$builds <- 0
+  build <- scene_grobs
+  local_mocked_bindings(
+    scene_grobs = function(...) {
+      count$builds <- count$builds + 1
+      build(...)
+    },
+    .env = env
+  )
+  function() count$builds
+}
+
+test_that("drawn children are reused for each renderer", {
+  scene <- scene_grob("Hello $x^2/2$")
+  builds <- count_builds()
+
+  path <- with_renderer("path", grid::makeContent(scene))$children
+  expect_identical(
+    with_renderer("path", grid::makeContent(scene))$children,
+    path
+  )
+  expect_equal(builds(), 1)
+
+  glyph <- with_renderer("glyph", grid::makeContent(scene))$children
+  expect_s3_class(glyph[[1]], "glyphgrob")
+  with_renderer("glyph", grid::makeContent(scene))
+  with_renderer("path", grid::makeContent(scene))
+  expect_equal(builds(), 2)
+})
+
+test_that("cached glyphs are rebuilt when their font files are gone", {
+  old <- options(ggtypst.font_cache = tempfile("font-cache"))
+  on.exit(options(old), add = TRUE)
+  scene <- scene_grob("Hello")
+  builds <- count_builds()
+
+  with_renderer("glyph", grid::makeContent(scene))
+  expect_equal(builds(), 1)
+
+  # Another font cache, as in a new R session reading the grob back.
+  options(ggtypst.font_cache = tempfile("font-cache"))
+  with_renderer("glyph", grid::makeContent(scene))
+  expect_equal(builds(), 2)
+
+  # A deleted font file is written again.
+  file <- typst_font_files(scene$scene$fonts)
+  unlink(file)
+  with_renderer("glyph", grid::makeContent(scene))
+  expect_equal(builds(), 3)
+  expect_true(file.exists(file))
+})
+
+test_that("labels with the same fonts share one font list", {
+  rm(list = ls(font_lists), envir = font_lists)
+  count <- new.env()
+  count$made <- 0
+  local_mocked_bindings(
+    glyphFontList = function(...) {
+      count$made <- count$made + 1
+      list(...)
+    },
+    .package = "grDevices"
+  )
+
+  hello <- typst_render(build_typst_source("Hello"))$scene$fonts
+  world <- typst_render(build_typst_source("World"))$scene$fonts
+  expect_identical(glyph_font_list(hello), glyph_font_list(world))
+  expect_equal(count$made, 1)
+
+  glyph_font_list(typst_render(build_typst_source("*Bold*"))$scene$fonts)
+  expect_equal(count$made, 2)
+})
+
 test_that("an invalid renderer option is reported", {
   scene <- scene_grob("Hello")
   expect_error(
