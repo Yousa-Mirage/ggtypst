@@ -220,6 +220,11 @@ image_content_plot <- function() {
     "Nested clip regions" = r"(#box(clip: true, width: 40pt, height: 24pt, radius: 12pt)[#box(clip: true, width: 60pt, height: 16pt)[#rect(width: 60pt, height: 30pt, fill: gradient.linear(..color.map.rainbow))]])",
     "Rotated gradient text" = r"(#rotate(-20deg)[#text(fill: gradient.linear(teal, purple))[*Rotated*]])"
   )
+  cells_plot(cells)
+}
+
+# A plot of Typst `cells` in two columns, each above its name as a caption.
+cells_plot <- function(cells) {
   x <- rep(c(1, 2), length.out = length(cells))
   y <- rev(rep(seq_len(length(cells) / 2), each = 2))
   p <- ggplot() +
@@ -234,4 +239,21 @@ image_content_plot <- function() {
       annotate_typst(names(cells)[i], x = x[i], y = y[i] - 0.3, size = 8)
   }
   p
+}
+
+# One plot with solid fills and strokes, including page fills, drawn as paths
+# (no images), on a grey background so that white fills show.
+solid_content_plot <- function() {
+  cells <- c(
+    "Page fill" = r"(#set page(fill: rgb("#FAD7A0"))
+Page fill)",
+    "Page fill auto (white)" = r"(#set page(fill: auto)
+Auto)",
+    "Filled box and circle" = r"(#box(width: 30pt, height: 16pt, fill: rgb("#2a9d8f")) #h(6pt) #box(circle(radius: 8pt, fill: rgb("#e76f51"))))",
+    "Solid and dashed borders" = r"(#box(width: 30pt, height: 16pt, stroke: 1.5pt + rgb("#264653")) #h(6pt) #box(width: 30pt, height: 16pt, stroke: (paint: rgb("#e63946"), thickness: 1.5pt, dash: "dashed")))",
+    "Semi-transparent fills" = r"(#box(width: 24pt, height: 16pt, fill: rgb("#1E66F580")) #h(-10pt) #box(width: 24pt, height: 16pt, fill: rgb("#D20F3980")))",
+    "Rounded box with fill and border" = r"(#box(fill: rgb("#FFF3B0"), stroke: 0.8pt + rgb("#E09F3E"), inset: 4pt, radius: 4pt)[Note $x^2$])"
+  )
+  cells_plot(cells) +
+    theme(plot.background = element_rect(fill = "grey85", colour = NA))
 }

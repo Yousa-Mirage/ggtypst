@@ -215,6 +215,10 @@ test_that("visual: content drawn as images and nested clip regions", {
   expect_svglite_snapshot("image-content-glyphs", image_content_plot())
 })
 
+test_that("visual: solid fills, borders, and page fills", {
+  expect_svglite_snapshot("solid-content-paths", solid_content_plot(), "path")
+})
+
 test_that("visual: colour emoji as native glyphs and as images", {
   skip_if_no_vdiffr()
   # Emoji come from the system's colour font, which differs between systems.
