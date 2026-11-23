@@ -33,6 +33,9 @@
   embeds the real fonts. On `pdf()` and `postscript()`, which only reference
   fonts by name, text is drawn as outlines so it looks the same everywhere.
   See `?ggtypst-options` to choose.
+- When rendering many different labels, ggtypst now limits the memory
+  retained by Typst's compilation cache by dropping results unused in the last
+  10 renders.
 - `rsvg` and `grImport2` are no longer required. They are only used, when
   installed, to draw Typst content that ggtypst cannot draw with grid yet
   (gradients, images, and color glyphs drawn as outlines), so most

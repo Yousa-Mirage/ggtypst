@@ -14,7 +14,13 @@ fn rs_typst_render(typst_code: &str) -> List {
     let fonts = fonts::get_fonts();
     let world = world::InMemoryWorld::new(typst_code.to_string(), fonts);
 
-    match world.render() {
+    let result = world.render();
+
+    // Like typst-cli's watch mode, drop entries unused in the last 10 renders,
+    // so nearby repeated labels still reuse their results.
+    typst::comemo::evict(10);
+
+    match result {
         Ok(rendered) => rendered.into_r_list(),
         Err(err) => err.to_typst_error(),
     }
