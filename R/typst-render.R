@@ -8,10 +8,9 @@
 #' @return A list with fields:
 #'   - `width_pt`, `height_pt`: size of the layout box, in points;
 #'   - `descent_pt`: the largest font descent of the text, in points;
-#'   - `scene`: what the page draws (see `scene_typst_grob()`);
-#'   - `fallback`: `NULL`, or the page as SVG when the scene cannot be drawn
-#'     with paths (fields `svg`, `width_pt`, `height_pt`, `offset_x_pt`,
-#'     `offset_y_pt`, see `svg_typst_grob()`);
+#'   - `scene`: what the page draws, ready for grid (see `scene_grobs()`).
+#'     Gradients, tilings, images, and colour glyphs are images in it, drawn
+#'     at `getOption("ggtypst.raster_dpi")`;
 #'   - `warnings`: Typst warnings.
 #' @noRd
 typst_render <- function(text) {

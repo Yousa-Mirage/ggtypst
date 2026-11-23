@@ -44,12 +44,15 @@ At a high level, the pipeline is:
       Typst.
 2.  `extendr` forwards the Typst source code into Rust.
 3.  Rust compiles Typst source in an in-memory world and describes the
-    first page as a scene: glyphs (font, glyph id, position), their
-    flattened outlines, and shapes, plus dimensions and diagnostics.
+    first page as a scene ready for grid: glyphs (font, glyph id,
+    position, transform), flattened shapes, clip regions, and runs in
+    drawing order. Content grid cannot draw (gradients, tilings, images,
+    colour emoji) is rendered into images by Typst’s own renderer. The
+    scene comes with the page dimensions and diagnostics.
 4.  R turns the scene into grid grobs and plugs those grobs into
     `ggplot2`. When a grob is drawn, it draws text as native glyphs on
     devices that rasterize or embed fonts, and as outlines elsewhere
-    (see `?ggtypst-options`).
+    (see `?ggtypst-options`); Rust computes the outlines only then.
 
 That split is the key architectural idea of the package: R owns
 user-facing API design and `ggplot2` integration; Rust owns rendering,
