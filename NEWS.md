@@ -29,7 +29,7 @@
 - Typst output is now drawn with grid directly instead of being imported as
   SVG. On devices that rasterize or embed fonts (ragg, `png()`, `cairo_pdf()`,
   svglite, ...) text is drawn as native glyphs, exactly like `ggplot2` text, so
-  it is no longer heavier than `element_text()` on screen and `cairo_pdf()`
+  it no longer seems fatter than `element_text()` on screen and `cairo_pdf()`
   embeds the real fonts. On `pdf()` and `postscript()`, which only reference
   fonts by name, text is drawn as outlines so it looks the same everywhere.
   See `?ggtypst-options` to choose.

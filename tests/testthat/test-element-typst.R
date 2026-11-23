@@ -425,7 +425,6 @@ test_that("element_typst visual: facet strip x and y", {
     facet_grid(vs ~ gear, labeller = label_both) +
     theme_minimal(base_size = 14) +
     theme(
-      strip.text = element_blank(),
       strip.text.x = element_typst(size = 14, face = "bold", colour = "#1E66F5"),
       strip.text.y = element_typst(size = 14, face = "italic", colour = "#D20F39")
     )

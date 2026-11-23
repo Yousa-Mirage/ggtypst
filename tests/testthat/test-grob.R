@@ -149,9 +149,7 @@ test_that("text and shapes are drawn in Typst's order", {
   scene <- typst_test_grob("#box(fill: yellow)[Hi] H")$children[[1]]
 
   for (mode in c("path", "glyph")) {
-    old <- options(ggtypst.renderer = mode)
-    children <- grid::makeContent(scene)$children
-    options(old)
+    children <- with_renderer(mode, grid::makeContent(scene))$children
 
     # The box background first, then the text inside and after it in one run.
     expect_length(children, 2)
@@ -166,7 +164,9 @@ test_that("dashed strokes are drawn as separate dashes", {
 
   grob <- typst_test_grob("#line(length: 30pt, stroke: (paint: black, dash: (4pt, 2pt)))")
   dashes <- drawn_subpaths(grob)
+
   expect_length(dashes, 5)
+
   for (dash in dashes) {
     expect_pt_equal(diff(range(dash[, 1])), 4)
   }
@@ -179,6 +179,7 @@ test_that("clipped groups are clipped", {
   # A 5pt wide clipped box holding much wider text.
   grob <- typst_test_grob("#box(clip: true, width: 5pt, height: 8pt)[HHHHHH]", hjust = 0, vjust = 0)
   ink <- raster_ink(grob)
+
   expect_lt(ink[["right"]] - ink[["left"]], 5.2)
   expect_gt(ink[["right"]] - ink[["left"]], 4)
 })
@@ -189,6 +190,7 @@ test_that("content paths cannot draw falls back to the SVG", {
 
   skip_if_not_installed("rsvg")
   skip_if_not_installed("grImport2")
+
   children <- grid::makeContent(scene)$children
   expect_s3_class(children[[1]], "typst_svg_fallback")
 })
@@ -200,6 +202,7 @@ test_that("without rsvg, the fallback warns once and draws what it can", {
   rlang::reset_message_verbosity("ggtypst_svg_fallback")
   expect_warning(children <- grid::makeContent(scene)$children, "rsvg")
   expect_no_warning(grid::makeContent(scene))
+
   # The plain text is still drawn as outlines.
   expect_s3_class(children[[1]], "pathgrob")
 })

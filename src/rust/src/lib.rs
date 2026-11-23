@@ -8,6 +8,7 @@ mod render;
 mod scene;
 mod world;
 
+/// Convert a Typst document to SVG.
 #[extendr]
 fn rs_typst_svg(typst_code: &str) -> List {
     let fonts = fonts::get_fonts();
@@ -19,7 +20,7 @@ fn rs_typst_svg(typst_code: &str) -> List {
     }
 }
 
-// Data of an embedded font, to write it to a file that devices can load.
+/// Data of an embedded font, to write it to a file that devices can load.
 #[extendr]
 fn rs_typst_font_data(store_index: i32) -> Robj {
     usize::try_from(store_index)
@@ -28,6 +29,7 @@ fn rs_typst_font_data(store_index: i32) -> Robj {
         .map_or_else(|| ().into_robj(), |data| Raw::from_bytes(&data).into_robj())
 }
 
+/// Convert LaTeX code to Typst code.
 #[extendr]
 fn rs_convert_latex_to_typst(latex_code: &str) -> Robj {
     match mitex::convert_latex_to_typst(latex_code) {

@@ -6,6 +6,13 @@ options(device = function(...) grDevices::pdf(file = NULL, ...))
 # its own tests (test-glyph.R).
 options(ggtypst.renderer = "path")
 
+# Evaluate `code` with text drawn by `renderer` ("auto", "glyph", or "path").
+with_renderer <- function(renderer, code) {
+  old <- options(ggtypst.renderer = renderer)
+  on.exit(options(old))
+  force(code)
+}
+
 skip_if_no_vdiffr <- function() {
   testthat::skip_if_not_installed("vdiffr")
 
