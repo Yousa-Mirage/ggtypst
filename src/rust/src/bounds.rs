@@ -5,8 +5,9 @@
 //! rotated without reflow). The renderer sizes the SVG canvas from these
 //! bounds so that nothing is cut off.
 
-use typst::layout::{Abs, Frame, FrameItem, Point, Rect, Transform};
+use typst::layout::{Abs, Frame, FrameItem, Point, Ratio, Rect, Transform};
 use typst::text::TextItem;
+use typst::text::color::{glyph_frame, should_outline};
 
 /// Axis-aligned bounds in page coordinates: points, y pointing down.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -116,6 +117,27 @@ fn text_bounds(text: &TextItem, ts: Transform) -> Option<Bounds> {
         let id = ttf_parser::GlyphId(glyph.id);
         let origin_x = x + glyph.x_offset.at(size);
         let origin_y = -(y + glyph.y_offset.at(size));
+
+        // Colour glyphs (emoji) are drawn from a frame in font units, whose
+        // image need not fit the glyph's outline box: bitmap emoji reach below
+        // the baseline. Bound what is drawn, as typst-render places it.
+        if !should_outline(&text.font, id)
+            && let Some(frame) = glyph_frame(&text.font, glyph.id)
+        {
+            let scale = Ratio::new(size.to_pt() / text.font.units_per_em());
+            let glyph_ts = ts
+                .pre_concat(Transform::translate(origin_x, origin_y))
+                .pre_concat(Transform::scale(scale, scale));
+            if let Some(glyph_bounds) = frame_bounds(&frame.into(), glyph_ts) {
+                bounds = Some(match bounds {
+                    Some(acc) => acc.union(glyph_bounds),
+                    None => glyph_bounds,
+                });
+            }
+            x += glyph.x_advance.at(size);
+            y += glyph.y_advance.at(size);
+            continue;
+        }
 
         let rect = if let Some(outline) = ttf.glyph_bounding_box(id) {
             Some(Rect::new(

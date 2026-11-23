@@ -1372,6 +1372,34 @@ mod tests {
     }
 
     #[test]
+    fn colour_glyph_images_are_not_cut_off() {
+        let (_, scene) = scene_of("H \u{1F600}");
+        let r = &scene.rasters;
+        if r.x.is_empty() {
+            return;
+        }
+        // The emoji reaches below the baseline (y = 0 here).
+        assert!(r.y[0] < -1.0, "image bottom {}", r.y[0]);
+        // Its edges are inside the image, which keeps a margin that is
+        // transparent apart from faint bleed from smoothing the bitmap.
+        let (Ok(w), Ok(h)) = (
+            usize::try_from(r.width_px[0]),
+            usize::try_from(r.height_px[0]),
+        ) else {
+            panic!("the image should have a size");
+        };
+        let alpha = |row: usize, col: usize| r.pixels[0][row * w + col].to_le_bytes()[3];
+        for col in 0..w {
+            assert!(alpha(0, col) <= 8, "top row");
+            assert!(alpha(h - 1, col) <= 8, "bottom row");
+        }
+        for row in 0..h {
+            assert!(alpha(row, 0) <= 8, "left column");
+            assert!(alpha(row, w - 1) <= 8, "right column");
+        }
+    }
+
+    #[test]
     fn nested_clip_regions_know_their_parent() {
         let (_, scene) =
             scene_of("#box(clip: true, width: 8pt)[H #box(clip: true, width: 5pt)[HHH] H] H");
