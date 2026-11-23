@@ -47,8 +47,14 @@ test_that("element_math_mitex() aliases and validation work", {
 
   expect_snapshot(element_math_mitex(size.unit = "inches"), error = TRUE)
   expect_snapshot(element_math_mitex(face = "italic"), error = TRUE)
-  expect_snapshot(element_math_mitex(face = "plain", fontface = "bold"), error = TRUE)
-  expect_snapshot(element_math_mitex(colour = "red", color = "blue"), error = TRUE)
+  expect_snapshot(
+    element_math_mitex(face = "plain", fontface = "bold"),
+    error = TRUE
+  )
+  expect_snapshot(
+    element_math_mitex(colour = "red", color = "blue"),
+    error = TRUE
+  )
 })
 
 test_that("element_math_mitex() defaults are NULL / FALSE", {

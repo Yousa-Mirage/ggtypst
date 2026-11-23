@@ -120,7 +120,11 @@ element_grob_math_impl <- function(
 
   verb <- if (kind == "typst") "normalize" else "convert"
   noun <- if (kind == "typst") "Typst" else "LaTeX"
-  error_msg <- sprintf("Failed to %s a %s math label in {.fn {fn}}.", verb, noun)
+  error_msg <- sprintf(
+    "Failed to %s a %s math label in {.fn {fn}}.",
+    verb,
+    noun
+  )
 
   face <- face %||% element$face
   face <- normalize_face_values(

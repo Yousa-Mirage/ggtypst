@@ -38,7 +38,11 @@ build_typst_source <- function(
   angle = NULL,
   hjust = NULL
 ) {
-  typst_code <- check_single_string(typst_code, "typst_code", allow_null = FALSE)
+  typst_code <- check_single_string(
+    typst_code,
+    "typst_code",
+    allow_null = FALSE
+  )
 
   color <- resolve_arg_alias(color, colour, "color", "colour")
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
@@ -92,7 +96,10 @@ build_typst_source <- function(
 
   # Math Family
   if (!is.null(math_family)) {
-    text_args <- c(text_args, sprintf('#show math.equation: set text(font: "%s")', math_family))
+    text_args <- c(
+      text_args,
+      sprintf('#show math.equation: set text(font: "%s")', math_family)
+    )
   }
 
   # Line height. grid puts baselines `1.2 * lineheight` font sizes apart. With
@@ -110,7 +117,10 @@ build_typst_source <- function(
       "#show: body => context {\n",
       "  let cap-em = measure([H]).height / text.size\n",
       "  show math.equation: set text(top-edge: cap-em * 1em)\n",
-      sprintf("  set par(leading: (%s * 1.2 - cap-em) * 1em)\n", format_typst_number(lineheight %||% 1.2)),
+      sprintf(
+        "  set par(leading: (%s * 1.2 - cap-em) * 1em)\n",
+        format_typst_number(lineheight %||% 1.2)
+      ),
       "  body\n",
       "}"
     )

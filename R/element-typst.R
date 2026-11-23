@@ -1,4 +1,4 @@
-#' @include helper.R grob.R build-source.R typst-svg.R
+#' @include helper.R grob.R build-source.R typst-render.R
 NULL
 
 # element_typst ----------------------------------------------------------------
@@ -33,7 +33,9 @@ merge_element_element_typst <- function(new, old, ...) {
   # Match ggplot2's element semantics: a concrete element overrides an existing
   # element_blank() at the same theme slot. inherit.blank is resolved later when
   # calc_element() combines parent and child theme elements.
-  if (inherits(old, "ggplot2::element_blank") || inherits(old, "element_blank")) {
+  if (
+    inherits(old, "ggplot2::element_blank") || inherits(old, "element_blank")
+  ) {
     return(new)
   }
 
@@ -438,12 +440,12 @@ typst_element_grob <- function(
     hjust = hjust
   )
 
-  rendered <- typst_svg(source)
+  rendered <- typst_render(source)
 
   width_pt <- rendered$width_pt * scale
   height_pt <- rendered$height_pt * scale
 
-  grob <- vector_typst_grob(
+  grob <- scene_typst_grob(
     rendered = rendered,
     x = x,
     y = y,

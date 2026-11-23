@@ -52,7 +52,10 @@ test_that("annotate_typst visual stability with default Typst fonts", {
       color = "#1E66F5"
     )
 
-  vdiffr::expect_doppelganger("annotate-typst-default-font-parameter-coverage", p)
+  vdiffr::expect_doppelganger(
+    "annotate-typst-default-font-parameter-coverage",
+    p
+  )
 })
 
 test_that("annotate_typst system fonts visual check (local only)", {
@@ -60,8 +63,14 @@ test_that("annotate_typst system fonts visual check (local only)", {
   skip_on_ci()
   skip_on_cran()
 
-  arial <- suppressWarnings(typst_svg(build_typst_source("probe", family = "Arial")))
-  courier <- suppressWarnings(typst_svg(build_typst_source("probe", family = "Courier New")))
+  arial <- suppressWarnings(typst_render(build_typst_source(
+    "probe",
+    family = "Arial"
+  )))
+  courier <- suppressWarnings(typst_render(build_typst_source(
+    "probe",
+    family = "Courier New"
+  )))
 
   if (length(arial$warnings) > 0 || length(courier$warnings) > 0) {
     skip("Required system fonts are not available: Arial/Courier New")
@@ -158,14 +167,29 @@ test_that("annotate_typst converts size according to size.unit", {
 })
 
 test_that("annotate_typst validates face", {
-  expect_snapshot(annotate_typst("A", x = 3, y = 25, face = "oblique"), error = TRUE)
+  expect_snapshot(
+    annotate_typst("A", x = 3, y = 25, face = "oblique"),
+    error = TRUE
+  )
 })
 
 test_that("annotate_typst lineheight changes rendered annotation height", {
   label <- "first line #linebreak() second line"
 
-  layer_tight <- annotate_typst(label, x = 3, y = 25, size = 12, lineheight = 0.8)
-  layer_loose <- annotate_typst(label, x = 3, y = 25, size = 12, lineheight = 1.8)
+  layer_tight <- annotate_typst(
+    label,
+    x = 3,
+    y = 25,
+    size = 12,
+    lineheight = 0.8
+  )
+  layer_loose <- annotate_typst(
+    label,
+    x = 3,
+    y = 25,
+    size = 12,
+    lineheight = 1.8
+  )
 
   height_tight <- grid::convertHeight(
     grid::grobHeight(layer_tight$geom_params$grob),

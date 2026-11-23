@@ -8,6 +8,7 @@
 ^\.vscode($|/)
 ^\.zed($|/)
 ^\.github($|/)
+^\.jj($|/)
 
 # temp files
 ^test\.R$

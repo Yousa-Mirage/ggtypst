@@ -46,8 +46,14 @@ test_that("element_math_typst() aliases and validation work", {
 
   expect_snapshot(element_math_typst(size.unit = "inches"), error = TRUE)
   expect_snapshot(element_math_typst(face = "italic"), error = TRUE)
-  expect_snapshot(element_math_typst(face = "plain", fontface = "bold"), error = TRUE)
-  expect_snapshot(element_math_typst(colour = "red", color = "blue"), error = TRUE)
+  expect_snapshot(
+    element_math_typst(face = "plain", fontface = "bold"),
+    error = TRUE
+  )
+  expect_snapshot(
+    element_math_typst(colour = "red", color = "blue"),
+    error = TRUE
+  )
 })
 
 test_that("element_math_typst() defaults are NULL / FALSE", {

@@ -15,14 +15,24 @@ leading_rule <- function(lineheight = "1.2") {
   )
 }
 
-source_lines <- function(...) strsplit(build_typst_source(...), "\n", fixed = TRUE)[[1]]
+source_lines <- function(...) {
+  strsplit(build_typst_source(...), "\n", fixed = TRUE)[[1]]
+}
 
 test_that("build_typst_source wraps text with page defaults", {
-  expect_equal(source_lines(r"(Hello)"), c(preamble_set, leading_rule(), r"(Hello)"))
+  expect_equal(
+    source_lines(r"(Hello)"),
+    c(preamble_set, leading_rule(), r"(Hello)")
+  )
 })
 
 test_that("build_typst_source adds color, alpha, and size directives", {
-  lines <- source_lines(typst_code = r"(A)", color = "#33669980", alpha = 0.5, size = 12.5)
+  lines <- source_lines(
+    typst_code = r"(A)",
+    color = "#33669980",
+    alpha = 0.5,
+    size = 12.5
+  )
 
   expect_equal(
     lines,
@@ -57,7 +67,13 @@ line2 {x} % y)"
 
   expect_equal(
     source_lines(text, size = 11),
-    c(preamble_set, "#set text(size: 11pt)", leading_rule(), "line1", "line2 {x} % y")
+    c(
+      preamble_set,
+      "#set text(size: 11pt)",
+      leading_rule(),
+      "line1",
+      "line2 {x} % y"
+    )
   )
 })
 
@@ -93,7 +109,10 @@ test_that("build_typst_source supports colour and fontface aliases", {
 test_that("build_typst_source does not force italic styling onto math", {
   lines <- source_lines("$ x $", face = "italic")
 
-  expect_equal(lines, c(preamble_set, '#set text(style: "italic")', leading_rule(), "$ x $"))
+  expect_equal(
+    lines,
+    c(preamble_set, '#set text(style: "italic")', leading_rule(), "$ x $")
+  )
   expect_false(any(grepl("#show math\\.equation: set text\\(weight:", lines)))
 })
 
@@ -117,7 +136,10 @@ test_that("build_typst_source maps hjust to the nearest Typst alignment", {
 
   # The user's own alignment comes after ours, so it wins.
   src <- build_typst_source("#align(right)[A]", hjust = 0)
-  expect_lt(regexpr("#set align(left)", src, fixed = TRUE), regexpr("#align(right)", src, fixed = TRUE))
+  expect_lt(
+    regexpr("#set align(left)", src, fixed = TRUE),
+    regexpr("#align(right)", src, fixed = TRUE)
+  )
 })
 
 test_that("build_typst_source validates arguments", {
@@ -125,9 +147,15 @@ test_that("build_typst_source validates arguments", {
   expect_snapshot(build_typst_source("A", size = 0), error = TRUE)
   expect_snapshot(build_typst_source("A", alpha = 1.1), error = TRUE)
   expect_snapshot(build_typst_source("A", color = "not-a-color"), error = TRUE)
-  expect_snapshot(build_typst_source("A", color = "red", colour = "blue"), error = TRUE)
+  expect_snapshot(
+    build_typst_source("A", color = "red", colour = "blue"),
+    error = TRUE
+  )
   expect_snapshot(build_typst_source("A", face = "oblique"), error = TRUE)
-  expect_snapshot(build_typst_source("A", face = "plain", fontface = "bold"), error = TRUE)
+  expect_snapshot(
+    build_typst_source("A", face = "plain", fontface = "bold"),
+    error = TRUE
+  )
 })
 
 test_that("convert_latex_to_typst returns mitex-ready typst code", {
@@ -168,5 +196,5 @@ test_that("convert_latex_to_typst supports matrix environments without alias", {
     r"(\begin{pmatrix}1 & 2 \\ 3 & 4\end{pmatrix})"
   )
 
-  expect_no_error(typst_svg(build_typst_source(src)))
+  expect_no_error(typst_render(build_typst_source(src)))
 })

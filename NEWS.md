@@ -1,5 +1,7 @@
 # ggtypst 0.2.0
 
+- **(BREAKING)** ggtypst now requires R >= 4.3, which added the native glyph
+  rendering (`grid::glyphGrob()`) used to draw Typst text.
 - **(BREAKING)** `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`
   now require optional arguments after `x` and `y` to be named, so misplaced
   positional inputs and misspelled argument names fail fast.
@@ -24,6 +26,22 @@
   `1.2 * lineheight` font sizes as in `ggplot2` (it used to add that much
   spacing between lines), defaulting to `geom_text()`'s 1.2; and theme
   elements reserve the same height for any text of a given font and size.
+- Typst output is now drawn with grid directly instead of being imported as
+  SVG. On devices that rasterize or embed fonts (ragg, `png()`, `cairo_pdf()`,
+  svglite, ...) text is drawn as native glyphs, exactly like `ggplot2` text, so
+  it no longer seems fatter than `element_text()` on screen and `cairo_pdf()`
+  embeds the real fonts. On `pdf()` and `postscript()`, which only reference
+  fonts by name, text is drawn as outlines so it looks the same everywhere.
+  See `?ggtypst-options` to choose.
+- When rendering many different labels, ggtypst now limits the memory
+  retained by Typst's compilation cache by dropping results unused in the last
+  10 renders.
+- `rsvg` and `grImport2` are no longer used, so installing ggtypst no longer
+  needs the system library `librsvg`. Content that grid cannot draw as text
+  or lines (gradients, tilings, images, and color emoji) is
+  drawn as an image rendered by Typst, at `ggtypst.raster_dpi` (600 dpi by
+  default; see `?ggtypst-options`). Clipped boxes inside clipped boxes are now
+  clipped by both.
 
 # ggtypst 0.1.0
 

@@ -2,11 +2,13 @@
 //!
 //! Typst lays text out by advance widths, so glyph ink can extend past the
 //! page (italic overhangs, descender tails, content moved with `#move` or
-//! rotated without reflow). The renderer sizes the SVG canvas from these
-//! bounds so that nothing is cut off.
+//! rotated without reflow). Items drawn as images are sized from these
+//! bounds so that nothing is cut off. Bounds are in page points, y pointing
+//! down.
 
-use typst::layout::{Abs, Frame, FrameItem, Point, Rect, Transform};
+use typst::layout::{Abs, Frame, FrameItem, Point, Ratio, Rect, Transform};
 use typst::text::TextItem;
+use typst::text::color::{glyph_frame, should_outline};
 
 /// Axis-aligned bounds in page coordinates: points, y pointing down.
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -35,7 +37,7 @@ impl Bounds {
         self.max_y - self.min_y
     }
 
-    fn expand(self, by: f64) -> Self {
+    pub fn expand(self, by: f64) -> Self {
         Self {
             min_x: self.min_x - by,
             min_y: self.min_y - by,
@@ -71,6 +73,7 @@ impl Bounds {
 }
 
 /// Ink bounds of everything `frame` draws, or `None` if it draws nothing.
+#[cfg(test)]
 pub fn ink_bounds(frame: &Frame) -> Option<Bounds> {
     frame_bounds(frame, Transform::identity())
 }
@@ -81,20 +84,23 @@ fn frame_bounds(frame: &Frame, ts: Transform) -> Option<Bounds> {
         .filter_map(|(pos, item)| {
             // Same composition order as typst-svg: item position, then the
             // group's own transform.
-            let ts = ts.pre_concat(Transform::translate(pos.x, pos.y));
-            match item {
-                FrameItem::Group(group) => {
-                    frame_bounds(&group.frame, ts.pre_concat(group.transform))
-                }
-                FrameItem::Text(text) => text_bounds(text, ts),
-                FrameItem::Shape(shape, _) => Bounds::of_rect(shape.bbox(true), ts),
-                FrameItem::Image(_, size, _) => {
-                    Bounds::of_rect(Rect::from_pos_size(Point::zero(), *size), ts)
-                }
-                FrameItem::Link(..) | FrameItem::Tag(_) => None,
-            }
+            item_bounds(item, ts.pre_concat(Transform::translate(pos.x, pos.y)))
         })
         .reduce(Bounds::union)
+}
+
+/// Ink bounds of `item` drawn with transform `ts`, or `None` if it draws
+/// nothing.
+pub fn item_bounds(item: &FrameItem, ts: Transform) -> Option<Bounds> {
+    match item {
+        FrameItem::Group(group) => frame_bounds(&group.frame, ts.pre_concat(group.transform)),
+        FrameItem::Text(text) => text_bounds(text, ts),
+        FrameItem::Shape(shape, _) => Bounds::of_rect(shape.bbox(true), ts),
+        FrameItem::Image(_, size, _) => {
+            Bounds::of_rect(Rect::from_pos_size(Point::zero(), *size), ts)
+        }
+        FrameItem::Link(..) | FrameItem::Tag(_) => None,
+    }
 }
 
 fn text_bounds(text: &TextItem, ts: Transform) -> Option<Bounds> {
@@ -112,6 +118,27 @@ fn text_bounds(text: &TextItem, ts: Transform) -> Option<Bounds> {
         let id = ttf_parser::GlyphId(glyph.id);
         let origin_x = x + glyph.x_offset.at(size);
         let origin_y = -(y + glyph.y_offset.at(size));
+
+        // Colour glyphs (emoji) are drawn from a frame in font units, whose
+        // image need not fit the glyph's outline box: bitmap emoji reach below
+        // the baseline. Bound what is drawn, as typst-render places it.
+        if !should_outline(&text.font, id)
+            && let Some(frame) = glyph_frame(&text.font, glyph.id)
+        {
+            let scale = Ratio::new(size.to_pt() / text.font.units_per_em());
+            let glyph_ts = ts
+                .pre_concat(Transform::translate(origin_x, origin_y))
+                .pre_concat(Transform::scale(scale, scale));
+            if let Some(glyph_bounds) = frame_bounds(&frame.into(), glyph_ts) {
+                bounds = Some(match bounds {
+                    Some(acc) => acc.union(glyph_bounds),
+                    None => glyph_bounds,
+                });
+            }
+            x += glyph.x_advance.at(size);
+            y += glyph.y_advance.at(size);
+            continue;
+        }
 
         let rect = if let Some(outline) = ttf.glyph_bounding_box(id) {
             Some(Rect::new(

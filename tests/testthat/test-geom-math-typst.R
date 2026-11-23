@@ -167,7 +167,13 @@ test_that("geom_math_typst visual delimiter normalization", {
   )
 
   p <- ggplot(df, aes(x, y, label = label, colour = colour, face = face)) +
-    geom_point(aes(x, y), size = 1.1, alpha = 0.35, colour = "grey45", inherit.aes = FALSE) +
+    geom_point(
+      aes(x, y),
+      size = 1.1,
+      alpha = 0.35,
+      colour = "grey45",
+      inherit.aes = FALSE
+    ) +
     geom_math_typst(size = 13) +
     scale_colour_identity() +
     coord_cartesian(xlim = c(1.4, 5.5), ylim = c(28, 34)) +
@@ -190,8 +196,18 @@ test_that("geom_math_typst visual display vs inline with facets", {
       "sum_(i=1)^n i",
       "integral_0^1 x^2 dif x"
     ),
-    colour = c("#1E66F5", "#D20F39", "#40A02B", "#1E66F5", "#D20F39", "#40A02B"),
-    mode = factor(rep(c("Display", "Inline"), each = 3), levels = c("Display", "Inline"))
+    colour = c(
+      "#1E66F5",
+      "#D20F39",
+      "#40A02B",
+      "#1E66F5",
+      "#D20F39",
+      "#40A02B"
+    ),
+    mode = factor(
+      rep(c("Display", "Inline"), each = 3),
+      levels = c("Display", "Inline")
+    )
   )
 
   p <- ggplot(df, aes(x, y)) +

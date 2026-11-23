@@ -21,7 +21,16 @@ build_geom_showcase <- function() {
   )
 
   frontier <- mtcars[
-    match(c("Toyota Corolla", "Fiat 128", "Ferrari Dino", "Hornet Sportabout", "Maserati Bora"), rownames(mtcars)),
+    match(
+      c(
+        "Toyota Corolla",
+        "Fiat 128",
+        "Ferrari Dino",
+        "Hornet Sportabout",
+        "Maserati Bora"
+      ),
+      rownames(mtcars)
+    ),
   ]
 
   ggplot(mtcars, aes(wt, mpg)) +
@@ -49,7 +58,11 @@ build_geom_showcase <- function() {
       show.legend = FALSE
     ) +
     geom_math_mitex(
-      data = data.frame(wt = 3.55, mpg = 26.4, label = r"(\eta = \frac{mpg}{wt})"),
+      data = data.frame(
+        wt = 3.55,
+        mpg = 26.4,
+        label = r"(\eta = \frac{mpg}{wt})"
+      ),
       aes(wt, mpg, label = label),
       color = "#1D4E89",
       size = 16,

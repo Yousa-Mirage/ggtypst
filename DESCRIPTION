@@ -12,7 +12,8 @@ Description: Provides a seamless integration of the 'Typst' typesetting engine
     into 'ggplot2'. It allows users to render complex mathematical formulas, 
     equations, and rich text directly in plot annotations, axis labels, 
     and titles without requiring a local Typst or LaTeX installation. Under
-    the hood, it leverages Rust FFI to compile Typst code into SVG.
+    the hood, it lays out Typst code through Rust FFI and draws the result
+    with 'grid'.
 URL: https://github.com/Yousa-Mirage/ggtypst,
     https://yousa-mirage.github.io/ggtypst/
 BugReports: https://github.com/Yousa-Mirage/ggtypst/issues
@@ -23,23 +24,24 @@ Config/rextendr/version: 0.5.0
 Config/Needs/website: pkgdown, pkgload
 SystemRequirements: Cargo (Rust's package manager), rustc >= 1.89.0
 Depends: 
-    R (>= 4.2),
+    R (>= 4.3),
     ggplot2
 Imports:
     S7,
     cli,
-    grImport2,
     grDevices,
     grid,
-    rlang,
-    rsvg
+    rlang
 Suggests: 
     ggtext,
     knitr,
     pkgdown,
+    png,
+    ragg,
     rmarkdown,
     spelling,
     svglite,
+    systemfonts,
     testthat (>= 3.0.0),
     vdiffr
 VignetteBuilder: knitr
@@ -50,7 +52,7 @@ Collate:
     'annotate-math.R'
     'build-source.R'
     'diagnostic.R'
-    'typst-svg.R'
+    'typst-render.R'
     'grob.R'
     'helper.R'
     'element-typst.R'
@@ -59,6 +61,8 @@ Collate:
     'geom-typst.R'
     'geom-math.R'
     'mitex.R'
+    'options.R'
+    'scene.R'
     'zzz.R'
 Language: en-US
-Config/roxygen2/version: 8.0.0
+Config/roxygen2/version: 8.1.1

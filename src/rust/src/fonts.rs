@@ -25,7 +25,7 @@ mod tests {
         Hello World"#;
 
         let world = InMemoryWorld::new(text.to_string(), fonts);
-        let result = world.compile_to_svg();
+        let result = world.render(600.0);
 
         assert!(result.is_ok(), "Typst compilation failed with system font");
     }
@@ -38,7 +38,7 @@ mod tests {
         Hello World"#;
 
         let world = InMemoryWorld::new(text.to_string(), fonts);
-        let result = world.compile_to_svg();
+        let result = world.render(600.0);
 
         assert!(
             result.is_ok(),

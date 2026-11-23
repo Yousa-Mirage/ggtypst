@@ -31,7 +31,10 @@ warn_typst_warnings <- function(warnings) {
       hints <- diagnostic$hints
       if (length(hints) > 0) {
         msg <- c(msg, stats::setNames("{.strong Hint:}", "i"))
-        msg <- c(msg, stats::setNames(escape_cli(hints), rep(" ", length(hints))))
+        msg <- c(
+          msg,
+          stats::setNames(escape_cli(hints), rep(" ", length(hints)))
+        )
       }
 
       msg
@@ -59,9 +62,9 @@ warn_typst_warnings <- function(warnings) {
 abort_typst_errors <- function(err) {
   kind <- err$kind
 
-  if (kind == "EmptySvg") {
+  if (kind == "EmptyPage") {
     cli::cli_abort(
-      "Typst rendered an empty SVG. Check your input.",
+      "Typst output has nothing to draw. Check your input.",
       class = c("ggtypst_typst_error", "typst_error"),
       typst_error = err,
       call = rlang::caller_env()

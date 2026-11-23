@@ -1,8 +1,3 @@
-typst_test_grob <- function(code, ...) {
-  rendered <- typst_svg(build_typst_source(code))
-  positioned_typst_grob(rendered, ...)
-}
-
 test_that("Typst output is drawn at its exact size", {
   skip_if_not_installed("svglite")
 
@@ -15,30 +10,6 @@ test_that("Typst output is drawn at its exact size", {
   ink <- ink_extent(typst_test_grob(box, scale = 2))
   expect_pt_equal(ink$right - ink$left, 40)
   expect_pt_equal(ink$bottom - ink$top, 20)
-})
-
-test_that("curved outlines are flattened finely enough to look smooth", {
-  skip_if_not_installed("svglite")
-
-  grob <- typst_test_grob("#circle(radius: 10pt, fill: black)")
-
-  s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
-  grid::grid.newpage()
-  grid::grid.draw(grob)
-  grDevices::dev.off()
-
-  svg <- as.character(s())
-  outline <- regmatches(svg, regexpr("<polygon points='[^']+'", svg))
-  nums <- as.numeric(unlist(regmatches(outline, gregexpr("-?[0-9]+(\\.[0-9]+)?", outline))))
-  xs <- nums[c(TRUE, FALSE)]
-  ys <- nums[c(FALSE, TRUE)]
-
-  # Largest angle between consecutive outline vertices, seen from the centre.
-  # Without oversampling grImport2 leaves ~10 degree facets on this circle.
-  angles <- sort(atan2(ys - mean(range(ys)), xs - mean(range(xs))))
-  max_step <- max(diff(c(angles, angles[1] + 2 * pi))) * 180 / pi
-
-  expect_lt(max_step, 6)
 })
 
 test_that("single-line and multi-line labels render glyphs at the same size", {
@@ -61,27 +32,16 @@ test_that("lines of multi-line labels are aligned by hjust in every API", {
   )
 
   line_edges <- function(grob) {
-    s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
-    grid::grid.newpage()
-    grid::grid.draw(grob)
-    grDevices::dev.off()
-    svg <- as.character(s())
-    polys <- regmatches(svg, gregexpr("<polygon points='[^']+'", svg))[[1]]
-    t(vapply(
-      polys,
-      function(p) {
-        v <- as.numeric(regmatches(p, gregexpr("-?[0-9]+(\\.[0-9]+)?", p))[[1]])
-        range(v[c(TRUE, FALSE)])
-      },
-      numeric(2),
-      USE.NAMES = FALSE
-    ))
+    t(vapply(drawn_subpaths(grob), function(m) range(m[, 1]), numeric(2)))
   }
 
   apis <- list(
-    annotate = function(h) annotate_typst(label, x = 0, y = 0, hjust = h)$geom_params$grob,
+    annotate = function(h) {
+      annotate_typst(label, x = 0, y = 0, hjust = h)$geom_params$grob
+    },
     geom = function(h) {
-      p <- ggplot(data.frame(x = 0, y = 0), aes(x, y)) + geom_typst(label = label, hjust = h)
+      p <- ggplot(data.frame(x = 0, y = 0), aes(x, y)) +
+        geom_typst(label = label, hjust = h)
       layer_grob(p)[[1]]
     },
     element = function(h) element_grob(element_typst(hjust = h), label = label)
@@ -102,7 +62,7 @@ test_that("lines of multi-line labels are aligned by hjust in every API", {
 test_that("the layout box spans cap height to baseline", {
   heights <- vapply(
     c("HHH", "ace", "Ågy", "$x$", "$integral_0^1 x^2$", "a $x^2$"),
-    function(code) typst_svg(build_typst_source(code, size = 10))$height_pt,
+    function(code) typst_render(build_typst_source(code, size = 10))$height_pt,
     numeric(1)
   )
   expect_equal(unname(heights), rep(heights[[1]], 6))
@@ -128,18 +88,15 @@ test_that("baselines are 1.2 * lineheight font sizes apart", {
   # sits on the baseline.
   line_bottoms <- function(lineheight, prefix = "") {
     code <- paste0(prefix, "H #linebreak() H")
-    rendered <- typst_svg(build_typst_source(code, size = 10, lineheight = lineheight))
-    s <- svglite::svgstring(width = 4, height = 3, standalone = FALSE)
-    grid::grid.newpage()
-    grid::grid.draw(positioned_typst_grob(rendered))
-    grDevices::dev.off()
-    svg <- as.character(s())
-    polys <- regmatches(svg, gregexpr("<polygon points='[^']+'", svg))[[1]]
+    rendered <- typst_render(build_typst_source(
+      code,
+      size = 10,
+      lineheight = lineheight
+    ))
     vapply(
-      polys,
-      function(p) max(as.numeric(regmatches(p, gregexpr("-?[0-9]+(\\.[0-9]+)?", p))[[1]])[c(FALSE, TRUE)]),
-      numeric(1),
-      USE.NAMES = FALSE
+      drawn_subpaths(positioned_typst_grob(rendered)),
+      function(m) max(m[, 2]),
+      numeric(1)
     )
   }
 
@@ -156,7 +113,10 @@ test_that("baselines are 1.2 * lineheight font sizes apart", {
 test_that("ink overhanging the layout box is drawn, not clipped", {
   skip_if_not_installed("svglite")
 
-  rendered <- typst_svg(build_typst_source('#text(style: "italic")[f]', size = 40))
+  rendered <- typst_render(build_typst_source(
+    '#text(style: "italic")[f]',
+    size = 40
+  ))
   ink <- ink_extent(positioned_typst_grob(rendered, hjust = 0, vjust = 0.5))
 
   # With hjust = 0 the layout box starts at the device centre (144pt); the
@@ -169,9 +129,13 @@ test_that("justification is relative to the Typst layout box, not the padded can
   skip_if_not_installed("svglite")
 
   box <- "#box(width: 20pt, height: 10pt, fill: black)"
-  rendered <- typst_svg(build_typst_source(box))
+  rendered <- typst_render(build_typst_source(box))
 
-  bottom_left <- ink_extent(positioned_typst_grob(rendered, hjust = 0, vjust = 0))
+  bottom_left <- ink_extent(positioned_typst_grob(
+    rendered,
+    hjust = 0,
+    vjust = 0
+  ))
   top_right <- ink_extent(positioned_typst_grob(rendered, hjust = 1, vjust = 1))
 
   # Moving the anchor from one corner of the layout box to the other shifts the

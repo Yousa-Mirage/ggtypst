@@ -5,7 +5,9 @@ suppressPackageStartupMessages({
 
 build_annotate_showcase <- function() {
   cars <- transform(mtcars, model = rownames(mtcars))
-  focus <- cars[cars$model %in% c("Toyota Corolla", "Ferrari Dino", "Maserati Bora"), ]
+  focus <- cars[
+    cars$model %in% c("Toyota Corolla", "Ferrari Dino", "Maserati Bora"),
+  ]
 
   ggplot(cars, aes(wt, mpg)) +
     geom_point(color = "#9AA5B1", alpha = 0.45, size = 2.4) +

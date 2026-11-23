@@ -10,7 +10,11 @@
 #' @useDynLib ggtypst, .registration = TRUE
 NULL
 
-rs_typst_svg <- function(typst_code) .Call(wrap__rs_typst_svg, typst_code)
+rs_typst_render <- function(typst_code, raster_dpi) .Call(wrap__rs_typst_render, typst_code, raster_dpi)
+
+rs_glyph_outlines <- function(fonts, glyphs) .Call(wrap__rs_glyph_outlines, fonts, glyphs)
+
+rs_typst_write_font <- function(store_index, collection_index, cache_key, path) .Call(wrap__rs_typst_write_font, store_index, collection_index, cache_key, path)
 
 rs_convert_latex_to_typst <- function(latex_code) .Call(wrap__rs_convert_latex_to_typst, latex_code)
 
