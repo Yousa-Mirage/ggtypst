@@ -16,7 +16,9 @@ export(geom_math_mitex)
 export(geom_math_typst)
 export(geom_typst)
 import(ggplot2)
-importFrom(grid,heightDetails)
-importFrom(grid,makeContent)
-importFrom(grid,widthDetails)
+importFrom(grid,
+  heightDetails,
+  makeContent,
+  widthDetails
+)
 useDynLib(ggtypst, .registration = TRUE)
