@@ -22,7 +22,7 @@
 #'   rotated word in it. A label rotated as a whole still uses native glyphs.
 #' - `ggtypst.raster_dpi`: resolution, in dots per inch, of the images that
 #'   draw content grid cannot draw as text or lines: gradients, tilings,
-#'   images, and colour glyphs (emoji) when text is drawn as outlines. Defaults
+#'   images, and color glyphs (emoji) when text is drawn as outlines. Defaults
 #'   to 600, twice the usual print resolution: an image drawn into an output
 #'   of the same resolution is resampled and looks slightly soft, while one of
 #'   twice the resolution looks the same as the vector original. Each image is
