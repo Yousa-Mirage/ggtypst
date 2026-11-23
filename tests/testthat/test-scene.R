@@ -158,22 +158,18 @@ test_that("the resolution of images follows ggtypst.raster_dpi", {
   expect_error(typst_render(code), "ggtypst.raster_dpi")
 })
 
-test_that("colour glyphs are images only when text is drawn as paths", {
-  scene <- typst_test_grob("H \U0001F600")$children[[1]]
-  skip_if_not(
-    any(scene$scene$glyphs$colour),
+test_that("colour glyphs are images however text is drawn", {
+  scene <- typst_test_grob("H \U0001F600 H")$children[[1]]
+  skip_if(
+    length(scene$scene$rasters$x) == 0,
     "needs a colour emoji font"
   )
+  expect_equal(scene$scene$runs$kind, c("glyph", "raster", "glyph"))
 
-  kinds <- function(mode) {
+  for (mode in c("glyph", "path")) {
     children <- with_renderer(mode, grid::makeContent(scene))$children
-    vapply(children, function(child) class(child)[1], character(1))
+    expect_s3_class(children[[2]], "rastergrob")
   }
-  expect_false("rastergrob" %in% kinds("glyph"))
-  expect_true("rastergrob" %in% kinds("path"))
-  # As paths, the emoji is not also drawn by its outline.
-  outlines <- glyph_outlines(scene$scene)
-  expect_equal(outlines$n_points[scene$scene$glyphs$colour], 0L)
 })
 
 test_that("nested clip regions are intersected", {

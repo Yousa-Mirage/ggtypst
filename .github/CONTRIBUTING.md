@@ -121,8 +121,7 @@ Important modules include:
 - `scene.rs`: walks the laid-out page into a draw-ready scene of glyphs,
   shapes, clip regions, drawing runs, and fonts
 - `raster.rs`: draws what grid cannot (gradients, tilings, images,
-  colour glyphs drawn as paths) as images with Typst’s own renderer,
-  `typst-render`
+  colour glyphs) as images with Typst’s own renderer, `typst-render`
 - `outlines.rs`: computes glyph outlines from a scene’s glyph table and
   fonts, for drawing text as paths
 - `bounds.rs`: ink bounds and font descent of a page

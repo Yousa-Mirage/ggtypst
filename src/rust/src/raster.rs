@@ -1,6 +1,6 @@
 //! Images of scene items that grid cannot draw as native glyphs or paths:
 //! text and shapes painted with gradients or tilings, images, and colour
-//! glyphs (emoji) when text is drawn as paths.
+//! glyphs (emoji).
 //!
 //! Typst's own renderer (typst-render) draws each such item on its own, so the
 //! image looks exactly as Typst draws it. R places it with `grid::rasterGrob()`

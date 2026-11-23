@@ -38,7 +38,7 @@
   10 renders.
 - `rsvg` and `grImport2` are no longer used, so installing ggtypst no longer
   needs the system library `librsvg`. Content that grid cannot draw as text
-  or lines (gradients, tilings, images, and color emoji drawn as outlines) is
+  or lines (gradients, tilings, images, and color emoji) is
   drawn as an image rendered by Typst, at `ggtypst.raster_dpi` (600 dpi by
   default; see `?ggtypst-options`). Clipped boxes inside clipped boxes are now
   clipped by both.
