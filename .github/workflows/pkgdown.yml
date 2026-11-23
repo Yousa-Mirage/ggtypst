@@ -3,8 +3,6 @@ name: pkgdown
 on:
   push:
     branches: [main, master]
-  pull_request:
-    branches: [main, master]
   release:
     types: [published]
   workflow_dispatch:
@@ -32,7 +30,6 @@ jobs:
         with:
           use-public-rspm: true
           extra-repositories: https://community.r-multiverse.org
-
 
       - name: Install Rust toolchain
         uses: dtolnay/rust-toolchain@stable

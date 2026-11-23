@@ -12,36 +12,46 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  air-check:
-    name: air-check
+  code-quality:
+    name: code-quality
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
 
-      - name: Install air
-        run: curl -LsSf https://github.com/posit-dev/air/releases/latest/download/air-installer.sh | sh
-
-      - name: Check R formatting
-        run: air format . --check
-
-  jarl-check:
-    name: jarl-check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - uses: etiennebacher/setup-jarl@v0.1.0
-
-  spelling-check:
-    name: spelling-check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: r-lib/actions/setup-r@v2
+      - name: Install R
+        uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
 
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: Cache Rust
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: src/rust -> target
+          # Keep the cache when only a formatting or lint check failed.
+          cache-on-failure: true
+
+      - name: Install air
+        uses: posit-dev/setup-air@v1
+
+      - name: Check R formatting
+        if: ${{ !cancelled() }}
+        run: air format . --check
+
+      - name: Lint R code
+        if: ${{ !cancelled() }}
+        uses: etiennebacher/setup-jarl@v0.1.1
+
+      - name: Check Rust formatting
+        if: ${{ !cancelled() }}
+        run: cargo fmt --manifest-path src/rust/Cargo.toml --check
+
       - name: Spell check
+        if: ${{ !cancelled() }}
         run: |
           install.packages(c("spelling", "cli", "rlang"))
           options(crayon.enabled = TRUE)
@@ -56,28 +66,6 @@ jobs:
           cli::cli_rule()
         shell: Rscript {0}
 
-  rust-check:
-    name: rust-check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - uses: r-lib/actions/setup-r@v2
-        with:
-          use-public-rspm: true
-
-      - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-        with:
-          components: rustfmt, clippy
-
-      - name: Cache Rust build artifacts
-        uses: Swatinem/rust-cache@v2
-        with:
-          workspaces: src/rust -> target
-
-      - name: Check Rust formatting
-        run: cargo fmt --manifest-path src/rust/Cargo.toml --check
-
       - name: Run clippy
+        if: ${{ !cancelled() }}
         run: cargo clippy --manifest-path src/rust/Cargo.toml

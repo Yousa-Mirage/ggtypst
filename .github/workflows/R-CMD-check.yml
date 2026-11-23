@@ -38,15 +38,15 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        r: ['release']
+        r: ["release"]
         include:
           - os: ubuntu-latest
-            r: '4.3'
+            r: "4.3"
 
     env:
       GITHUB_PAT: ${{ secrets.GITHUB_TOKEN }}
-      TESTTHAT_CPUS: '2'
-      VDIFFR_RUN_TESTS: 'false'
+      TESTTHAT_CPUS: "2"
+      VDIFFR_RUN_TESTS: "false"
 
     steps:
       - uses: actions/checkout@v6
@@ -58,7 +58,6 @@ jobs:
           r-version: ${{ matrix.r }}
           use-public-rspm: true
           extra-repositories: https://community.r-multiverse.org
-
 
       - name: Install Rust toolchain (Unix)
         if: runner.os != 'Windows'
