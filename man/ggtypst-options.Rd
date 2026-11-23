@@ -21,8 +21,9 @@ drawn as outlines so it looks the same on every computer.
 \item \code{"path"}: outlines on every device.
 }
 
-Text that native glyphs cannot express, such as text with a stroke, is
-always drawn as outlines. On R older than 4.5, the same applies to a
+Text that native glyphs cannot express, such as text with a stroke or in
+a variable font (whose axes R's native glyphs cannot set), is always drawn
+as outlines. On R older than 4.5, the same applies to a
 label whose glyphs have different angles, such as a label with one
 rotated word in it. A label rotated as a whole still uses native glyphs.
 \item \code{ggtypst.raster_dpi}: resolution, in dots per inch, of the images that

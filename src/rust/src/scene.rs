@@ -392,6 +392,12 @@ impl SceneBuilder {
             }
         };
 
+        // R's native glyphs cannot set variable font axes before 4.6.
+        // So just draw them as paths.
+        if !text.font.variations().0.is_empty() {
+            self.no_glyphs("variable font");
+        }
+
         let (scale, rotation) = match similarity(ts) {
             Some(st) => st,
             None => {
@@ -1664,6 +1670,26 @@ mod tests {
         // outside both.
         assert_eq!(scene.runs.clip, vec![1, 2, 1, 0]);
         assert_eq!(scene.runs.segment, vec![1, 2, 3, 4]);
+    }
+
+    #[test]
+    fn variable_fonts_are_drawn_as_paths() {
+        // Only on systems with a variable font.
+        let store = fonts::get_fonts();
+        let book = store.book();
+        let Some(family) = (0..)
+            .map_while(|i| book.info(i))
+            .find(|info| !info.axes.is_empty())
+            .map(|info| info.family.clone())
+        else {
+            return;
+        };
+        let (_, scene) = scene_of(&format!("#text(font: \"{family}\")[H]"));
+        assert!(!scene.glyph_ok, "{family}");
+        assert!(!scene.fonts.variations[0].is_empty(), "{family}");
+
+        let (_, plain) = scene_of("H");
+        assert!(plain.glyph_ok);
     }
 
     #[test]
