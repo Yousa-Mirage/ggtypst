@@ -210,9 +210,6 @@ test_that("devices without groups clip nested regions by the innermost one", {
 test_that("visual: content drawn as images and nested clip regions", {
   skip_if_no_vdiffr()
   skip_if_not_installed("png")
-  # A lower resolution keeps the snapshot small.
-  old <- options(ggtypst.raster_dpi = 150)
-  on.exit(options(old), add = TRUE)
 
   expect_svglite_snapshot("image-content-paths", image_content_plot(), "path")
   expect_svglite_snapshot("image-content-glyphs", image_content_plot())
@@ -226,8 +223,6 @@ test_that("visual: colour emoji as native glyphs and as images", {
     identical(fonts$family, "Apple Color Emoji"),
     "needs Apple Color Emoji"
   )
-  old <- options(ggtypst.raster_dpi = 150)
-  on.exit(options(old), add = TRUE)
 
   p <- ggplot() +
     annotate_typst(

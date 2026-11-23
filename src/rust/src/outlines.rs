@@ -284,7 +284,7 @@ mod tests {
         let Some(page) = doc.pages().first() else {
             panic!("document should have a page");
         };
-        (page.frame.clone(), extract_scene(page, 300.0))
+        (page.frame.clone(), extract_scene(page, 600.0))
     }
 
     fn outlines_of(scene: &Scene) -> Outlines {

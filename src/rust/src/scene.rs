@@ -1015,7 +1015,7 @@ mod tests {
         let Some(page) = doc.pages().first() else {
             panic!("document should have a page");
         };
-        let scene = extract_scene(page, 300.0);
+        let scene = extract_scene(page, 600.0);
         (page.frame.clone(), scene)
     }
 
@@ -1314,13 +1314,13 @@ mod tests {
         assert!(scene.glyph_ok, "{:?}", scene.unsupported);
         assert_eq!(kinds(&scene), vec!["raster"]);
         let r = &scene.rasters;
-        // The shape plus a pixel of margin on each side, at 300 dpi.
-        let margin = 72.0 / 300.0;
+        // The shape plus a pixel of margin on each side, at 600 dpi.
+        let margin = 72.0 / 600.0;
         assert_close(r.width[0], 40.0 + 2.0 * margin);
         assert_close(r.height[0], 10.0 + 2.0 * margin);
         assert_eq!(
             r.width_px[0],
-            r_int((r.width[0] * 300.0 / 72.0).round() as i64)
+            r_int((r.width[0] * 600.0 / 72.0).round() as i64)
         );
         assert!(r.interpolate[0]);
         // Typst mixes gradients in Oklab: red and blue meet at #8C53A2, not at

@@ -96,7 +96,7 @@ mod tests {
 
     fn compile_source(source: &str) -> Result<RenderedPage, RenderError> {
         let world = InMemoryWorld::new(source.to_string(), fonts::get_fonts());
-        world.render(300.0)
+        world.render(600.0)
     }
 
     fn compile_latex(latex_source: &str) -> Result<RenderedPage, RenderError> {
