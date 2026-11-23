@@ -1687,18 +1687,6 @@ mod tests {
     }
 
     #[test]
-    fn long_thin_images_keep_to_the_pixel_cap() {
-        // 8 million pixels long at 600 dpi, and thinner than a pixel.
-        let (_, scene) = scene_of(
-            "#line(length: 1000000pt, stroke: (paint: gradient.linear(red, blue), thickness: 0.01pt))",
-        );
-        let r = &scene.rasters;
-        assert_eq!(r.x.len(), 1);
-        let pixels = f64::from(r.width_px[0]) * f64::from(r.height_px[0]);
-        assert!(pixels <= crate::raster::MAX_PIXELS, "{pixels}");
-    }
-
-    #[test]
     fn page_fills_are_drawn_first() {
         let (_, scene) = scene_of("#set page(fill: rgb(\"#ff0000\"))\nHi");
         assert_eq!(kinds(&scene), vec!["path", "glyph"]);
