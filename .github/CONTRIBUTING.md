@@ -83,10 +83,13 @@ Other R files include:
 - `diagnostic.R`: formats Rust/Typst diagnostics into structured `cli`
   warnings and errors.
 - `typst-render.R`: thin R wrapper around the Rust renderer entrypoint.
-- `grob.R`: turns rendered scenes into measured grid grobs, choosing
-  native glyphs or outlines when drawn; content the scene cannot
-  describe yet (gradients, images) falls back to importing the SVG with
-  the optional `rsvg` and `grImport2` packages.
+- `grob.R`: turns rendered output into measured grid grobs that choose
+  native glyphs or outlines when drawn, and caches what they drew;
+  content the scene cannot describe yet (gradients, images) falls back
+  to importing the SVG with the optional `rsvg` and `grImport2`
+  packages.
+- `scene.R`: draws a rendered scene with grid (glyph runs, outlines,
+  shapes, clip regions) and provides the font files native glyphs need.
 - `helper.R`: shared validators, alias resolution, face normalization,
   unit conversion, and small utility helpers. Prefer reusing those
   helpers instead of open-coding validation.

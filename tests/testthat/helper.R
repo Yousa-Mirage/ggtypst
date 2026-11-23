@@ -143,3 +143,9 @@ raster_ink <- function(grob) {
     72 /
     600
 }
+
+# A positioned grob drawing Typst `code` with the default text settings.
+typst_test_grob <- function(code, ...) {
+  rendered <- typst_render(build_typst_source(code))
+  positioned_typst_grob(rendered, ...)
+}
