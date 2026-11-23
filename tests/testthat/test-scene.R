@@ -192,3 +192,56 @@ test_that("nested clip regions are intersected", {
     expect_equal(unname(ink[["bottom"]] - ink[["top"]]), 30, tolerance = 0.01)
   }
 })
+
+test_that("devices without groups clip nested regions by the innermost one", {
+  scene <- typst_test_grob(
+    r"(#box(clip: true, width: 30pt)[#box(clip: true, width: 20pt)[HHHH]])"
+  )$children[[1]]
+  has_group <- function(grob) {
+    inherits(grob, "GridGroup") ||
+      any(vapply(grob$children %||% list(), has_group, logical(1)))
+  }
+
+  local_mocked_bindings(device_draws_groups = function() FALSE)
+  expect_no_warning(children <- grid::makeContent(scene)$children)
+  expect_false(has_group(children[[1]]))
+
+  # A device that can draw groups gets them, not the cached children.
+  local_mocked_bindings(device_draws_groups = function() TRUE)
+  expect_true(has_group(grid::makeContent(scene)$children[[1]]))
+})
+
+test_that("visual: content drawn as images and nested clip regions", {
+  skip_if_no_vdiffr()
+  skip_if_not_installed("png")
+  # A lower resolution keeps the snapshot small.
+  old <- options(ggtypst.raster_dpi = 150)
+  on.exit(options(old), add = TRUE)
+
+  expect_svglite_snapshot("image-content-paths", image_content_plot(), "path")
+  expect_svglite_snapshot("image-content-glyphs", image_content_plot())
+})
+
+test_that("visual: colour emoji as native glyphs and as images", {
+  skip_if_no_vdiffr()
+  # Emoji come from the system's colour font, which differs between systems.
+  fonts <- typst_render(build_typst_source("\U0001F600"))$scene$fonts
+  skip_if_not(
+    identical(fonts$family, "Apple Color Emoji"),
+    "needs Apple Color Emoji"
+  )
+  old <- options(ggtypst.raster_dpi = 150)
+  on.exit(options(old), add = TRUE)
+
+  p <- ggplot() +
+    annotate_typst(
+      "Emoji \U0001F600 \U0001F680 in text",
+      x = 0,
+      y = 0,
+      size = 16
+    ) +
+    coord_cartesian(xlim = c(-1, 1), ylim = c(-1, 1)) +
+    theme_void()
+  expect_svglite_snapshot("emoji-paths", p, "path", width = 4, height = 1.5)
+  expect_svglite_snapshot("emoji-glyphs", p, width = 4, height = 1.5)
+})

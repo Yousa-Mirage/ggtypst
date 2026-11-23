@@ -122,7 +122,12 @@ makeContent.typst_scene_grob <- function(x) {
 # The children drawing scene grob `x` in `mode`, with what decides whether they
 # can be reused.
 scene_children <- function(x, mode) {
-  entry <- list(scale = x$scale, font_dir = NULL, font_files = character())
+  entry <- list(
+    scale = x$scale,
+    groups = device_draws_groups(),
+    font_dir = NULL,
+    font_files = character()
+  )
 
   font_list <- NULL
   outlines <- NULL
@@ -140,6 +145,7 @@ scene_children <- function(x, mode) {
     mode,
     font_list,
     outlines,
+    entry$groups,
     x$scale,
     x$width_pt,
     x$height_pt
@@ -151,7 +157,11 @@ scene_children <- function(x, mode) {
 # are still there: a grob read back in a new session, a changed
 # `ggtypst.font_cache`, or a deleted font file rebuilds them.
 scene_children_valid <- function(entry, scale) {
-  if (is.null(entry) || !identical(entry$scale, scale)) {
+  if (
+    is.null(entry) ||
+      !identical(entry$scale, scale) ||
+      !identical(entry$groups, device_draws_groups())
+  ) {
     return(FALSE)
   }
   is.null(entry$font_dir) ||
@@ -216,6 +226,14 @@ glyph_devices <- c(
   "svg",
   "devSVG"
 )
+
+# Whether the current device can draw grid groups, which nested clip regions
+# need. Devices without them (vdiffr's SVG device, postscript()) report no
+# compositing operators.
+device_draws_groups <- function() {
+  operators <- grDevices::dev.capabilities("compositing")$compositing
+  !(is.null(operators) || anyNA(operators) || isFALSE(operators))
+}
 
 device_draws_glyphs <- function() {
   name <- names(grDevices::dev.cur())

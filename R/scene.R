@@ -20,6 +20,8 @@
 #' @param font_list The scene's fonts as a `glyphFontList`, for `"glyph"`.
 #' @param outlines The scene's glyph outlines, for `"path"`, see
 #'   `glyph_outlines()`.
+#' @param groups Whether the device can draw grid groups (see
+#'   `clipped_grob()`).
 #' @param scale Scaling factor applied to the rendered output.
 #' @param width,height Size of the layout box in points.
 #' @return A `gList`.
@@ -29,6 +31,7 @@ scene_grobs <- function(
   mode,
   font_list = NULL,
   outlines = NULL,
+  groups = TRUE,
   scale = 1,
   width,
   height
@@ -61,7 +64,7 @@ scene_grobs <- function(
     if (id == 0L || length(children) == 0L) {
       return(children)
     }
-    list(clipped_grob(scene, id, do.call(grid::gList, children), scale))
+    list(clipped_grob(scene, id, do.call(grid::gList, children), scale, groups))
   })
   do.call(grid::gList, unlist(segments, recursive = FALSE))
 }
@@ -91,10 +94,11 @@ raster_grob <- function(rasters, i, scale) {
 #
 # Clipping viewports inside each other does not intersect their clip regions:
 # grid uses the innermost one. Drawing the clipped content as a group and
-# clipping the group to the outer region does intersect them.
-clipped_grob <- function(scene, id, children, scale) {
+# clipping the group to the outer region does intersect them. On devices that
+# cannot draw groups, only the innermost region clips.
+clipped_grob <- function(scene, id, children, scale, groups = TRUE) {
   grob <- grid::gTree(children = children, vp = clip_viewport(scene, id, scale))
-  outer <- scene$clips$parent[id]
+  outer <- if (groups) scene$clips$parent[id] else 0L
   while (outer != 0L) {
     grob <- grid::gTree(
       children = grid::gList(grid::groupGrob(grob)),

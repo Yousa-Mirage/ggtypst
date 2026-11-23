@@ -340,3 +340,64 @@ test_that("without per-glyph rotation, labels mixing angles are drawn as outline
   rotated <- scene_grob("Hxample", angle = 90)$scene
   expect_equal(with_renderer("glyph", typst_render_mode(rotated)), "glyph")
 })
+
+test_that("visual: annotations, geoms, and theme elements as native glyphs", {
+  labels <- data.frame(
+    wt = c(2, 3.2, 4.2, 5),
+    mpg = c(30, 26, 22, 14),
+    vs = c(0, 0, 1, 1),
+    label = c(
+      "Plain",
+      "*bold* and _italic_",
+      "$frac(a, b) + sqrt(x)$",
+      "#box(fill: yellow, inset: 2pt)[in a box]"
+    ),
+    angle = c(0, 30, 0, -15)
+  )
+  p <- ggplot(mtcars, aes(wt, mpg, colour = factor(gear))) +
+    geom_point(size = 1) +
+    geom_typst(
+      aes(label = label, angle = angle),
+      data = labels,
+      colour = "black",
+      size = 10
+    ) +
+    annotate_math_typst(
+      "integral_0^1 f(x) dif x",
+      x = 4.6,
+      y = 32,
+      size = 12
+    ) +
+    annotate_typst(
+      "first line\\ second, longer line",
+      x = 1.6,
+      y = 12,
+      hjust = 0,
+      size = 9
+    ) +
+    annotate_typst(
+      "#text(stroke: 0.4pt + red)[stroked: drawn as paths]",
+      x = 4,
+      y = 12,
+      size = 9
+    ) +
+    facet_wrap(~vs, labeller = label_both) +
+    labs(
+      title = "*Native glyphs* in a ggplot",
+      subtitle = "Every Typst label here, except the stroked one",
+      x = "Weight",
+      y = "frac(\"miles\", \"gallon\")",
+      colour = "*Gears*"
+    ) +
+    theme_minimal(base_size = 10) +
+    theme(
+      plot.title = element_typst(size = 14),
+      plot.subtitle = element_typst(colour = "grey30"),
+      axis.title.x = element_typst(),
+      axis.title.y = element_math_typst(size = 12),
+      strip.text = element_typst(face = "bold"),
+      legend.title = element_typst()
+    )
+
+  expect_svglite_snapshot("glyph-mode-plot", p)
+})

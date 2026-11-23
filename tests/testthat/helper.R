@@ -149,3 +149,89 @@ typst_test_grob <- function(code, ...) {
   rendered <- typst_render(build_typst_source(code))
   positioned_typst_grob(rendered, ...)
 }
+
+# Snapshot `plot` drawn on svglite with text drawn by `renderer`. vdiffr's own
+# SVG device cannot draw native glyphs, clipping paths, or groups; svglite can,
+# and writes each native glyph as a path from its font. Like vdiffr
+# snapshots, these only run locally.
+expect_svglite_snapshot <- function(
+  name,
+  plot,
+  renderer = "glyph",
+  width = 7,
+  height = 5
+) {
+  skip_if_no_vdiffr()
+  testthat::skip_if_not_installed("svglite")
+  path <- tempfile(fileext = ".svg")
+  svglite::svglite(path, width = width, height = height)
+  tryCatch(
+    with_renderer(renderer, print(plot)),
+    finally = grDevices::dev.off()
+  )
+  testthat::expect_snapshot_file(
+    path,
+    paste0(name, ".svg"),
+    compare = testthat::compare_file_text
+  )
+}
+
+# Typst code for a small raster image: four coloured pixels in a 2 x 2 grid,
+# as PNG bytes.
+typst_png_bytes <- function() {
+  pixels <- array(
+    c(0.15, 0.62, 0.91, 0.16, 0.47, 0.44, 0.14, 0.80, 0.58, 0.69, 0.32, 0.20),
+    dim = c(2, 2, 3)
+  )
+  paste0(
+    "bytes((",
+    paste(as.integer(png::writePNG(pixels)), collapse = ", "),
+    "))"
+  )
+}
+
+# One plot with every kind of content drawn as an image (gradients, tilings,
+# images) and nested clip regions, each above a plain caption.
+image_content_plot <- function() {
+  svg <- paste0(
+    "<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8'>",
+    "<rect width='6' height='8' fill='#2a9d8f'/>",
+    "<circle cx='9' cy='4' r='3' fill='#e76f51'/></svg>"
+  )
+  cells <- c(
+    "Linear gradient on text and math" = r"(#text(fill: gradient.linear(rgb("#1f77b4"), rgb("#d62728")))[*Gradient* $sum_(i=1)^n x_i^2$])",
+    "Radial gradient with a focus" = r"(#rect(width: 60pt, height: 24pt, radius: 4pt, fill: gradient.radial(white, rgb("#1f77b4"), focal-center: (30%, 30%), focal-radius: 5%)))",
+    "Conic gradient" = r"(#circle(radius: 14pt, fill: gradient.conic(..color.map.viridis)))",
+    "Gradient stroke" = r"(#line(length: 60pt, stroke: (paint: gradient.linear(red, blue), thickness: 4pt, cap: "round")))",
+    "Tiling" = r"(#rect(width: 60pt, height: 24pt, stroke: 0.5pt, fill: tiling(size: (6pt, 6pt))[#place(dx: 1pt, dy: 1pt, circle(radius: 1.5pt, fill: rgb("#264653")))]))",
+    "SVG, smooth and pixelated images" = paste0(
+      sprintf(r"(#box(image(bytes("%s"), format: "svg", width: 30pt)))", svg),
+      " #h(6pt) ",
+      sprintf(
+        r"(#box(image(%s, format: "png", width: 20pt)))",
+        typst_png_bytes()
+      ),
+      " #h(6pt) ",
+      sprintf(
+        r"(#box(image(%s, format: "png", width: 20pt, scaling: "pixelated")))",
+        typst_png_bytes()
+      )
+    ),
+    "Nested clip regions" = r"(#box(clip: true, width: 40pt, height: 24pt, radius: 12pt)[#box(clip: true, width: 60pt, height: 16pt)[#rect(width: 60pt, height: 30pt, fill: gradient.linear(..color.map.rainbow))]])",
+    "Rotated gradient text" = r"(#rotate(-20deg)[#text(fill: gradient.linear(teal, purple))[*Rotated*]])"
+  )
+  x <- rep(c(1, 2), length.out = length(cells))
+  y <- rev(rep(seq_len(length(cells) / 2), each = 2))
+  p <- ggplot() +
+    coord_cartesian(
+      xlim = c(0.4, 2.6),
+      ylim = c(0.4, length(cells) / 2 + 0.6)
+    ) +
+    theme_void()
+  for (i in seq_along(cells)) {
+    p <- p +
+      annotate_typst(cells[[i]], x = x[i], y = y[i] + 0.12, size = 12) +
+      annotate_typst(names(cells)[i], x = x[i], y = y[i] - 0.3, size = 8)
+  }
+  p
+}
