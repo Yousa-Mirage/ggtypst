@@ -33,6 +33,12 @@
   embeds the real fonts. On `pdf()` and `postscript()`, which only reference
   fonts by name, text is drawn as outlines so it looks the same everywhere.
   See `?ggtypst-options` to choose.
+- Labels render much faster. A label in a `geom_*()` layer now adds under 1 ms
+  to a PNG and about 2 ms to a PDF, less than with `ggtext`. The installed
+  fonts are scanned on a background thread when the package loads, so the
+  first plot of a session waits less. See the benchmark article for details.
+- Text drawn as outlines (on `pdf()` and `postscript()`) uses about half as
+  many points, so such PDF files are smaller.
 - When rendering many different labels, ggtypst now limits the memory
   retained by Typst's compilation cache by dropping results unused in the last
   10 renders.
