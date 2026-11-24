@@ -172,6 +172,79 @@ test_that("element_typst merge keeps concrete element over same-slot blank", {
   expect_true(inherits(merged, "ggtypst::element_typst"))
 })
 
+test_that("element_typst can be the root text element of a theme", {
+  p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
+    geom_point() +
+    facet_wrap(~am) +
+    labs(title = "*Title*", x = "$x^2$")
+
+  # A plot's theme is its theme added to the default theme.
+  for (th in list(
+    theme_grey() + theme(text = element_typst()),
+    theme_bw() + theme(text = element_typst(scale = 1.5))
+  )) {
+    root <- calc_element("text", th)
+    expect_true(inherits(root, "ggtypst::element_typst"))
+
+    # Every text element inherits from it.
+    for (name in c(
+      "plot.title",
+      "axis.title.x.bottom",
+      "axis.text.y.left",
+      "legend.text",
+      "strip.text.x.top"
+    )) {
+      expect_true(inherits(calc_element(name, th), "ggtypst::element_typst"))
+    }
+    expect_s3_class(ggplotGrob(p + th), "gtable")
+  }
+  expect_s3_class(ggplotGrob(p + theme(text = element_typst())), "gtable")
+
+  for (el in list(element_math_typst(), element_math_mitex())) {
+    root <- calc_element("text", theme_grey() + theme(text = el))
+    expect_identical(class(root)[1], class(el)[1])
+  }
+
+  plot_th <- theme_grey() +
+    theme(
+      text = element_typst(scale = 2, alpha = 0.5, math_family = "Fira Math")
+    )
+  child <- calc_element("axis.title.x.bottom", plot_th)
+  expect_equal(child$scale, 2)
+  expect_equal(child$alpha, 0.5)
+  expect_equal(child$math_family, "Fira Math")
+})
+
+test_that("element_text merged into a Typst element keeps it and its properties", {
+  merged <- ggplot2::merge_element(
+    element_text(hjust = 0, size = 9),
+    element_typst(colour = "red", scale = 2)
+  )
+
+  expect_true(inherits(merged, "ggtypst::element_typst"))
+  expect_equal(merged$hjust, 0)
+  expect_equal(merged$size, 9)
+  expect_equal(merged$colour, "red")
+  expect_equal(merged$scale, 2)
+})
+
+test_that("element_typst below the root still inherits ggtypst properties", {
+  th <- theme_grey() +
+    theme(
+      axis.text = element_typst(
+        scale = 2,
+        alpha = 0.5,
+        math_family = "Fira Math"
+      ),
+      axis.text.x = element_typst()
+    )
+  child <- calc_element("axis.text.x.bottom", th)
+
+  expect_equal(child$scale, 2)
+  expect_equal(child$alpha, 0.5)
+  expect_equal(child$math_family, "Fira Math")
+})
+
 
 # element_grob rendering
 
@@ -498,4 +571,20 @@ test_that("element_typst visual: multiline lineheight", {
     )
 
   vdiffr::expect_doppelganger("element-typst-lineheight", p)
+})
+
+test_that("element_typst visual: root text element", {
+  skip_if_no_vdiffr()
+
+  p <- ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
+    geom_point(alpha = 0.8, size = 1.6) +
+    labs(
+      title = "*Fuel economy* by weight",
+      subtitle = r"(Weight $w$ in 1000 lbs, efficiency $eta = "mpg" / w$)",
+      colour = "*Cylinders*"
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(text = element_typst())
+
+  vdiffr::expect_doppelganger("element-typst-root-text", p)
 })

@@ -60,7 +60,28 @@ merge_element_element_typst <- function(new, old, ...) {
     S7::props(new)[idx] <- old_props[idx]
   }
 
+  # Support for `theme(text = element_typst())`
+  # Values of element_typst's own properties that leave the text as it is.
+  typst_neutral_props <- list(scale = 1, alpha = 1, math_family = "")
+
+  if (all(lengths(old_props) > 0)) {
+    unset <- names(typst_neutral_props)[
+      lengths(S7::props(new)[names(typst_neutral_props)]) == 0
+    ]
+    S7::props(new)[unset] <- typst_neutral_props[unset]
+  }
+
   new
+}
+
+# Merging a plain element_text into a Typst element, as ggplot2's legends do
+# with the root `text` element to set its justification, keeps the Typst
+# element and takes the properties the element_text sets.
+merge_element_text_into_typst <- function(new, old, ...) {
+  new_props <- S7::props(new)
+  set <- names(new_props)[lengths(new_props) > 0]
+  S7::props(old)[set] <- new_props[set]
+  old
 }
 
 #' Render Theme Elements with Typst Text

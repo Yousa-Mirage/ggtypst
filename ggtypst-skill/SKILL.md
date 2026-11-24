@@ -129,10 +129,12 @@ ggplot(mtcars, aes(wt, mpg, colour = factor(cyl))) +
   )
 ```
 
-Set them on specific elements (`plot.title`, `axis.title.x`) or on groups (`axis.title`, `axis.text`,
-`legend.text`, `strip.text`), whose children inherit them. Do not set `text = element_typst()`: the root `text`
-element currently fails to build. The elements take the usual `element_text()` arguments, including `margin`,
-`hjust`, `vjust`, and `angle`.
+Set them on specific elements (`plot.title`, `axis.title.x`), on groups (`axis.title`, `axis.text`,
+`legend.text`, `strip.text`), or on the root `text` element to draw all of a plot's text with Typst; child elements
+inherit them. Text from the data (axis labels of a discrete scale, legend keys, strip labels) is then read as Typst
+markup too, so characters such as `*`, `_`, `$`, `#`, and `@` in it take their Typst meaning. Setting a math
+element on `text` reads every label as math, which is rarely wanted. The elements take the usual
+`element_text()` arguments, including `margin`, `hjust`, `vjust`, and `angle`.
 
 ## Explain Typst strings clearly
 
@@ -220,8 +222,6 @@ has its own overhead.
 - **PDF text looks different from PNG, or cannot be selected**: `pdf()` gets outlines; use `cairo_pdf()` or
   set `ggtypst.renderer`.
 - **Gradients or emoji look soft**: raise `ggtypst.raster_dpi` before creating the plot.
-- **`theme(text = element_typst())` fails**: set the element on groups such as `axis.text`, `axis.title`,
-  `legend.text`, and `strip.text` instead.
 
 ## Use repo-aware references
 

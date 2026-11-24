@@ -11,6 +11,11 @@ NULL
     list(element_typst_class, S7::class_any)
   ) <- merge_element_element_typst
 
+  S7::method(
+    merge_element_generic,
+    list(ggplot2::element_text, element_typst_class)
+  ) <- merge_element_text_into_typst
+
   # attach the S3 element_grob method for the namespaced S7 class name.
   registerS3method(
     "element_grob",

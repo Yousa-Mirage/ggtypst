@@ -14,6 +14,9 @@
 - `element_typst()`, `element_math_typst()`, and `element_math_mitex()` now
   respect `hjust` and `vjust` within their cell, like `element_text()`: titles,
   subtitles, captions, and legend labels are no longer always centered.
+- `element_typst()`, `element_math_typst()`, and `element_math_mitex()` can now
+  be set on the root `text` element, as in `theme(text = element_typst())`, to
+  draw all of a plot's text with Typst. This used to fail.
 - The lines of multi-line labels are now aligned left, center, or right
   according to `hjust` in annotations, geoms, and theme elements, as with
   `ggplot2` text. Alignment set in the Typst code itself still takes precedence.
