@@ -63,6 +63,27 @@ build_annotate_showcase <- function() {
       face = "bold",
       color = "#8C2F39"
     ) +
+    annotate_typst(
+      typst_code = paste(
+        r"(#text(fill: gradient.linear(rgb("#F4D35E"), rgb("#EE964B"), rgb("#F95738")))[*Gradient-filled text*])",
+        r"(#linebreak())",
+        r"(#let stripes = tiling(size: (3pt, 3pt))[)",
+        r"(  #place(rect(width: 3pt, height: 3pt, fill: rgb("#1F7A70"))))",
+        r"(  #place(line(start: (0pt, 3pt), end: (3pt, 0pt), stroke: 0.9pt + rgb("#9FE2D6"))))",
+        r"(])",
+        r"(#text(fill: stripes, weight: "bold", size: 1.25em)[Tiling-filled text])",
+        r"(#linebreak())",
+        r"(Emoji work too 🚗 ⛽ 🌱)",
+        sep = "\n"
+      ),
+      x = 5.55,
+      y = 28.6,
+      hjust = 1,
+      vjust = 1,
+      size = 15,
+      lineheight = 1.15,
+      color = "#12344D"
+    ) +
     annotate_math_mitex(
       latex_math_code = r"(\eta = \frac{mpg}{wt})",
       x = 4.95,
@@ -75,7 +96,7 @@ build_annotate_showcase <- function() {
     coord_cartesian(xlim = c(1.55, 5.6), ylim = c(10, 35.5), clip = "off") +
     labs(
       title = "Annotation Showcase",
-      subtitle = "Narrative callouts, Typst styling, and LaTeX-to-Typst math in one plot",
+      subtitle = "Narrative callouts, Typst styling, LaTeX-to-Typst math, gradients, tilings, and emoji in one plot",
       x = "Weight (1000 lbs)",
       y = "Miles per gallon"
     ) +

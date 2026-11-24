@@ -11,7 +11,7 @@ MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.or
 DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yousa-Mirage/ggtypst)
 [![r-universe
 version](https://yousa-mirage.r-universe.dev/ggtypst/badges/version)](https://yousa-mirage.r-universe.dev/ggtypst)
-[![extendr](https://img.shields.io/badge/extendr-%5E0.8.1-276DC2)](https://extendr.github.io/extendr/extendr_api/)
+[![extendr](https://img.shields.io/badge/extendr-%5E0.9.0-276DC2)](https://extendr.github.io/extendr/extendr_api/)
 
 </div>
 
@@ -23,6 +23,9 @@ plots through three public API families:
 - `annotate_*()` for one-off annotations
 - `geom_*()` for data-driven text layers
 - `element_*()` for Typst-rendered theme text
+
+The result is drawn with grid, just like the text `ggplot2` draws
+itself, so it fits the plot’s size and layout exactly.
 
 `ggtypst` supports both native Typst math and **LaTeX-style math**
 thanks to [MiTeX](https://github.com/mitex-rs/mitex). Just choose the
@@ -45,8 +48,13 @@ pipeline.
 - 🔁 Choose native Typst math or LaTeX-style math, depending on your
   preference
 - 🧩 Keep the familiar `ggplot2` layout system and theme semantics
+- ⚡ Draw fast: each label in a `geom_typst()` layer adds under 1ms to a
+  PNG
 
 ## Installation
+
+`ggtypst` requires R 4.3 or later. Regardless of how you install it, you
+don’t need a separate local Typst or LaTeX installation to use it.
 
 ### Install from pre-compile binary
 
@@ -61,7 +69,7 @@ install.packages("ggtypst", repos = "https://yousa-mirage.r-universe.dev")
 On **Ubuntu 24.04**, you should run:
 
 ``` r
-linux_binary_repo <- function(universe){
+linux_binary_repo <- function(universe) {
   sprintf(
     "https://%s.r-universe.dev/bin/linux/noble-%s/%s/",
     universe,
@@ -84,11 +92,9 @@ devtools::install_github("Yousa-Mirage/ggtypst")
 ```
 
 Because the GitHub installation builds the Typst backend in Rust, you
-need `rustc` and `cargo` on your system to compile it. Particularly on
-Windows, you must use the `x86_64-pc-windows-gnu` toolchain.
-
-Regardless of how you install `ggtypst`, you don’t need a separate local
-Typst or LaTeX installation to use it.
+need `rustc` (1.89 or later) and `cargo` on your system to compile it.
+Particularly on Windows, you must use the `x86_64-pc-windows-gnu`
+toolchain.
 
 ## Get Started
 
@@ -108,9 +114,13 @@ labels, and Typst-powered theme elements.
 
 `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`
 let you place rich notes, callouts, or equations at precise plot
-locations.
+locations. Anything Typst can draw works, including text filled with
+gradients or tilings and color emoji.
 
 <img src="man/figures/annotate-showcase.png" alt="Annotation showcase" />
+
+See the code for this plot in
+[annotate-showcase.R](inst/examples/annotate-showcase.R).
 
 ### Geom: Data-driven labels
 
@@ -120,6 +130,9 @@ row by row.
 
 <img src="man/figures/geom-showcase.png" alt="Geom showcase" />
 
+See the code for this plot in
+[geom-showcase.R](inst/examples/geom-showcase.R).
+
 ### Element: Render theme elements
 
 `element_typst()`, `element_math_typst()`, and `element_math_mitex()`
@@ -127,6 +140,9 @@ take over the themes and rendering of titles, axis labels, strips, and
 legends. You can even render a matrix as the title!
 
 <img src="man/figures/element-showcase.png" alt="Element showcase" />
+
+See the code for this plot in
+[element-showcase.R](inst/examples/element-showcase.R).
 
 ## Contributing
 
