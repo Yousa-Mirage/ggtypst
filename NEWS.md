@@ -1,6 +1,6 @@
 # ggtypst 0.2.0
 
-Many thanks to **Stein Arne Sæther** for carefully spotting several plotting
+Many thanks to **Stein Are Sæther** for carefully spotting several plotting
 issues and suggesting fixes. Most of the changes below stem from his report.
 
 ## Breaking changes
