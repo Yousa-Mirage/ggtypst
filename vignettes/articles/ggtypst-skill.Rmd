@@ -1,10 +1,5 @@
 ---
 title: "SKILL.md for Agents"
-output: rmarkdown::html_vignette
-vignette: >
-  %\VignetteIndexEntry{SKILL.md for Agents}
-  %\VignetteEngine{knitr::rmarkdown}
-  %\VignetteEncoding{UTF-8}
 ---
 
 The `ggtypst` repository includes a reusable AI skill located at `ggtypst-skill/SKILL.md`. This skill is a lightweight

@@ -1,0 +1,355 @@
+---
+title: "Performance Benchmark"
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>",
+  echo = FALSE,
+  fig.width = 7,
+  fig.height = 5,
+  fig.align = "center"
+)
+library(ggplot2)
+
+results <- read.csv("benchmark-results.csv")
+environment_log <- readLines("benchmark-environment.log")
+
+device_names <- c(png = "PNG", pdf = "PDF")
+
+# The value of `column` in the one result row matching all of `...`.
+result <- function(..., column = "median_ms") {
+  conditions <- list(...)
+  rows <- Reduce(
+    `&`,
+    Map(function(name, value) results[[name]] %in% value, names(conditions), conditions)
+  )
+  value <- results[[column]][rows]
+  stopifnot(length(value) == 1)
+  value
+}
+
+# Milliseconds as text: "85 ms", or seconds from one second up.
+ms <- function(x) {
+  ifelse(x >= 1000, sprintf("%.2f s", x / 1000), sprintf("%.0f ms", x))
+}
+ms2 <- function(x) sprintf("%.2f ms", x)
+times <- function(x) sprintf("%.1f", x)
+
+per_label <- function(method, device, n = max_rows) {
+  result(section = "geom", method = method, device = device, n = n,
+    column = "per_label_ms")
+}
+
+# A table with one row per `rows` value and one column per device.
+by_device <- function(data, rows, value = "median_ms", format = ms) {
+  table <- data.frame(unique(data[rows]), check.names = FALSE)
+  for (device in names(device_names)) {
+    keys <- do.call(paste, data[data$device == device, rows, drop = FALSE])
+    values <- data[[value]][data$device == device]
+    table[[device_names[[device]]]] <- format(values[match(
+      do.call(paste, table[rows]),
+      keys
+    )])
+  }
+  table
+}
+
+max_rows <- max(results$n[results$section == "geom"])
+```
+
+This article measures how long plots with `ggtypst` labels take to draw, compared with the
+same plots labeled by `ggplot2` itself (`geom_text()`, `element_text()`) and by
+[`ggtext`](https://wilkelab.org/ggtext/). It helps you estimate the cost in your own work and
+choose the right tool.
+
+Every measurement is a whole plot: from building the `ggplot` object to the file written by
+`ggsave()`, as PNG (drawn by `ragg`) and as PDF (drawn by `pdf()`). Every label is different,
+in every plot and in every run, as in real data. The results come from
+`tools/benchmark.R` (see [Reproducing the benchmark](#reproducing-the-benchmark)) on the machine
+described in [Test environment](#test-environment).
+
+## Summary
+
+```{r}
+#| label: summary-numbers
+png_typst <- per_label("geom_typst", "png")
+png_ggtext <- per_label("geom_richtext", "png")
+png_text <- per_label("geom_text", "png")
+pdf_typst <- per_label("geom_typst", "pdf")
+pdf_ggtext <- per_label("geom_richtext", "pdf")
+pdf_text <- per_label("geom_text", "pdf")
+math_png <- per_label("geom_math_typst", "png")
+math_pdf <- per_label("geom_math_typst", "pdf")
+mitex_png <- per_label("geom_math_mitex", "png")
+plotmath_png <- per_label("geom_text(parse = TRUE)", "png")
+
+first_plot <- function(package, device) {
+  result(section = "cold start", package = package, device = device,
+    measure = "first plot")
+}
+load_time <- function(package, device = "png") {
+  result(section = "cold start", package = package, device = device,
+    measure = "load")
+}
+```
+
+- **Label layers.** With `r max_rows` labels, each `geom_typst()` label adds about
+  **`r ms2(png_typst)`** to a PNG and **`r ms2(pdf_typst)`** to a PDF. That is
+  `r times(png_ggtext / png_typst)` times faster than `ggtext::geom_richtext()` for PNG
+  (`r ms2(png_ggtext)` per label) and `r times(pdf_ggtext / pdf_typst)` times faster for PDF
+  (`r ms2(pdf_ggtext)`). Plain `geom_text()`, which cannot style text, remains far cheaper
+  (`r ms2(png_text)` and `r ms2(pdf_text)` per label).
+- **Math.** A formula costs a little more than styled text (`r ms2(math_png)` per label for
+  PNG), and LaTeX math through MiTeX costs about the same as Typst math (`r ms2(mitex_png)`).
+  `ggplot2`'s plotmath (`geom_text(parse = TRUE)`) is faster (`r ms2(plotmath_png)`) but much
+  more limited.
+- **A few labels** (titles, a handful of annotations) add only a few milliseconds to a plot
+  that already takes `r ms(result(section = "geom", method = "geom_point only", device = "png", n = 1))`
+  to save as PNG.
+- **Each label costs more in PDF than in PNG** with `ggtypst`, because `pdf()` only refers to
+  fonts by name: `ggtypst` draws its text there as outlines so it looks the same everywhere. See
+  `?ggtypst-options` for devices that draw native glyphs.
+- **Theme text** such as titles, legends, and facet strips costs about the same as with
+  `ggtext`; many tick labels cost more (see [Theme elements](#theme-elements)).
+- **The first plot of a session** takes about
+  `r ms(first_plot("ggtypst", "png") - first_plot("ggplot2", "png"))` longer than with plain
+  `ggplot2`, while `ggtypst` loads its fonts and Typst. Loading the package itself costs little.
+
+## Label layers
+
+The plots have one point per row and label each point. Styled text is bold and italic, such as
+`*Bold 12* _italic_ text` in `geom_typst()` and `<b>Bold 12</b> <i>italic</i> text` in
+`ggtext::geom_richtext()` (with its box, padding and margin turned off); `geom_text()` draws the
+same words without styling. Formulas are equivalent in Typst math, LaTeX (MiTeX), and plotmath,
+such as `x_12^2 + alpha / (beta + 12)`.
+
+```{r}
+#| label: geom-plot
+#| fig.alt: >
+#|   Line charts of the time to build and save a plot against the number of labels, from 1 to
+#|   1000, on log scales. Panels show styled text and math labels as PNG and as PDF.
+geom <- results[results$section == "geom", ]
+geom$content <- ifelse(geom$content == "math", "Math", "Styled text")
+base <- geom[geom$method == "geom_point only", ]
+geom <- geom[geom$method != "geom_point only", ]
+geom <- rbind(
+  geom,
+  transform(base, content = "Styled text"),
+  transform(base, content = "Math")
+)
+geom$device <- factor(device_names[geom$device], levels = device_names)
+geom$content <- factor(geom$content, levels = c("Styled text", "Math"))
+tools <- c(
+  "geom_point only" = "No labels",
+  "geom_text" = "ggplot2: geom_text()",
+  "geom_text(parse = TRUE)" = "ggplot2: geom_text()",
+  "geom_richtext" = "ggtext: geom_richtext()",
+  "geom_typst" = "ggtypst",
+  "geom_math_typst" = "ggtypst",
+  "geom_math_mitex" = "ggtypst: MiTeX"
+)
+geom$tool <- factor(tools[geom$method], levels = unique(tools))
+
+ggplot(geom, aes(n, median_ms / 1000, colour = tool)) +
+  geom_line(linewidth = 0.6) +
+  geom_point(size = 1.4) +
+  scale_x_log10(breaks = unique(geom$n)) +
+  scale_y_log10() +
+  scale_colour_manual(
+    values = c(
+      "No labels" = "grey60",
+      "ggplot2: geom_text()" = "#264653",
+      "ggtext: geom_richtext()" = "#e76f51",
+      "ggtypst" = "#40A2B4",
+      "ggtypst: MiTeX" = "#e9c46a"
+    )
+  ) +
+  facet_grid(content ~ device) +
+  labs(
+    x = "Labels",
+    y = "Time to build and save the plot (s)",
+    colour = NULL
+  ) +
+  theme_minimal(base_size = 11) +
+  theme(legend.position = "bottom")
+```
+
+The time grows linearly with the number of labels. The table gives the time each label adds:
+the median time of the plot minus the same plot without labels, divided by the number of
+labels.
+
+```{r}
+#| label: geom-table
+per_row <- results[
+  results$section == "geom" &
+    results$method != "geom_point only" &
+    results$n %in% c(10, 100, max_rows),
+]
+per_row$Labels <- per_row$n
+per_row$Content <- ifelse(per_row$content == "math", "Math", "Styled text")
+per_row$Function <- per_row$method
+table <- by_device(
+  per_row,
+  c("Content", "Function", "Labels"),
+  value = "per_label_ms",
+  format = ms2
+)
+table <- table[order(table$Content == "Math", table$Labels), ]
+knitr::kable(table, row.names = FALSE, align = "llrrr")
+```
+
+With 10 labels, each label also carries a share of the layer's fixed cost; from 100 labels on,
+the cost per label is steady. In the math panels, `ggplot2` draws plotmath
+(`geom_text(parse = TRUE)`).
+
+## Annotations
+
+Each `annotate_typst()` call adds one label, so 10 annotations are 10 layers.
+`annotate("text")` and `annotate("richtext")` place all 10 labels in one layer.
+
+```{r}
+#| label: annotate-table
+annotate <- results[results$section == "annotate", ]
+annotate$Function <- annotate$method
+annotate$Labels <- annotate$n
+knitr::kable(
+  by_device(annotate, c("Function", "Labels")),
+  row.names = FALSE,
+  align = "lrrr"
+)
+```
+
+For more than a few labels, a `geom_*()` layer with a data frame is cheaper than many
+`annotate_*()` calls, since every layer has its own overhead.
+
+## Theme elements
+
+Each case draws the plot's text with `element_text()`, `ggtext::element_markdown()`, or
+`element_typst()`, set on every element involved:
+
+- **Titles**: title, subtitle, caption, and the two axis titles (5 labels).
+- **Axis text**: 10 tick labels on each axis (20 labels).
+- **Legend**: a legend title and 8 keys (9 labels).
+- **Strips**: 12 facet panels (12 strip labels).
+- **All**: all of the above in one faceted plot, where tick labels repeat on every outer panel.
+
+```{r}
+#| label: theme-table
+theme_results <- results[results$section == "theme", ]
+case_names <- c(
+  titles = "Titles",
+  axis_text = "Axis text",
+  legend = "Legend",
+  strips = "Strips",
+  all = "All"
+)
+theme_results$Case <- factor(
+  case_names[theme_results$content],
+  levels = case_names
+)
+theme_results$Element <- theme_results$method
+table <- by_device(theme_results, c("Case", "Element"))
+table <- table[order(table$Case), ]
+knitr::kable(table, row.names = FALSE, align = "llrr")
+```
+
+Titles, legends, and strips cost about the same with `ggtypst` as with `ggtext`. Many tick
+labels cost more, especially in PDF: `ggtypst` lays out and draws every tick label on its own, in
+every panel where it appears.
+
+## Saving the same plot again
+
+`ggplot2` builds and draws the whole plot again each time it is printed or saved, for example
+when the plot pane is resized or when `ggsave()` follows `print()`. These cases save a plot that
+was already saved once.
+
+```{r}
+#| label: redraw-table
+redraw <- results[
+  results$section %in% c("geom", "theme", "redraw") &
+    (results$n %in% 100 | results$content %in% "all") &
+    results$method != "geom_point only",
+]
+redraw$Plot <- ifelse(
+  is.na(redraw$n),
+  "All theme text",
+  sprintf("%d %s labels", redraw$n, ifelse(redraw$content == "math", "math", "styled"))
+)
+redraw$Function <- redraw$method
+redraw$Save <- ifelse(redraw$measure == "second", "Second", "First")
+table <- by_device(redraw, c("Plot", "Function", "Save"))
+table <- table[order(table$Plot, table$Function, table$Save), ]
+knitr::kable(table, row.names = FALSE, align = "lllrr")
+```
+
+Saving a plot again takes about as long as saving it the first time, with every package: the
+labels are laid out again.
+
+## First plot in a new session
+
+Each run starts a new R session, loads `ggplot2` and the package, then builds and saves a plot
+with 10 labels. "Load" is the time to load the packages, "First plot" the time to build and save
+the plot.
+
+```{r}
+#| label: cold-table
+cold <- results[results$section == "cold start", ]
+cold$Package <- ifelse(cold$package == "ggplot2", "ggplot2 only", cold$package)
+cold$Function <- cold$method
+cold$Step <- factor(
+  c(load = "Load", "first plot" = "First plot", "load and first plot" = "Total")[
+    cold$measure
+  ],
+  levels = c("Load", "First plot", "Total")
+)
+table <- by_device(cold, c("Package", "Function", "Step"))
+table <- table[order(table$Step, table$Package), ]
+knitr::kable(table, row.names = FALSE, align = "lllrr")
+```
+
+Loading `ggtypst` costs about `r ms(load_time("ggtypst") - load_time("ggplot2"))` more than
+`ggplot2` alone. Its first plot takes longer than later ones, because `ggtypst` finds the
+installed fonts and starts Typst the first time it renders a label.
+
+## Practical guidelines
+
+1. **Estimate the cost of a label layer** as the time of the plot without labels plus the number
+   of labels times the cost per label above, about `r ms2(png_typst)` for PNG and
+   `r ms2(pdf_typst)` for PDF on this machine. A plot with `r max_rows` labels takes about
+   `r ms(result(section = "geom", method = "geom_typst", device = "png", n = max_rows))` as
+   PNG.
+2. **Use `geom_text()` for plain text.** When labels need no styling or math, `ggplot2`'s own
+   text is the fastest option.
+3. **For label layers, `ggtypst` is faster than `ggtext`** at every size measured here, and
+   also draws math.
+4. **Use one `geom_*()` layer instead of many `annotate_*()` calls** for more than a few labels.
+5. **For PDF, consider the device.** `pdf()` draws `ggtypst` text as outlines, which looks the
+   same on every computer but is slower to draw. Devices that embed fonts, such as
+   `cairo_pdf()`, draw native glyphs instead; see `?ggtypst-options`.
+
+## Test environment
+
+```{r}
+#| label: environment
+#| comment: ""
+cat(environment_log, sep = "\n")
+```
+
+## Reproducing the benchmark
+
+The benchmark script is in the package's source repository, not in the installed package. From
+a clone of the repository, run:
+
+```bash
+Rscript tools/benchmark.R
+```
+
+It installs the package from the source as a release build into a temporary library, so it
+measures what users install rather than a development build, and writes
+`vignettes/articles/benchmark-results.csv` and `vignettes/articles/benchmark-environment.log`,
+which this article reads. Timings depend on the machine, so compare packages within one run
+rather than with numbers from another computer.

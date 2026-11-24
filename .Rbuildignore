@@ -32,9 +32,9 @@
 ^\.pre-commit-config\.yaml$
 ^_pkgdown\.yml$
 ^pkgdown($|/)
+^vignettes($|/)
 ^ggtypst-skill($|/)
 ^tests/testthat/_problems($|/)
 ^tools/benchmark\.R$
-^tools/benchmark-results\.txt$
 ^tools/build-site\.R$
 ^tools/icon\.R$
