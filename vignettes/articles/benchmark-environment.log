@@ -1,6 +1,6 @@
 ggtypst benchmark environment
 
-Date:            2026-11-24 15:13 +08
+Date:            2026-11-24 20:35 +08
 CPU:             Apple M5
 Cores:           10
 Memory:          24 GB
@@ -18,11 +18,11 @@ Packages:
   bench          1.1.4
 
 ggtypst build:
-  Source:        jj 06b057f07d49
-  Fingerprint:   6988111f02d732bba6012190d8253a6d
+  Source:        jj d50f9038b9cc
+  Fingerprint:   953b4ef8134059e04ad61918c818afb5
   Profile:       release
   Cargo release: opt-level = 3, strip = true, lto = true
-  Library:       reused
+  Library:       built for this run
 
 Settings:
   Plots:         7 x 5 in, saved with ggsave()
@@ -37,4 +37,4 @@ Settings:
                  interleaved in a random order each iteration, after one
                  untimed warm-up run of each case
 
-Total run time:  11.7 min
+Total run time:  14.1 min

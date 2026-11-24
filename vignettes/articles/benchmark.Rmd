@@ -139,8 +139,9 @@ is no longer preventing you from using `ggtypst`.
 - **A few labels** (titles, a handful of annotations) add only a few milliseconds to a plot
   that already takes `r ms(result(section = "geom", method = "geom_point only", device = "png", n = 1))`
   to save as PNG.
-- **Each label costs more in PDF than in PNG** with `ggtypst`, because `pdf()` only refers to
-  fonts by name: `ggtypst` draws its text there as outlines so it looks the same everywhere. See
+- **Each label costs more in PDF than in PNG** with `ggtypst`, about
+  `r times(pdf_typst / png_typst)` times as much, because `pdf()` only refers to fonts by name:
+  `ggtypst` draws its text there as outlines so it looks the same everywhere. See
   `?ggtypst-options` for devices that draw native glyphs.
 - **Theme text** such as titles, legends, and facet strips costs about the same as with
   `ggtext`; many tick labels cost more (see [Theme elements](#theme-elements)).
