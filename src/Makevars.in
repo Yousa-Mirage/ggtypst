@@ -19,28 +19,28 @@ VENDOR_DIR = $(CURDIR)/vendor
 # CRAN note: Cargo and Rustc versions are reported during
 # configure via tools/msrv.R.
 #
-# vendor.tar.xz, if present, is unzipped and used for offline compilation.
-#
-# On macOS, Rust (and the C code some crates compile) is built for R's
-# deployment target: R's -mmacosx-version-min if it has one, otherwise 11.0,
-# Rust's default for Apple silicon. Left unset, crates may target the SDK's
-# newer version, and the linker warns about objects built for a newer macOS
-# than the package. A MACOSX_DEPLOYMENT_TARGET set by the user is kept.
+# If a vendor directory exists, it is used for offline compilation. Otherwise if
+# vendor.tar.xz exists, it is unzipped and used for offline compilation.
 $(STATLIB):
 
-	if [ -f ./rust/vendor.tar.xz ]; then \
+	if [ -d ./vendor ]; then \
+		echo "=== Using offline vendor directory ==="; \
+		mkdir -p $(CARGOTMP) && \
+		cp rust/vendor-config.toml $(CARGOTMP)/config.toml; \
+	elif [ -f ./rust/vendor.tar.xz ]; then \
+		echo "=== Using offline vendor tarball ==="; \
 		tar xf rust/vendor.tar.xz && \
 		mkdir -p $(CARGOTMP) && \
 		cp rust/vendor-config.toml $(CARGOTMP)/config.toml; \
 	fi
 
-	if [ "@CARGO_TMP@" = "true" ]; then export CARGO_HOME=$(CARGOTMP); fi && \
+	export CARGO_HOME=$(CARGOTMP) && \
 	export PATH="$(PATH):$(HOME)/.cargo/bin" && \
-	if [ "$$(uname -s)" = "Darwin" ] && [ -z "$${MACOSX_DEPLOYMENT_TARGET}" ]; then \
-		MACOSX_DEPLOYMENT_TARGET="$$(echo "$(CC) $(CFLAGS) $(LDFLAGS)" | sed -n 's/.*-mmacosx-version-min=\([0-9.]*\).*/\1/p')"; \
-		export MACOSX_DEPLOYMENT_TARGET="$${MACOSX_DEPLOYMENT_TARGET:-11.0}"; \
-	fi && \
 	@PANIC_EXPORTS@RUSTFLAGS="$(RUSTFLAGS) --print=native-static-libs" cargo build @CRAN_FLAGS@ --lib @PROFILE@ --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR) @TARGET@
+
+	export CARGO_HOME=$(CARGOTMP) && \
+	export PATH="$(PATH):$(HOME)/.cargo/bin" && \
+	cargo run @CRAN_FLAGS@ --bin document --manifest-path=./rust/Cargo.toml --target-dir $(TARGET_DIR) @TARGET@
 
 	# Always clean up CARGOTMP
 	rm -Rf $(CARGOTMP);
