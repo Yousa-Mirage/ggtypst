@@ -42,4 +42,7 @@ src/rust/vendor/
 
 # pkgdown site
 docs/
+
+# testthat's reproductions of failed snapshot tests
+tests/testthat/_problems/
 src/rust/vendor
