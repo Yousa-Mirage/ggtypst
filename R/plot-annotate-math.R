@@ -1,4 +1,4 @@
-#' @include annotate-typst.R
+#' @include plot-annotate-typst.R
 NULL
 
 #' Annotate a Plot with Typst Math

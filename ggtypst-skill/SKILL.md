@@ -186,9 +186,9 @@ When debugging, check these first:
 Prefer these sources when answering deeper questions:
 
 - `README.Rmd` for high-level package positioning and showcase examples
-- `vignettes/get-started.Rmd` for onboarding and usage patterns
+- `vignettes/articles/get-started.Rmd` for onboarding and usage patterns
 - `.github/CONTRIBUTING.Rmd` for architecture and development workflow
-- `R/annotate-typst.R`, `R/annotate-math.R`, `R/geom-typst.R`, `R/geom-math.R`, `R/element-typst.R`, `R/element-math.R`
+- `R/plot-annotate-typst.R`, `R/plot-annotate-math.R`, `R/plot-geom-typst.R`, `R/plot-geom-math.R`, `R/plot-element-typst.R`, `R/plot-element-math.R`
   for API details
 - `R/helper.R` for validation and alias behavior
 - `R/mitex.R` for LaTeX-to-Typst conversion behavior

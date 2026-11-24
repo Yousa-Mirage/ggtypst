@@ -1,4 +1,4 @@
-#' @include element-typst.R
+#' @include plot-element-typst.R
 NULL
 
 # element_math_typst ----------------------------------------------------------

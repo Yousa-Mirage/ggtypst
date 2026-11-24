@@ -1,4 +1,4 @@
-#' @include geom-typst.R
+#' @include plot-geom-typst.R
 NULL
 
 # geom_math_typst
