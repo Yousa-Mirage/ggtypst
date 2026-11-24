@@ -25,7 +25,11 @@ result <- function(..., column = "median_ms") {
   conditions <- list(...)
   rows <- Reduce(
     `&`,
-    Map(function(name, value) results[[name]] %in% value, names(conditions), conditions)
+    Map(
+      function(name, value) results[[name]] %in% value,
+      names(conditions),
+      conditions
+    )
   )
   value <- results[[column]][rows]
   stopifnot(length(value) == 1)
@@ -40,8 +44,13 @@ ms2 <- function(x) sprintf("%.2f ms", x)
 times <- function(x) sprintf("%.1f", x)
 
 per_label <- function(method, device, n = max_rows) {
-  result(section = "geom", method = method, device = device, n = n,
-    column = "per_label_ms")
+  result(
+    section = "geom",
+    method = method,
+    device = device,
+    n = n,
+    column = "per_label_ms"
+  )
 }
 
 # A table with one row per `rows` value and one column per device.
@@ -88,12 +97,20 @@ mitex_png <- per_label("geom_math_mitex", "png")
 plotmath_png <- per_label("geom_text(parse = TRUE)", "png")
 
 first_plot <- function(package, device) {
-  result(section = "cold start", package = package, device = device,
-    measure = "first plot")
+  result(
+    section = "cold start",
+    package = package,
+    device = device,
+    measure = "first plot"
+  )
 }
 load_time <- function(package, device = "png") {
-  result(section = "cold start", package = package, device = device,
-    measure = "load")
+  result(
+    section = "cold start",
+    package = package,
+    device = device,
+    measure = "load"
+  )
 }
 ```
 
@@ -270,14 +287,19 @@ was already saved once.
 ```{r}
 #| label: redraw-table
 redraw <- results[
-  results$section %in% c("geom", "theme", "redraw") &
+  results$section %in%
+    c("geom", "theme", "redraw") &
     (results$n %in% 100 | results$content %in% "all") &
     results$method != "geom_point only",
 ]
 redraw$Plot <- ifelse(
   is.na(redraw$n),
   "All theme text",
-  sprintf("%d %s labels", redraw$n, ifelse(redraw$content == "math", "math", "styled"))
+  sprintf(
+    "%d %s labels",
+    redraw$n,
+    ifelse(redraw$content == "math", "math", "styled")
+  )
 )
 redraw$Function <- redraw$method
 redraw$Save <- ifelse(redraw$measure == "second", "Second", "First")
@@ -286,8 +308,7 @@ table <- table[order(table$Plot, table$Function, table$Save), ]
 knitr::kable(table, row.names = FALSE, align = "lllrr")
 ```
 
-Saving a plot again takes about as long as saving it the first time, with every package: the
-labels are laid out again.
+Saving a plot again takes about as long as saving it the first time, with every package.
 
 ## First plot in a new session
 
@@ -301,7 +322,11 @@ cold <- results[results$section == "cold start", ]
 cold$Package <- ifelse(cold$package == "ggplot2", "ggplot2 only", cold$package)
 cold$Function <- cold$method
 cold$Step <- factor(
-  c(load = "Load", "first plot" = "First plot", "load and first plot" = "Total")[
+  c(
+    load = "Load",
+    "first plot" = "First plot",
+    "load and first plot" = "Total"
+  )[
     cold$measure
   ],
   levels = c("Load", "First plot", "Total")
@@ -341,15 +366,9 @@ cat(environment_log, sep = "\n")
 
 ## Reproducing the benchmark
 
-The benchmark script is in the package's source repository, not in the installed package. From
-a clone of the repository, run:
+The benchmark script is in the package's source repository. From a clone of the repository,
+run:
 
 ```bash
 Rscript tools/benchmark.R
 ```
-
-It installs the package from the source as a release build into a temporary library, so it
-measures what users install rather than a development build, and writes
-`vignettes/articles/benchmark-results.csv` and `vignettes/articles/benchmark-environment.log`,
-which this article reads. Timings depend on the machine, so compare packages within one run
-rather than with numbers from another computer.

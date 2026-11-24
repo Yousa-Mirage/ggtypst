@@ -183,8 +183,7 @@ If you are on other Linux platforms, or you need the latest development version,
 ```{r}
 #| label: install-github
 #| eval: false
-install.packages("remotes")
-remotes::install_github("Yousa-Mirage/ggtypst")
+devtools::install_github("Yousa-Mirage/ggtypst")
 ```
 
 Because the GitHub installation builds the Typst backend in Rust, you need `rustc` and `cargo` on your system to compile
