@@ -41,11 +41,11 @@
 #'   wt = c(2, 3.5, 4.5),
 #'   mpg = c(15, 30, 10),
 #'   label = c(
-#'     r"(*Toyota Corolla* 😂)",
+#'     r"(*Toyota Corolla* #emoji.face.joy)",
 #'     r"(*Fiat 128*, $y = x$)",
 #'     r"(*_Maserati Bora_*)"
 #'   ),
-#'   colour = c("blue", NA, "red")
+#'   colour = c("blue", "black", "red")
 #' )
 #'
 #' ggplot(mtcars, aes(wt, mpg)) +
