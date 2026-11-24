@@ -1,5 +1,8 @@
 # ggtypst 0.2.0
 
+Many thanks to **Stein Are Sæther**, who carefully diagnosed some plot issues
+and suggested how to fix them. That report led to most of the changes below.
+
 - **(BREAKING)** ggtypst now requires R >= 4.3, which added the native glyph
   rendering (`grid::glyphGrob()`) used to draw Typst text.
 - **(BREAKING)** `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`

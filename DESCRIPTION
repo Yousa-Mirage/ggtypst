@@ -1,12 +1,17 @@
 Package: ggtypst
 Title: Render High-Quality Text and Formulas in 'ggplot2' by Typst
 Version: 0.2.0
-Authors@R:
+Authors@R: c(
     person(given = "Hao",
            family = "Cheng",
            role = c("aut", "cre", "cph"),
-           email = "Yousa-Mirage@foxmail.com")
-Author: Hao Cheng [aut, cre, cph]
+           email = "Yousa-Mirage@foxmail.com"),
+    person(given = c("Stein", "Are"),
+           family = "Sæther",
+           role = "ctb")
+    )
+Author: Hao Cheng [aut, cre, cph],
+    Stein Are Sæther [ctb]
 Maintainer: Hao Cheng <Yousa-Mirage@foxmail.com>
 Description: Provides a seamless integration of the 'Typst' typesetting engine 
     into 'ggplot2'. It allows users to render complex mathematical formulas, 
