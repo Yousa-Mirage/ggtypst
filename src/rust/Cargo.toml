@@ -19,14 +19,7 @@ extendr-api = "0.9.0"
 mitex = "0.2.4"
 ttf-parser = "0.25.1"
 typst = "0.15.0"
-typst-kit = {
-  version = "0.15.0",
-  default-features = false,
-  features = [
-    "embedded-fonts",
-    "scan-fonts",
-  ]
-}
+typst-kit = { version = "0.15.0", default-features = false, features = ["embedded-fonts", "scan-fonts"] }
 typst-layout = "0.15.0"
 typst-render = "0.15.0"
 
