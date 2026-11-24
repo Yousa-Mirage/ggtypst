@@ -9,6 +9,11 @@ publish = false
 crate-type = ["staticlib"]
 name = "ggtypst"
 
+[[bin]]
+name = "document"
+path = "document.rs"
+test = false
+
 [dependencies]
 extendr-api = "0.9.0"
 mitex = "0.2.4"

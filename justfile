@@ -32,6 +32,7 @@ pkg-check:
     R CMD check .
 
 document:
+    cd src && cargo run --quiet --manifest-path rust/Cargo.toml --bin document
     Rscript -e "devtools::document()"
 
 test:

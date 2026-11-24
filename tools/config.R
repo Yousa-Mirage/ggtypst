@@ -8,8 +8,9 @@ source("tools/msrv.R")
 env_debug <- Sys.getenv("DEBUG")
 env_not_cran <- Sys.getenv("NOT_CRAN")
 
-# check if the vendored zip file exists
-vendor_exists <- file.exists("src/rust/vendor.tar.xz")
+# check if vendored crates exist, as a directory or as a zip file
+vendor_exists <- dir.exists("src/vendor") ||
+  file.exists("src/rust/vendor.tar.xz")
 
 is_not_cran <- env_not_cran != ""
 is_debug <- env_debug != ""
