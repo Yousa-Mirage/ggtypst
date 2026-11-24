@@ -79,8 +79,8 @@ If you are on other Linux platforms, or you need the latest development
 version, you can install it from source:
 
 ``` r
-install.packages("remotes")
-remotes::install_github("Yousa-Mirage/ggtypst")
+# install.packages("devtools")
+devtools::install_github("Yousa-Mirage/ggtypst")
 ```
 
 Because the GitHub installation builds the Typst backend in Rust, you
