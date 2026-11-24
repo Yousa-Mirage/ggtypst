@@ -18,13 +18,13 @@ You will need:
 - Rust \>= 1.89 with `cargo` and `rustc`, better with `rust-analyzer`
 - [`Air`](https://posit-dev.github.io/air/) for formatting R code and
   [`Jarl`](https://jarl.etiennebacher.com/) for checking R code
-- Recommended development packages such as `devtools`, `pkgdown`,
-  `testthat`, and `vdiffr`
-- Optional: [`just`](https://github.com/casey/just) to run development
+- [`just`](https://github.com/casey/just) to run the development
   commands in `justfile`
-- Optional: [`pre-commit`](https://pre-commit.com/) or
-  [`prek`](https://prek.j178.dev/) to run some checks on staged files
-  before committing
+  - In particular, `just document` is the only command that regenerates
+    `R/extendr-wrappers.R`: it runs the Rust `document` binary
+    (`src/rust/document.rs`) before `devtools::document()`.
+- Development packages such as `devtools`, `pkgdown`, `testthat`, and
+  `vdiffr`
 
 Install package dependencies in your usual R environment, then use the
 project root as your working directory.
@@ -60,14 +60,19 @@ Typst world setup, and diagnostics emitted by the Typst compiler.
 
 ## Repository layout
 
-- `R/`: Rust-exported functions, helpers, grob construction,
+- `R/`: the public functions (`R/plot-*.R`), helpers, grob construction,
   diagnostics, and ggplot2 integration
 - `src/rust/src/`: Rust renderer, MiTeX conversion, embedded Typst
   assets, and error translation
-- `src/`: generated `rextendr` glue
+- `src/rust/document.rs`: the `document` binary that writes
+  `R/extendr-wrappers.R`, run by `just document`
+- `src/`: Rust source code and the Makevars templates that build the
+  Rust library
 - `tests/testthat/`: R tests
-- `vignettes/`: pkgdown articles and documents
-- `tools/`: development scripts used by `rextendr`
+- `vignettes/articles/`: articles, built by pkgdown only
+- `tools/`: `config.R` and `msrv.R` (run by `configure` to check the
+  Rust toolchain and fill in the Makevars) and development scripts: the
+  benchmark, the site build, and the icon
 
 ## Architecture overview
 
@@ -96,15 +101,14 @@ Other R files include:
 - `mitex.R`: converts LaTeX math input to Typst source code with the
   embedded MiTeX scope.
 - `extendr-wrappers.R`: generated `.Call()` wrappers for the Rust
-  entrypoints; auto generated when running `rextendr::document()` or
-  `just document`, never edit by hand.
+  entrypoints; regenerated only by `just document`, never edit by hand.
 - `zzz.R`: performs runtime registration that cannot be expressed
   statically, especially for `ggplot2` generics that are owned outside
   this package.
 
 ### Rust layer
 
-The Rust crate lives in `src/rust/` and currently exposes four exported
+The Rust crate lives in `src/rust/` and currently exposes five exported
 entry points:
 
 - `rs_typst_render()` compiles Typst and returns the page’s size, scene,
@@ -114,6 +118,8 @@ entry points:
 - `rs_typst_write_font()` writes a font built into the binary to a file,
   so devices can load it for native glyphs
 - `rs_convert_latex_to_typst()` converts LaTeX-style input through MiTeX
+- `rs_warm_up_fonts()` starts loading the fonts on a background thread
+  when the package loads
 
 Important modules include:
 
@@ -130,7 +136,7 @@ Important modules include:
 - `bounds.rs`: ink bounds and font descent of a page
 - `mitex.rs`: bridges LaTeX-style input through MiTeX
 - `error.rs`: translates Rust-side failures into structured R errors
-- `fonts.rs`: loads and caches embedded/system fonts for Typst rendering
+- `fonts.rs`: loads and caches embedded and system fonts
 
 The three embedded Typst files under `src/rust/specs/`, which are from
 MiTeX’s repository, provide the MiTeX scope used when evaluating
@@ -149,17 +155,22 @@ files and regenerate outputs.
 
 ## Core development commands
 
-The repository uses `just` as the main command runner:
+The repository uses `just` as its command runner; run `just` alone to
+list the recipes:
 
-- `just format` / `just fmt` - run `r-air format .` and `cargo fmt`
+- `just format` / `just fmt` - run `air format .` (or `r-air`) and
+  `cargo fmt`
 - `just check` - run `jarl check .`, `devtools::spell_check()`, and
   `cargo clippy`
-- `just document` / `just doc` - regenerate `rextendr` wrappers,
-  `NAMESPACE`, and Rd files
+- `just document` / `just doc` - run the Rust `document` binary to
+  regenerate `R/extendr-wrappers.R`, then `devtools::document()` to
+  regenerate `NAMESPACE` and the Rd files
 - `just test` - run R tests plus Rust tests
-- `just build-check` - run `R CMD check .`
-- `just site` - rebuild `README.md`, community docs, and the pkgdown
+- `just pkg-check` - run `R CMD check .`
+- `just site` - rebuild `README.md`, `CONTRIBUTING.md`, and the pkgdown
   site
+- `just update-wordlist` - add new words to `inst/WORDLIST` after a
+  spell check finds them
 
 Useful direct commands while iterating:
 
