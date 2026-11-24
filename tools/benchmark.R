@@ -64,6 +64,9 @@ plot_iterations <- if (quick) 2L else 15L
 redraw_rows <- 100
 redraw_iterations <- if (quick) 2L else 10L
 cold_runs <- if (quick) 1L else 7L
+# Pause between loading the packages and the first plot, as when a plot is
+# typed or run after `library()` in an interactive session.
+cold_pause_ms <- 500
 
 # ── Release build of this source tree ───────────────────────────────────────
 
@@ -278,6 +281,10 @@ write_environment_log <- function(finished = NULL) {
     sprintf("  Geom rows:     %s", paste(geom_rows, collapse = ", ")),
     sprintf("  Quick run:     %s", quick),
     "  Labels:        all different, in every plot and every iteration",
+    sprintf(
+      "  Cold start:    a new R session per run; pause before the first plot 0 or %g ms",
+      cold_pause_ms
+    ),
     "  Timing:        bench::hires_time(), after a garbage collection; cases",
     "                 interleaved in a random order each iteration, after one",
     "                 untimed warm-up run of each case"
@@ -736,8 +743,9 @@ theme_cases_for <- function(cases, measure = "first", section = "theme") {
 
 # ── Cold start ──────────────────────────────────────────────────────────────
 
-# In a new R session: load the packages, then build and save a plot with 10
-# labels. "Cold" means a new R process, not empty operating system caches.
+# In a new R session: load the packages, wait `pause` ms, then build and save
+# a plot with 10 labels. "Cold" means a new R process, not empty operating
+# system caches.
 cold_start_script <- function() {
   script <- tempfile(fileext = ".R")
   writeLines(
@@ -746,6 +754,7 @@ cold_start_script <- function() {
       "lib <- args[[1]]",
       "variant <- args[[2]]",
       "file <- args[[3]]",
+      "pause <- as.numeric(args[[4]])",
       ".libPaths(c(lib, .libPaths()))",
       "start <- Sys.time()",
       "suppressPackageStartupMessages({",
@@ -754,6 +763,8 @@ cold_start_script <- function() {
       "  if (variant == 'ggtypst') library(ggtypst, lib.loc = lib)",
       "})",
       "loaded <- Sys.time()",
+      "Sys.sleep(pause / 1000)",
+      "resumed <- Sys.time()",
       "set.seed(1)",
       "data <- data.frame(x = runif(10), y = runif(10))",
       "data$label <- switch(",
@@ -774,7 +785,7 @@ cold_start_script <- function() {
       "saved <- Sys.time()",
       "cat(",
       "  as.numeric(difftime(loaded, start, units = 'secs')) * 1000,",
-      "  as.numeric(difftime(saved, loaded, units = 'secs')) * 1000",
+      "  as.numeric(difftime(saved, resumed, units = 'secs')) * 1000",
       ")"
     ),
     script
@@ -788,6 +799,7 @@ measure_cold_start <- function() {
   grid <- expand.grid(
     variant = variants,
     device = devices,
+    pause = c(0, cold_pause_ms),
     stringsAsFactors = FALSE
   )
   times <- list()
@@ -800,7 +812,8 @@ measure_cold_start <- function() {
           shQuote(script),
           shQuote(bench_lib),
           grid$variant[[i]],
-          shQuote(plot_files[[grid$device[[i]]]])
+          shQuote(plot_files[[grid$device[[i]]]]),
+          grid$pause[[i]]
         ),
         stdout = TRUE,
         stderr = FALSE
@@ -814,18 +827,22 @@ measure_cold_start <- function() {
           call. = FALSE
         )
       }
-      key <- paste(grid$variant[[i]], grid$device[[i]])
+      key <- paste(grid$variant[[i]], grid$device[[i]], grid$pause[[i]])
       times[[key]] <- rbind(times[[key]], value)
     }
   }
   rows <- lapply(seq_len(nrow(grid)), function(i) {
-    key <- paste(grid$variant[[i]], grid$device[[i]])
+    key <- paste(grid$variant[[i]], grid$device[[i]], grid$pause[[i]])
     value <- times[[key]]
-    measures <- list(
-      load = value[, 1],
-      "first plot" = value[, 2],
-      "load and first plot" = value[, 1] + value[, 2]
-    )
+    measures <- if (grid$pause[[i]] == 0) {
+      list(
+        load = value[, 1],
+        "first plot" = value[, 2],
+        "load and first plot" = value[, 1] + value[, 2]
+      )
+    } else {
+      list("first plot after a pause" = value[, 2])
+    }
     do.call(
       rbind,
       lapply(names(measures), function(measure) {

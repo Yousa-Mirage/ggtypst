@@ -1,6 +1,6 @@
 ggtypst benchmark environment
 
-Date:            2026-11-24 13:39 +08
+Date:            2026-11-24 15:13 +08
 CPU:             Apple M5
 Cores:           10
 Memory:          24 GB
@@ -18,8 +18,8 @@ Packages:
   bench          1.1.4
 
 ggtypst build:
-  Source:        jj 5741dffeb3be
-  Fingerprint:   a18f924274cf5350715f6d19e8461229
+  Source:        jj 06b057f07d49
+  Fingerprint:   6988111f02d732bba6012190d8253a6d
   Profile:       release
   Cargo release: opt-level = 3, strip = true, lto = true
   Library:       reused
@@ -32,8 +32,9 @@ Settings:
   Geom rows:     1, 10, 100, 500, 1000
   Quick run:     FALSE
   Labels:        all different, in every plot and every iteration
+  Cold start:    a new R session per run; pause before the first plot 0 or 500 ms
   Timing:        bench::hires_time(), after a garbage collection; cases
                  interleaved in a random order each iteration, after one
                  untimed warm-up run of each case
 
-Total run time:  10.7 min
+Total run time:  11.7 min

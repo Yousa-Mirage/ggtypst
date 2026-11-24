@@ -104,6 +104,14 @@ first_plot <- function(package, device) {
     measure = "first plot"
   )
 }
+first_plot_after_pause <- function(package, device) {
+  result(
+    section = "cold start",
+    package = package,
+    device = device,
+    measure = "first plot after a pause"
+  )
+}
 load_time <- function(package, device = "png") {
   result(
     section = "cold start",
@@ -113,6 +121,10 @@ load_time <- function(package, device = "png") {
   )
 }
 ```
+
+In a summary, after [PR #3](https://github.com/Yousa-Mirage/ggtypst/pull/3), `ggtypst` plots
+much faster than v0.1.0 now and is faster than `ggtext` in most cases. I believe performance
+is no longer preventing you from using `ggtypst`.
 
 - **Label layers.** With `r max_rows` labels, each `geom_typst()` label adds about
   **`r ms2(png_typst)`** to a PNG and **`r ms2(pdf_typst)`** to a PDF. That is
@@ -132,9 +144,12 @@ load_time <- function(package, device = "png") {
   `?ggtypst-options` for devices that draw native glyphs.
 - **Theme text** such as titles, legends, and facet strips costs about the same as with
   `ggtext`; many tick labels cost more (see [Theme elements](#theme-elements)).
-- **The first plot of a session** takes about
+- **The first plot of a session.** `ggtypst` starts scanning the installed fonts in the
+  background as soon as it is loaded. A plot saved right after `library()` still waits for the
+  rest of that scan and takes about
   `r ms(first_plot("ggtypst", "png") - first_plot("ggplot2", "png"))` longer than with plain
-  `ggplot2`, while `ggtypst` loads its fonts and Typst. Loading the package itself costs little.
+  `ggplot2`; after a short pause, as in daily interactive use, the difference is about
+  `r ms(first_plot_after_pause("ggtypst", "png") - first_plot_after_pause("ggplot2", "png"))`.
 
 ## Label layers
 
@@ -314,7 +329,9 @@ Saving a plot again takes about as long as saving it the first time, with every 
 
 Each run starts a new R session, loads `ggplot2` and the package, then builds and saves a plot
 with 10 labels. "Load" is the time to load the packages, "First plot" the time to build and save
-the plot.
+the plot right after loading them. "First plot after a pause" waits 0.5 seconds after loading,
+as when a plot is typed or run after `library()` in an interactive session. Compare packages
+within the same step.
 
 ```{r}
 #| label: cold-table
@@ -325,36 +342,29 @@ cold$Step <- factor(
   c(
     load = "Load",
     "first plot" = "First plot",
-    "load and first plot" = "Total"
+    "load and first plot" = "Load and first plot",
+    "first plot after a pause" = "First plot after a pause"
   )[
     cold$measure
   ],
-  levels = c("Load", "First plot", "Total")
+  levels = c(
+    "Load",
+    "First plot",
+    "Load and first plot",
+    "First plot after a pause"
+  )
 )
 table <- by_device(cold, c("Package", "Function", "Step"))
 table <- table[order(table$Step, table$Package), ]
 knitr::kable(table, row.names = FALSE, align = "lllrr")
 ```
 
-Loading `ggtypst` costs about `r ms(load_time("ggtypst") - load_time("ggplot2"))` more than
-`ggplot2` alone. Its first plot takes longer than later ones, because `ggtypst` finds the
-installed fonts and starts Typst the first time it renders a label.
-
-## Practical guidelines
-
-1. **Estimate the cost of a label layer** as the time of the plot without labels plus the number
-   of labels times the cost per label above, about `r ms2(png_typst)` for PNG and
-   `r ms2(pdf_typst)` for PDF on this machine. A plot with `r max_rows` labels takes about
-   `r ms(result(section = "geom", method = "geom_typst", device = "png", n = max_rows))` as
-   PNG.
-2. **Use `geom_text()` for plain text.** When labels need no styling or math, `ggplot2`'s own
-   text is the fastest option.
-3. **For label layers, `ggtypst` is faster than `ggtext`** at every size measured here, and
-   also draws math.
-4. **Use one `geom_*()` layer instead of many `annotate_*()` calls** for more than a few labels.
-5. **For PDF, consider the device.** `pdf()` draws `ggtypst` text as outlines, which looks the
-   same on every computer but is slower to draw. Devices that embed fonts, such as
-   `cairo_pdf()`, draw native glyphs instead; see `?ggtypst-options`.
+While it loads, `ggtypst` starts finding the installed fonts on a background thread, which
+takes about a tenth of a second with a few hundred font families. A plot saved right after
+loading waits for the rest of that work; after a pause it is done, and the first plot costs
+about
+`r ms(first_plot_after_pause("ggtypst", "png") - first_plot_after_pause("ggplot2", "png"))`
+more than with plain `ggplot2`, less than with `ggtext`.
 
 ## Test environment
 
