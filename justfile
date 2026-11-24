@@ -1,6 +1,8 @@
 set unstable
 set lists
 
+export LC_CTYPE := "en_US.UTF-8"
+
 alias fmt := format
 alias doc := document
 alias lint := check
