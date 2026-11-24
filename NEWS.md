@@ -1,59 +1,55 @@
 # ggtypst 0.2.0
 
-Many thanks to **Stein Are Sæther**, who carefully diagnosed some plot issues
-and suggested how to fix them. That report led to most of the changes below.
+Many thanks to **Stein Arne Sæther** for carefully spotting several plotting
+issues and suggesting fixes. Most of the changes below stem from his report.
 
-- **(BREAKING)** ggtypst now requires R >= 4.3, which added the native glyph
-  rendering (`grid::glyphGrob()`) used to draw Typst text.
-- **(BREAKING)** `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`
-  now require optional arguments after `x` and `y` to be named, so misplaced
-  positional inputs and misspelled argument names fail fast.
--  **(BREAKING: Expect plots to change slightly in size)**
-  Typst output is now drawn at exactly the size Typst lays it out, so `size`
-  matches the requested font size. Previously all rendered text and math were
-  about 9% too small, and short labels shrank by up to a further ~5% depending
-  on their box size (so a single-line label drew smaller glyphs than a
-  multi-line label of the same `size`).
-- `element_typst()`, `element_math_typst()`, and `element_math_mitex()` now
-  respect `hjust` and `vjust` within their cell, like `element_text()`: titles,
-  subtitles, captions, and legend labels are no longer always centered.
-- `element_typst()`, `element_math_typst()`, and `element_math_mitex()` can now
-  be set on the root `text` element, as in `theme(text = element_typst())`, to
-  draw all of a plot's text with Typst. This used to fail.
-- The lines of multi-line labels are now aligned left, center, or right
-  according to `hjust` in annotations, geoms, and theme elements, as with
-  `ggplot2` text. Alignment set in the Typst code itself still takes precedence.
-- Labels are now justified by their content: Typst's page margin no longer
-  shifts text away from its anchor, so `hjust = 0` and `hjust = 1` line up
-  exactly with `ggplot2` text.
-- Vertical metrics now match `ggplot2` text. `vjust = 0` puts the last
-  baseline on the anchor and `vjust = 1` the cap height of the first line,
-  whatever glyphs the text contains; `lineheight` sets the baseline distance to
-  `1.2 * lineheight` font sizes as in `ggplot2` (it used to add that much
-  spacing between lines), defaulting to `geom_text()`'s 1.2; and theme
-  elements reserve the same height for any text of a given font and size.
-- Typst output is now drawn with grid directly instead of being imported as
+## Breaking changes
+
+- ggtypst now requires R 4.3 or later, the first version that can draw native
+  glyphs.
+- In `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`,
+  all optional arguments after `x` and `y` must now be named explicitly.
+- Text and math are now drawn at the requested `size`. They used to be about 9%
+  too small, so labels in existing plots get slightly larger.
+
+## New rendering
+
+- Typst output is now drawn directly with grid instead of being imported as
   SVG. On devices that rasterize or embed fonts (ragg, `png()`, `cairo_pdf()`,
-  svglite, ...) text is drawn as native glyphs, exactly like `ggplot2` text, so
-  it no longer seems fatter than `element_text()` on screen and `cairo_pdf()`
-  embeds the real fonts. On `pdf()` and `postscript()`, which only reference
-  fonts by name, text is drawn as outlines so it looks the same everywhere.
-  See `?ggtypst-options` to choose.
-- Labels render much faster. A label in a `geom_*()` layer now adds under 1 ms
-  to a PNG and about 2 ms to a PDF, less than with `ggtext`. The installed
-  fonts are scanned on a background thread when the package loads, so the
-  first plot of a session waits less. See the benchmark article for details.
-- Text drawn as outlines (on `pdf()` and `postscript()`) uses about half as
-  many points, so such PDF files are smaller.
-- When rendering many different labels, ggtypst now limits the memory
-  retained by Typst's compilation cache by dropping results unused in the last
-  10 renders.
+  svglite, Quartz), text is drawn as native glyphs like `ggplot2` text: crisp
+  on screen, no longer heavier than `element_text()`, and with the real fonts
+  embedded by `cairo_pdf()`. On `pdf()` and `postscript()`, text is drawn as
+  outlines so it looks the same everywhere.
+- New options, described in `?ggtypst-options`: `ggtypst.renderer` chooses
+  native glyphs or outlines, `ggtypst.raster_dpi` sets the resolution of
+  gradients, tilings, images, and color emoji (drawn as images, 600 dpi by
+  default), and `ggtypst.font_cache` sets where the built-in fonts are written
+  for native glyphs.
 - `rsvg` and `grImport2` are no longer used, so installing ggtypst no longer
-  needs the system library `librsvg`. Content that grid cannot draw as text
-  or lines (gradients, tilings, images, and color emoji) is
-  drawn as an image rendered by Typst, at `ggtypst.raster_dpi` (600 dpi by
-  default; see `?ggtypst-options`). Clipped boxes inside clipped boxes are now
-  clipped by both.
+  requires the system library `librsvg`.
+
+## Layout fixes
+
+- Typst theme elements now respect `hjust` and `vjust`: titles, subtitles,
+  captions, and legend labels are no longer always centered.
+- `element_typst()` and the math elements can now be set on the root `text`
+  element, as in `theme(text = element_typst())`, to draw all of a plot's text
+  with Typst.
+- The lines of multi-line labels are aligned by `hjust`, unless the Typst code
+  sets its own alignment.
+- Labels now line up with `ggplot2` text: `hjust` and `vjust` place the text
+  itself rather than Typst's page margin, `lineheight` spaces lines as in
+  `ggplot2`, and theme elements reserve the same height as `element_text()`.
+- Clipped boxes inside clipped boxes are now clipped by both.
+
+## Performance
+
+- Labels render much faster: a label in a `geom_*()` layer adds under 1 ms to
+  a PNG and about 2 ms to a PDF, less than with `ggtext`.
+- The installed fonts are loaded in the background when the package loads, so
+  the first plot appears sooner.
+- PDFs with text drawn as outlines are smaller, and memory use stays limited
+  when rendering many different labels.
 
 # ggtypst 0.1.0
 
