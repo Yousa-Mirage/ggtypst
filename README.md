@@ -1,7 +1,7 @@
 
 # ggtypst <img src="man/figures/logo.png" align="right" height="175" alt="ggtypst logo" />
 
-<div data-align="center">
+<div align="center">
 
 [![GitHub
 stars](https://img.shields.io/github/stars/Yousa-Mirage/ggtypst?style=social)](https://github.com/Yousa-Mirage/ggtypst/stargazers)

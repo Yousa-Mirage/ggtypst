@@ -8,7 +8,7 @@ if (file.exists("README.Rmd")) {
 
   rmarkdown::render(
     input = "README.Rmd",
-    output_format = rmarkdown::github_document(html_preview = FALSE),
+    output_options = list(html_preview = FALSE),
     output_file = "README.md",
     quiet = TRUE,
     envir = new.env(parent = globalenv())
@@ -18,7 +18,7 @@ if (file.exists("README.Rmd")) {
 if (file.exists(".github/CONTRIBUTING.Rmd")) {
   rmarkdown::render(
     input = ".github/CONTRIBUTING.Rmd",
-    output_format = rmarkdown::github_document(html_preview = FALSE),
+    output_options = list(html_preview = FALSE),
     output_file = "CONTRIBUTING.md",
     output_dir = ".github",
     quiet = TRUE,
