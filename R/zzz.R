@@ -32,4 +32,8 @@ NULL
     element_grob.element_math_mitex,
     envir = asNamespace("ggplot2")
   )
+
+  # Scan the installed fonts on a background thread now, so the first label
+  # does not wait for it.
+  rs_warm_up_fonts()
 }

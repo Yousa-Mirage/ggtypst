@@ -32,6 +32,13 @@ fn rs_typst_render(typst_code: &str, raster_dpi: f64) -> List {
     }
 }
 
+/// Start loading the fonts on a background thread.
+/// @noRd
+#[extendr]
+fn rs_warm_up_fonts() {
+    fonts::warm_up();
+}
+
 /// Outlines of a scene's glyphs, for drawing its text as paths.
 /// @noRd
 #[extendr]
@@ -83,6 +90,7 @@ fn rs_convert_latex_to_typst(latex_code: &str) -> Robj {
 extendr_module! {
     mod ggtypst;
     fn rs_typst_render;
+    fn rs_warm_up_fonts;
     fn rs_glyph_outlines;
     fn rs_typst_write_font;
     fn rs_convert_latex_to_typst;

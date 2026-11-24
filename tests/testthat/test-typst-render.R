@@ -85,3 +85,11 @@ test_that("different font families produce different text widths", {
   expect_gt(courier$width_pt, 0)
   expect_true(arial$width_pt != courier$width_pt)
 })
+
+test_that("starting the font warm-up again after loading is harmless", {
+  # .onLoad has already started it; later calls do nothing.
+  expect_null(rs_warm_up_fonts())
+  expect_null(rs_warm_up_fonts())
+  rendered <- typst_render(build_typst_source("Warm fonts"))
+  expect_gt(rendered$width_pt, 0)
+})
