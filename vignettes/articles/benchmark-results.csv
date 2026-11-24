@@ -1,0 +1,159 @@
+"section","content","package","method","device","n","measure","iterations","median_ms","q25_ms","q75_ms","min_ms","max_ms","per_label_ms"
+"cold start","styled text","ggplot2","geom_text","png",10,"load",7,277.27,275.77,283.88,269.04,300.93,NA
+"cold start","styled text","ggplot2","geom_text","png",10,"first plot",7,128.75,128.41,135.52,126.45,146.96,NA
+"cold start","styled text","ggplot2","geom_text","png",10,"load and first plot",7,410.45,403.05,426.15,398.04,429.69,NA
+"cold start","styled text","ggtext","geom_richtext","png",10,"load",7,309.91,305.04,325.42,303.13,344.17,NA
+"cold start","styled text","ggtext","geom_richtext","png",10,"first plot",7,180.2,178.4,186.58,176.15,194.83,NA
+"cold start","styled text","ggtext","geom_richtext","png",10,"load and first plot",7,488.95,484.84,512.65,479.27,536.04,NA
+"cold start","styled text","ggtypst","geom_typst","png",10,"load",7,282.89,281.16,290.69,276.83,300.44,NA
+"cold start","styled text","ggtypst","geom_typst","png",10,"first plot",7,199.97,197.7,201.94,195.36,207.31,NA
+"cold start","styled text","ggtypst","geom_typst","png",10,"load and first plot",7,481.74,479.65,496.03,472.35,500.31,NA
+"cold start","styled text","ggplot2","geom_text","pdf",10,"load",7,274.14,271.8,286.25,269.22,296.82,NA
+"cold start","styled text","ggplot2","geom_text","pdf",10,"first plot",7,93.71,92.19,94.38,91.16,99.29,NA
+"cold start","styled text","ggplot2","geom_text","pdf",10,"load and first plot",7,369.03,363.27,379.78,362.32,396.12,NA
+"cold start","styled text","ggtext","geom_richtext","pdf",10,"load",7,307.59,306.3,315.41,304.21,359.48,NA
+"cold start","styled text","ggtext","geom_richtext","pdf",10,"first plot",7,140.78,138.54,153.08,137.25,171.73,NA
+"cold start","styled text","ggtext","geom_richtext","pdf",10,"load and first plot",7,448.03,445.02,468.49,441.47,531.21,NA
+"cold start","styled text","ggtypst","geom_typst","pdf",10,"load",7,287.94,279.89,290.89,277.7,335.18,NA
+"cold start","styled text","ggtypst","geom_typst","pdf",10,"first plot",7,158.17,157.11,159.63,156.56,162.16,NA
+"cold start","styled text","ggtypst","geom_typst","pdf",10,"load and first plot",7,444.5,437.76,450.48,435.87,495.91,NA
+"cold start","styled text","ggplot2","geom_text","png",10,"first plot after a pause",7,164.98,162.85,168.34,162.25,174.62,NA
+"cold start","styled text","ggtext","geom_richtext","png",10,"first plot after a pause",7,213.41,212.58,215.76,205.81,224.56,NA
+"cold start","styled text","ggtypst","geom_typst","png",10,"first plot after a pause",7,175.99,175.24,176.71,174.49,190.85,NA
+"cold start","styled text","ggplot2","geom_text","pdf",10,"first plot after a pause",7,128.59,127.19,164.33,126.33,205.62,NA
+"cold start","styled text","ggtext","geom_richtext","pdf",10,"first plot after a pause",7,174.91,173.64,183.77,169.72,205.36,NA
+"cold start","styled text","ggtypst","geom_typst","pdf",10,"first plot after a pause",7,146.4,145.89,151.19,144.91,165.08,NA
+"geom","none","ggplot2","geom_point only","png",1,"first",15,80.33,79.56,86.84,78.91,92.12,NA
+"geom","none","ggplot2","geom_point only","pdf",1,"first",15,41.34,41.07,45.51,40.64,51.43,NA
+"geom","styled text","ggplot2","geom_text","png",1,"first",15,85.62,84.5,90.11,83.53,95.86,5.29
+"geom","styled text","ggplot2","geom_text","pdf",1,"first",15,48.2,46.02,52.45,44.86,86.73,6.85
+"geom","styled text","ggtext","geom_richtext","png",1,"first",15,89.08,86.77,96.35,85.57,136.88,8.75
+"geom","styled text","ggtext","geom_richtext","pdf",1,"first",15,48.85,47.8,52.6,47.09,58.58,7.51
+"geom","styled text","ggtypst","geom_typst","png",1,"first",15,85.67,84.69,92.45,83.8,119.85,5.33
+"geom","styled text","ggtypst","geom_typst","pdf",1,"first",15,47.1,46.38,50.15,45.87,54.53,5.76
+"geom","math","ggplot2","geom_text(parse = TRUE)","png",1,"first",15,86.06,84.63,92.38,83.78,133.04,5.72
+"geom","math","ggplot2","geom_text(parse = TRUE)","pdf",1,"first",15,46.43,45.08,50.33,44.51,54.79,5.09
+"geom","math","ggtypst","geom_math_typst","png",1,"first",15,85.56,85.06,89.96,84.1,98.81,5.23
+"geom","math","ggtypst","geom_math_typst","pdf",1,"first",15,47.56,47.23,51.4,45.86,106.63,6.22
+"geom","math","ggtypst","geom_math_mitex","png",1,"first",15,85.37,84.87,85.94,84.25,92.38,5.04
+"geom","math","ggtypst","geom_math_mitex","pdf",1,"first",15,48.21,46.81,54.32,46.08,63.51,6.87
+"geom","none","ggplot2","geom_point only","png",10,"first",15,79.65,79.1,80.9,78.08,83.56,NA
+"geom","none","ggplot2","geom_point only","pdf",10,"first",15,41.19,40.85,43.72,40.17,45.45,NA
+"geom","styled text","ggplot2","geom_text","png",10,"first",15,85.51,85.04,86.11,84.36,101.14,0.59
+"geom","styled text","ggplot2","geom_text","pdf",10,"first",15,45.77,45.01,47.88,44.29,50.09,0.46
+"geom","styled text","ggtext","geom_richtext","png",10,"first",15,107.63,106.95,110.01,106.55,145.86,2.8
+"geom","styled text","ggtext","geom_richtext","pdf",10,"first",15,66.8,66.45,68.5,65.53,72.77,2.56
+"geom","styled text","ggtypst","geom_typst","png",10,"first",15,92.64,90.74,93.31,90.01,118,1.3
+"geom","styled text","ggtypst","geom_typst","pdf",10,"first",15,60.8,60.14,61.3,58.81,131.79,1.96
+"geom","math","ggplot2","geom_text(parse = TRUE)","png",10,"first",15,87.53,87.26,88.23,86.37,90.61,0.79
+"geom","math","ggplot2","geom_text(parse = TRUE)","pdf",10,"first",15,45.91,45.21,49.1,44.7,69.68,0.47
+"geom","math","ggtypst","geom_math_typst","png",10,"first",15,93.26,92.62,94.02,91.61,102.07,1.36
+"geom","math","ggtypst","geom_math_typst","pdf",10,"first",15,61.31,60.55,62.04,59.38,64.68,2.01
+"geom","math","ggtypst","geom_math_mitex","png",10,"first",15,96.54,95.96,97.53,92.77,99.75,1.69
+"geom","math","ggtypst","geom_math_mitex","pdf",10,"first",15,64.25,63.99,67.73,61.18,122.97,2.31
+"geom","none","ggplot2","geom_point only","png",100,"first",15,81.65,81.4,81.95,81.28,83.48,NA
+"geom","none","ggplot2","geom_point only","pdf",100,"first",15,41.83,41.45,42.1,41.05,82.06,NA
+"geom","styled text","ggplot2","geom_text","png",100,"first",15,105.25,105.09,105.7,103.98,106.04,0.24
+"geom","styled text","ggplot2","geom_text","pdf",100,"first",15,46.57,46.31,47.48,45.67,86.15,0.05
+"geom","styled text","ggtext","geom_richtext","png",100,"first",15,320.35,319.28,320.85,316.27,322.78,2.39
+"geom","styled text","ggtext","geom_richtext","pdf",100,"first",15,258.25,256.8,261.24,255.21,291.25,2.16
+"geom","styled text","ggtypst","geom_typst","png",100,"first",15,162.64,161.63,163.82,160.33,165.88,0.81
+"geom","styled text","ggtypst","geom_typst","pdf",100,"first",15,214.92,211.2,218.73,206,226.48,1.73
+"geom","math","ggplot2","geom_text(parse = TRUE)","png",100,"first",15,120.89,120.84,122.48,118.98,125.88,0.39
+"geom","math","ggplot2","geom_text(parse = TRUE)","pdf",100,"first",15,48.99,48.7,49.57,48.23,83.89,0.07
+"geom","math","ggtypst","geom_math_typst","png",100,"first",15,175.53,173.61,175.84,172.96,177.09,0.94
+"geom","math","ggtypst","geom_math_typst","pdf",100,"first",15,218.25,214.96,229.84,203.18,244.67,1.76
+"geom","math","ggtypst","geom_math_mitex","png",100,"first",15,181.02,179.47,182.71,176.65,191.05,0.99
+"geom","math","ggtypst","geom_math_mitex","pdf",100,"first",15,230.69,225.77,235.51,219.06,258.58,1.89
+"geom","none","ggplot2","geom_point only","png",500,"first",7,92.11,90.82,92.56,88.84,93.99,NA
+"geom","none","ggplot2","geom_point only","pdf",500,"first",7,47.64,46.39,47.83,44.97,48.85,NA
+"geom","styled text","ggplot2","geom_text","png",500,"first",7,158.31,157.86,158.89,157.31,160.25,0.13
+"geom","styled text","ggplot2","geom_text","pdf",500,"first",7,53.41,52.38,53.63,51.66,54.05,0.01
+"geom","styled text","ggtext","geom_richtext","png",500,"first",7,1263.75,1232.42,1274.39,1206.58,1301.34,2.34
+"geom","styled text","ggtext","geom_richtext","pdf",500,"first",7,1133.09,1116.34,1169.61,1106.65,1176.99,2.17
+"geom","styled text","ggtypst","geom_typst","png",500,"first",7,443.24,442.09,448.04,437.58,450.49,0.7
+"geom","styled text","ggtypst","geom_typst","pdf",500,"first",7,934.21,921.53,940.15,915.53,942.66,1.77
+"geom","math","ggplot2","geom_text(parse = TRUE)","png",500,"first",7,230.53,230.1,231.36,228.84,232.42,0.28
+"geom","math","ggplot2","geom_text(parse = TRUE)","pdf",500,"first",7,64.97,64.49,65.23,63.32,101.71,0.03
+"geom","math","ggtypst","geom_math_typst","png",500,"first",7,512.71,511.22,520.87,508.22,529.34,0.84
+"geom","math","ggtypst","geom_math_typst","pdf",500,"first",7,991.85,983.89,1017.38,972.48,1040.37,1.89
+"geom","math","ggtypst","geom_math_mitex","png",500,"first",7,532.63,525.73,537.62,517.3,563.72,0.88
+"geom","math","ggtypst","geom_math_mitex","pdf",500,"first",7,999.66,963.64,1070.77,916.26,1100.76,1.9
+"geom","none","ggplot2","geom_point only","png",1000,"first",7,97.16,96.74,98.86,95.74,105.12,NA
+"geom","none","ggplot2","geom_point only","pdf",1000,"first",7,50.95,50.77,51.16,50.17,51.9,NA
+"geom","styled text","ggplot2","geom_text","png",1000,"first",7,187.46,186.42,190.07,183.24,194.21,0.09
+"geom","styled text","ggplot2","geom_text","pdf",1000,"first",7,58.48,58.04,66.2,57.39,68.6,0.01
+"geom","styled text","ggtext","geom_richtext","png",1000,"first",7,2572.5,2471.66,2670.44,2453.35,2872.55,2.48
+"geom","styled text","ggtext","geom_richtext","pdf",1000,"first",7,2493.13,2439.69,2561.5,2339.41,2734.25,2.44
+"geom","styled text","ggtypst","geom_typst","png",1000,"first",7,809.44,798.67,820.02,778.42,841.44,0.71
+"geom","styled text","ggtypst","geom_typst","pdf",1000,"first",7,1876.56,1853.05,1908.7,1836.48,1962.68,1.83
+"geom","math","ggplot2","geom_text(parse = TRUE)","png",1000,"first",7,347.54,343.5,349.21,335.26,350.2,0.25
+"geom","math","ggplot2","geom_text(parse = TRUE)","pdf",1000,"first",7,82.76,80.97,87.13,80.19,89.79,0.03
+"geom","math","ggtypst","geom_math_typst","png",1000,"first",7,1019.92,956.09,1056.46,942.6,1090.83,0.92
+"geom","math","ggtypst","geom_math_typst","pdf",1000,"first",7,2036.39,2012.32,2088.86,1940.91,2154.92,1.99
+"geom","math","ggtypst","geom_math_mitex","png",1000,"first",7,1029.2,1009.51,1088.87,988.48,1110.89,0.93
+"geom","math","ggtypst","geom_math_mitex","pdf",1000,"first",7,2041.11,1964.47,2068.23,1883.46,2117.71,1.99
+"annotate","none","ggplot2","geom_point only","png",0,"first",15,81.97,81.79,82.12,81.62,82.62,NA
+"annotate","none","ggplot2","geom_point only","pdf",0,"first",15,42.19,42.06,42.37,41.78,44.26,NA
+"annotate","styled text","ggplot2","annotate(""text"")","png",1,"first",15,92.26,92.1,92.5,91.89,93.74,NA
+"annotate","styled text","ggplot2","annotate(""text"")","pdf",1,"first",15,52.29,52.18,52.35,51.99,53.49,NA
+"annotate","styled text","ggtext","annotate(""richtext"")","png",1,"first",15,95.02,94.74,96.01,94.45,97.18,NA
+"annotate","styled text","ggtext","annotate(""richtext"")","pdf",1,"first",15,54.76,54.61,55.01,54.35,55.92,NA
+"annotate","styled text","ggtypst","annotate_typst","png",1,"first",15,85.45,85.39,85.65,85.14,86.54,NA
+"annotate","styled text","ggtypst","annotate_typst","pdf",1,"first",15,46.78,46.64,46.93,46.39,47.28,NA
+"annotate","styled text","ggplot2","annotate(""text"")","png",10,"first",15,94.45,94.23,95.1,93.88,97.81,NA
+"annotate","styled text","ggplot2","annotate(""text"")","pdf",10,"first",15,52.58,52.39,53.07,52.08,145.47,NA
+"annotate","styled text","ggtext","annotate(""richtext"")","png",10,"first",15,116.66,116.54,117.24,116.18,118.15,NA
+"annotate","styled text","ggtext","annotate(""richtext"")","pdf",10,"first",15,74.15,73.84,75.33,73.19,76.55,NA
+"annotate","styled text","ggtypst","annotate_typst","png",10,"first",15,118.42,118.25,118.67,117.9,119.05,NA
+"annotate","styled text","ggtypst","annotate_typst","pdf",10,"first",15,88.6,88.29,89.08,87.84,92.3,NA
+"theme","titles","ggplot2","element_text","png",NA,"first",15,96.28,95.9,96.9,95.72,99.1,NA
+"theme","titles","ggplot2","element_text","pdf",NA,"first",15,53.96,53.86,54.14,53.55,54.7,NA
+"theme","titles","ggtext","element_markdown","png",NA,"first",15,105.54,105.26,106.42,104.97,128.26,NA
+"theme","titles","ggtext","element_markdown","pdf",NA,"first",15,63.08,62.81,64.12,62.17,160.11,NA
+"theme","titles","ggtypst","element_typst","png",NA,"first",15,103.05,102.79,103.74,102.06,105.85,NA
+"theme","titles","ggtypst","element_typst","pdf",NA,"first",15,65.93,65.47,66.31,64.24,76.87,NA
+"theme","axis_text","ggplot2","element_text","png",NA,"first",15,98.19,97.9,98.48,97.7,110.68,NA
+"theme","axis_text","ggplot2","element_text","pdf",NA,"first",15,53.26,53.01,53.64,52.59,57.28,NA
+"theme","axis_text","ggtext","element_markdown","png",NA,"first",15,97.76,97.51,98.04,92.83,99.28,NA
+"theme","axis_text","ggtext","element_markdown","pdf",NA,"first",15,52.43,52.26,52.71,45.72,54.56,NA
+"theme","axis_text","ggtypst","element_typst","png",NA,"first",15,112.56,111.61,113.25,110.27,116.41,NA
+"theme","axis_text","ggtypst","element_typst","pdf",NA,"first",15,86.33,85.43,88.33,84.7,90.75,NA
+"theme","legend","ggplot2","element_text","png",NA,"first",15,112.39,112.05,112.95,111.76,113.85,NA
+"theme","legend","ggplot2","element_text","pdf",NA,"first",15,69.49,68.62,70.3,68.24,73.33,NA
+"theme","legend","ggtext","element_markdown","png",NA,"first",15,130.59,130.21,131.21,129.93,226.82,NA
+"theme","legend","ggtext","element_markdown","pdf",NA,"first",15,86.79,86.4,87.07,85.72,90,NA
+"theme","legend","ggtypst","element_typst","png",NA,"first",15,120.33,120.05,120.44,119.78,120.83,NA
+"theme","legend","ggtypst","element_typst","pdf",NA,"first",15,86.37,85.2,86.71,84.1,88.55,NA
+"theme","strips","ggplot2","element_text","png",NA,"first",15,305.85,304.56,307.7,304.09,341.6,NA
+"theme","strips","ggplot2","element_text","pdf",NA,"first",15,262.24,260.68,263.77,258.14,352.53,NA
+"theme","strips","ggtext","element_markdown","png",NA,"first",15,352.49,351,356.67,348.6,471.37,NA
+"theme","strips","ggtext","element_markdown","pdf",NA,"first",15,306.08,305.35,307.89,304.18,310.69,NA
+"theme","strips","ggtypst","element_typst","png",NA,"first",15,336.09,334.47,338.99,332.04,343.24,NA
+"theme","strips","ggtypst","element_typst","pdf",NA,"first",15,305.03,302.29,305.54,298.24,406.85,NA
+"theme","all","ggplot2","element_text","png",NA,"first",15,349,347.63,351.12,346.37,450.72,NA
+"theme","all","ggplot2","element_text","pdf",NA,"first",15,292.69,291.62,297.23,289.58,388.34,NA
+"theme","all","ggtext","element_markdown","png",NA,"first",15,414.08,412.42,415.99,404.88,513.81,NA
+"theme","all","ggtext","element_markdown","pdf",NA,"first",15,357.8,356.11,359.42,347.57,378.64,NA
+"theme","all","ggtypst","element_typst","png",NA,"first",15,466.52,464.97,470.37,458.67,476.87,NA
+"theme","all","ggtypst","element_typst","pdf",NA,"first",15,505.63,501.21,506.9,485.77,517.03,NA
+"redraw","none","ggplot2","geom_point only","png",100,"second",10,72.02,71.88,72.16,71.69,75.52,NA
+"redraw","none","ggplot2","geom_point only","pdf",100,"second",10,32.43,32.23,32.6,31.81,33.08,NA
+"redraw","styled text","ggplot2","geom_text","png",100,"second",10,94.69,94.53,95.89,94.34,99.6,0.23
+"redraw","styled text","ggplot2","geom_text","pdf",100,"second",10,35.92,35.86,36.45,35.37,36.81,0.03
+"redraw","styled text","ggtext","geom_richtext","png",100,"second",10,323.65,320.05,331.01,317.76,338.03,2.52
+"redraw","styled text","ggtext","geom_richtext","pdf",100,"second",10,261.78,260.21,264.68,257.37,275.12,2.29
+"redraw","styled text","ggtypst","geom_typst","png",100,"second",10,162.24,161.39,164.07,160.29,174.84,0.9
+"redraw","styled text","ggtypst","geom_typst","pdf",100,"second",10,223.35,221,226.12,216.4,238.95,1.91
+"redraw","math","ggplot2","geom_text(parse = TRUE)","png",100,"second",10,112.03,111.52,113.72,110.93,116.76,0.4
+"redraw","math","ggplot2","geom_text(parse = TRUE)","pdf",100,"second",10,38.57,38.45,39.08,38.16,39.49,0.06
+"redraw","math","ggtypst","geom_math_typst","png",100,"second",10,188.1,186.53,189.55,175.85,279.23,1.16
+"redraw","math","ggtypst","geom_math_typst","pdf",100,"second",10,248.46,243.71,256.82,233.88,274.98,2.16
+"redraw","math","ggtypst","geom_math_mitex","png",100,"second",10,190.88,189.07,195.44,187.73,200.66,1.19
+"redraw","math","ggtypst","geom_math_mitex","pdf",100,"second",10,256.44,247.32,269.27,243.15,373.43,2.24
+"redraw","all","ggplot2","element_text","png",NA,"second",10,339.6,338.42,346.08,334.16,439.39,NA
+"redraw","all","ggplot2","element_text","pdf",NA,"second",10,286.03,283.23,290.26,281.04,295.48,NA
+"redraw","all","ggtext","element_markdown","png",NA,"second",10,405.91,393.34,411.23,391.1,423.68,NA
+"redraw","all","ggtext","element_markdown","pdf",NA,"second",10,352.93,336.17,357.31,334.97,452.09,NA
+"redraw","all","ggtypst","element_typst","png",NA,"second",10,463.57,456.19,472.36,444.36,620.58,NA
+"redraw","all","ggtypst","element_typst","pdf",NA,"second",10,497.59,493.06,509.53,490.2,786.26,NA

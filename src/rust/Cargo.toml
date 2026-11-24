@@ -1,35 +1,46 @@
 [package]
-name = 'ggtypst'
+name = "ggtypst"
+version = "0.1.1"
+edition = "2024"
+rust-version = "1.92"
 publish = false
-version = '0.1.1'
-edition = '2024'
-rust-version = '1.92'
 
 [lib]
-crate-type = ['staticlib']
-name = 'ggtypst'
+crate-type = ["staticlib"]
+name = "ggtypst"
+
+[[bin]]
+name = "document"
+path = "document.rs"
+test = false
 
 [dependencies]
-extendr-api = '0.9.0'
+extendr-api = "0.9.0"
 mitex = "0.2.4"
 ttf-parser = "0.25.1"
 typst = "0.15.0"
-typst-kit = { version = "0.15.0", features = [
+typst-kit = {
+  version = "0.15.0",
+  default-features = false,
+  features = [
     "embedded-fonts",
     "scan-fonts",
-], default-features = false }
+  ]
+}
 typst-layout = "0.15.0"
 typst-render = "0.15.0"
+
+[lints.clippy]
+expect_used = "deny"
+unwrap_used = "deny"
 
 [lints.rust]
 warnings = "deny"
 
-[lints.clippy]
-unwrap_used = "deny"
-expect_used = "deny"
+[profile.dev.package."*"]
+opt-level = 2
 
 [profile.release]
-lto = true
-opt-level = "z"
+opt-level = 3
 strip = true
-codegen-units = 1
+lto = true

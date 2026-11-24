@@ -1,5 +1,7 @@
 ---
-output: github_document
+output:
+  github_document:
+    md_extensions: -native_divs
 ---
 
 ```{r}

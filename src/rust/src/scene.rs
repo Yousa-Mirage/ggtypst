@@ -39,7 +39,9 @@ use crate::fonts;
 use crate::raster::{Rasters, rasterize};
 
 /// Maximum distance, in points, between a flattened curve and the true curve.
-const FLATTEN_TOLERANCE_PT: f64 = 0.005;
+/// At 0.02pt (0.007mm) the corners are invisible unless a PDF is zoomed in
+/// tens of times, which makes `pdf()` output faster to draw and smaller.
+const FLATTEN_TOLERANCE_PT: f64 = 0.02;
 
 /// Grid line widths (`lwd`, 1/96 in) per Typst point (1/72 in).
 const LWD_PER_PT: f64 = 96.0 / 72.0;

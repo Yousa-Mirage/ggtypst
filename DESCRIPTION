@@ -21,7 +21,7 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Config/rextendr/version: 0.5.0
-Config/Needs/website: pkgdown, pkgload
+Config/Needs/website: pkgdown, pkgload, rmarkdown
 SystemRequirements: Cargo (Rust's package manager), rustc >= 1.89.0
 Depends: 
     R (>= 4.3),
@@ -34,17 +34,14 @@ Imports:
     rlang
 Suggests: 
     ggtext,
-    knitr,
     pkgdown,
     png,
     ragg,
-    rmarkdown,
     spelling,
     svglite,
     systemfonts,
     testthat (>= 3.0.0),
     vdiffr
-VignetteBuilder: knitr
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Collate: 

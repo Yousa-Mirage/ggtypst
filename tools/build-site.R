@@ -1,31 +1,29 @@
+Sys.setenv(NOT_CRAN = "true", DEBUG = "true")
+
 agents_path <- "AGENTS.md"
 hidden_agents_path <- ".AGENTS.md.pkgdown-hidden"
 
 if (file.exists("README.Rmd")) {
-  pkgload::load_all(".", export_all = FALSE, helpers = FALSE, quiet = TRUE)
+  devtools::load_all(quiet = TRUE)
 
   rmarkdown::render(
     input = "README.Rmd",
-    output_format = "github_document",
+    output_options = list(html_preview = FALSE),
     output_file = "README.md",
     quiet = TRUE,
     envir = new.env(parent = globalenv())
   )
-
-  unlink("README.html")
 }
 
 if (file.exists(".github/CONTRIBUTING.Rmd")) {
   rmarkdown::render(
     input = ".github/CONTRIBUTING.Rmd",
-    output_format = "github_document",
+    output_options = list(html_preview = FALSE),
     output_file = "CONTRIBUTING.md",
     output_dir = ".github",
     quiet = TRUE,
     envir = new.env(parent = globalenv())
   )
-
-  unlink(".github/CONTRIBUTING.html")
 }
 
 restore_agents <- function() {
@@ -45,7 +43,12 @@ if (file.exists(agents_path)) {
 tryCatch(
   {
     pkgdown::init_site()
-    pkgdown::build_site(preview = FALSE, devel = TRUE, lazy = TRUE)
+    pkgdown::build_site(
+      preview = FALSE,
+      devel = TRUE,
+      lazy = TRUE,
+      install = TRUE
+    )
   },
   finally = restore_agents()
 )

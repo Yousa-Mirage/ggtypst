@@ -1,8 +1,6 @@
 Acknowledgements
 DeepWiki
 FFI
-GC
-LTO
 MiTeX
 OpenCode
 RStudio
@@ -21,7 +19,7 @@ ggplot
 ggproto
 md
 mitex
-overbrace
+plotmath
 pre
 prebuilt
 ragg
@@ -30,9 +28,7 @@ svglite
 tilings
 toolchain
 toolchains
-transpilation
 typst
-underbrace
 unmapped
 ℹ️
 ️

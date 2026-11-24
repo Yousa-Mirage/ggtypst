@@ -1,0 +1,40 @@
+ggtypst benchmark environment
+
+Date:            2026-11-24 20:35 +08
+CPU:             Apple M5
+Cores:           10
+Memory:          24 GB
+OS:              macOS Golden Gate 27.2.1
+Platform:        aarch64-apple-darwin27.0.0
+R:               R version 4.6.2 (2026-10-29)
+Rust:            rustc 1.100.0 (0ef1bc386 2026-11-09)
+
+Packages:
+  ggtypst        0.1.1
+  ggplot2        4.0.4
+  ggtext         0.2.0
+  gridtext       0.1.6
+  ragg           1.5.2
+  bench          1.1.4
+
+ggtypst build:
+  Source:        jj d50f9038b9cc
+  Fingerprint:   953b4ef8134059e04ad61918c818afb5
+  Profile:       release
+  Cargo release: opt-level = 3, strip = true, lto = true
+  Library:       built for this run
+
+Settings:
+  Plots:         7 x 5 in, saved with ggsave()
+  PNG:           ragg::agg_png() via ggsave(), 300 dpi
+  PDF:           grDevices::pdf() via ggsave()
+  ggtypst:       renderer "auto", raster dpi 600
+  Geom rows:     1, 10, 100, 500, 1000
+  Quick run:     FALSE
+  Labels:        all different, in every plot and every iteration
+  Cold start:    a new R session per run; pause before the first plot 0 or 500 ms
+  Timing:        bench::hires_time(), after a garbage collection; cases
+                 interleaved in a random order each iteration, after one
+                 untimed warm-up run of each case
+
+Total run time:  14.1 min

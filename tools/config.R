@@ -8,8 +8,9 @@ source("tools/msrv.R")
 env_debug <- Sys.getenv("DEBUG")
 env_not_cran <- Sys.getenv("NOT_CRAN")
 
-# check if the vendored zip file exists
-vendor_exists <- file.exists("src/rust/vendor.tar.xz")
+# check if vendored crates exist, as a directory or as a zip file
+vendor_exists <- dir.exists("src/vendor") ||
+  file.exists("src/rust/vendor.tar.xz")
 
 is_not_cran <- env_not_cran != ""
 is_debug <- env_debug != ""
@@ -32,6 +33,12 @@ if (!is_not_cran) {
   "-j 2 --offline",
   ""
 )
+
+# CRAN builds must not write to the user's home directory, and vendored
+# builds need the vendor config, so they use a temporary CARGO_HOME that is
+# deleted after the build. Other builds (`devtools::load_all()` sets NOT_CRAN)
+# use the default CARGO_HOME, so downloaded crates are cached between builds.
+.cargo_tmp <- ifelse(!is_not_cran || vendor_exists, "true", "false")
 
 # when DEBUG env var is present we use `--debug` build
 .profile <- ifelse(is_debug, "", "--release")
@@ -102,7 +109,8 @@ new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@CLEAN_TARGET@", .clean_targets, x = _) |>
   gsub("@LIBDIR@", .libdir, x = _) |>
   gsub("@TARGET@", .target, x = _) |>
-  gsub("@PANIC_EXPORTS@", .panic_exports, x = _)
+  gsub("@PANIC_EXPORTS@", .panic_exports, x = _) |>
+  gsub("@CARGO_TMP@", .cargo_tmp, x = _)
 
 message("Writing `", mv_ofp, "`.")
 con <- file(mv_ofp, open = "wb")

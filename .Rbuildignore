@@ -1,5 +1,6 @@
 ^src/\.cargo($|/)
 ^src/rust/vendor($|/)
+^src/vendor($|/)
 ^src/rust/target($|/)
 ^src/[^/]+\.(o|so|dll)$
 ^src/Makevars$
@@ -17,18 +18,23 @@
 ^dev\.typ$
 ^target($|/)
 ^justfile$
-^\docs($|/)
+^docs($|/)
 
 ^AGENTS\.md$
 ^CLAUDE\.md$
 ^cran-comments\.md$
 ^air\.toml$
-^\\.\\.Rcheck$
+^\.\.Rcheck($|/)
 ^\.cargo($|/)
-^[^/]+\\.xml$
+^[^/]+\.xml$
 ^Rplots\.pdf$
 ^README\.Rmd$
 ^\.pre-commit-config\.yaml$
 ^_pkgdown\.yml$
 ^pkgdown($|/)
+^vignettes($|/)
 ^ggtypst-skill($|/)
+^tests/testthat/_problems($|/)
+^tools/benchmark\.R$
+^tools/build-site\.R$
+^tools/icon\.R$

@@ -357,6 +357,48 @@ test_that("without per-glyph rotation, labels mixing angles are drawn as outline
   expect_equal(mode_with_rot(rotated, FALSE), "glyph")
 })
 
+test_that("glyph info built directly is what glyphInfo() returns", {
+  skip_if_not(glyph_rot_supported())
+  expect_true(glyph_info_direct_ok())
+
+  scene <- typst_render(
+    build_typst_source(
+      "*Bold* #text(red.transparentize(50%))[_red_]",
+      angle = 30
+    )
+  )$scene
+  glyphs <- scene$glyphs
+  rows <- seq_along(glyphs$id)
+  args <- list(
+    id = glyphs$id[rows],
+    x = glyphs$x[rows] * 2,
+    y = glyphs$y[rows] * 2,
+    font = glyphs$font[rows],
+    size = glyphs$size[rows] * 2,
+    col = glyphs$fill[rows],
+    rot = glyphs$rot[rows],
+    font_list = glyph_font_list(scene$fonts),
+    width = 40,
+    height = 12
+  )
+  expect_identical(
+    do.call(direct_glyph_info, args),
+    do.call(grdevices_glyph_info, args)
+  )
+})
+
+test_that("glyphInfo() is only called when glyph info cannot be built directly", {
+  skip_if_not(glyph_rot_supported())
+  local_mocked_bindings(
+    grdevices_glyph_info = function(...) stop("glyphInfo() was called")
+  )
+  scene <- scene_grob("Hello")
+  expect_no_error(scene_children(scene, "glyph"))
+
+  local_mocked_bindings(glyph_info_direct_ok = function() FALSE)
+  expect_error(scene_children(scene, "glyph"), "glyphInfo\\(\\) was called")
+})
+
 test_that("visual: annotations, geoms, and theme elements as native glyphs", {
   labels <- data.frame(
     wt = c(2, 3.2, 4.2, 5),

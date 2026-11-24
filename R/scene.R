@@ -37,7 +37,9 @@ scene_grobs <- function(
   height
 ) {
   runs <- scene$runs
-  grobs <- lapply(seq_along(runs$kind), function(i) {
+
+  # The grob of run `i`, or `NULL` if it draws nothing (`gList()` drops it).
+  run_grob <- function(i) {
     rows <- seq(runs$row[i], length.out = runs$n_rows[i])
     if (runs$kind[i] == "raster") {
       raster_grob(scene$rasters, rows, scale)
@@ -52,16 +54,21 @@ scene_grobs <- function(
       points <- seq(first, length.out = sum(outlines$n_points[rows]))
       outline_run_grob(outlines, scene$glyphs, points, scale)
     }
-  })
+  }
+
+  # Most scenes have no clip regions: their runs are drawn one after another.
+  if (all(runs$clip == 0L)) {
+    return(do.call(grid::gList, lapply(seq_along(runs$kind), run_grob)))
+  }
 
   segments <- split(seq_along(runs$kind), runs$segment)
   segments <- lapply(unname(segments), function(j) {
-    children <- Filter(Negate(is.null), grobs[j])
+    children <- do.call(grid::gList, lapply(j, run_grob))
     id <- runs$clip[j[1]]
     if (id == 0L || length(children) == 0L) {
       return(children)
     }
-    list(clipped_grob(scene, id, do.call(grid::gList, children), scale, groups))
+    list(clipped_grob(scene, id, children, scale, groups))
   })
   do.call(grid::gList, unlist(segments, recursive = FALSE))
 }
@@ -142,26 +149,21 @@ glyph_run_grob <- function(glyphs, rows, font_list, scale, width, height) {
     x <- turned_x
   }
 
-  args <- list(
+  info <- glyph_info(
     id = glyphs$id[rows],
     x = x,
     y = y,
     font = glyphs$font[rows],
     size = glyphs$size[rows] * scale,
-    fontList = font_list,
+    col = glyphs$fill[rows],
+    rot = if (glyph_rot_supported()) rot,
+    font_list = font_list,
     width = width * scale,
-    height = height * scale,
-    hAnchor = grDevices::glyphAnchor(0, "left"),
-    vAnchor = grDevices::glyphAnchor(0, "bottom"),
-    col = glyphs$fill[rows]
+    height = height * scale
   )
 
-  if (glyph_rot_supported()) {
-    args$rot <- rot
-  }
-
   grob <- grid::glyphGrob(
-    do.call(grDevices::glyphInfo, args),
+    info,
     x = 0,
     y = 0,
     hjust = 0,
@@ -184,6 +186,158 @@ glyph_run_grob <- function(glyphs, rows, font_list, scale, width, height) {
       angle = turn
     )
   )
+}
+
+# Glyphs for `grid::glyphGrob()`, as `grDevices::glyphInfo()` describes them,
+# anchored at the layout box's bottom-left corner. `rot` is `NULL` where
+# glyphInfo() cannot rotate glyphs.
+#
+# glyphInfo() checks and converts every argument and builds a data frame, which
+# took most of the time of drawing a label as native glyphs. A scene's glyph
+# table needs none of that (colours are already `#RRGGBBAA`, no values are
+# missing), so the object is built directly, as long as that gives what
+# glyphInfo() returns in this version of R (see `glyph_info_direct_ok()`).
+glyph_info <- function(
+  id,
+  x,
+  y,
+  font,
+  size,
+  col,
+  rot,
+  font_list,
+  width,
+  height
+) {
+  build <- if (!is.null(rot) && glyph_info_direct_ok()) {
+    direct_glyph_info
+  } else {
+    grdevices_glyph_info
+  }
+  build(id, x, y, font, size, col, rot, font_list, width, height)
+}
+
+grdevices_glyph_info <- function(
+  id,
+  x,
+  y,
+  font,
+  size,
+  col,
+  rot,
+  font_list,
+  width,
+  height
+) {
+  args <- list(
+    id = id,
+    x = x,
+    y = y,
+    font = font,
+    size = size,
+    fontList = font_list,
+    width = width,
+    height = height,
+    hAnchor = grDevices::glyphAnchor(0, "left"),
+    vAnchor = grDevices::glyphAnchor(0, "bottom"),
+    col = col
+  )
+  if (!is.null(rot)) {
+    args$rot <- rot
+  }
+  do.call(grDevices::glyphInfo, args)
+}
+
+direct_glyph_info <- function(
+  id,
+  x,
+  y,
+  font,
+  size,
+  col,
+  rot,
+  font_list,
+  width,
+  height
+) {
+  glyphs <- structure(
+    list(
+      id = id,
+      x = x,
+      y = y,
+      font = font,
+      size = size,
+      colour = col,
+      rot = rot
+    ),
+    class = "data.frame",
+    row.names = seq_along(id)
+  )
+  structure(
+    list(
+      glyphs = glyphs,
+      fonts = font_list,
+      width = structure(
+        c(width = width),
+        anchor = "left",
+        class = "GlyphWidth"
+      ),
+      height = structure(
+        c(height = height),
+        anchor = "bottom",
+        class = "GlyphHeight"
+      ),
+      hAnchor = c(
+        left = 0,
+        right = width,
+        centre = width / 2,
+        center = width / 2
+      ),
+      vAnchor = c(
+        bottom = 0,
+        top = height,
+        centre = height / 2,
+        center = height / 2
+      )
+    ),
+    class = "RGlyphInfo"
+  )
+}
+
+# Whether `direct_glyph_info()` gives what `grDevices::glyphInfo()` returns in
+# this version of R. Checked once per session.
+glyph_info_direct_ok <- function() {
+  ok <- glyph_info_state$direct_ok
+  if (is.null(ok)) {
+    ok <- glyph_info_direct_matches()
+    glyph_info_state$direct_ok <- ok
+  }
+  ok
+}
+
+glyph_info_state <- new.env(parent = emptyenv())
+
+glyph_info_direct_matches <- function() {
+  font_list <- grDevices::glyphFontList(
+    grDevices::glyphFont("font.otf", 0L, "Sans", 400, "normal")
+  )
+  glyphs <- list(
+    id = c(3L, 4L),
+    x = c(0, 1.5),
+    y = c(0, -2),
+    font = c(1L, 1L),
+    size = c(11, 12),
+    col = c("#1A2B3C80", "#000000FF"),
+    rot = c(0, 30),
+    font_list = font_list,
+    width = 20,
+    height = 8
+  )
+  expected <- tryCatch(
+    do.call(grdevices_glyph_info, glyphs),
+    error = function(e) NULL
+  )
+  identical(do.call(direct_glyph_info, glyphs), expected)
 }
 
 # Whether `glyphInfo()` has the `rot` argument (R 4.5 and later).

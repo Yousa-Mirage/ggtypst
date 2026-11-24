@@ -14,6 +14,7 @@ mod world;
 
 /// Compile a Typst document and describe its first page for drawing. Items
 /// grid cannot draw as glyphs or paths are drawn as images at `raster_dpi`.
+/// @noRd
 #[extendr]
 fn rs_typst_render(typst_code: &str, raster_dpi: f64) -> List {
     let fonts = fonts::get_fonts();
@@ -31,7 +32,15 @@ fn rs_typst_render(typst_code: &str, raster_dpi: f64) -> List {
     }
 }
 
+/// Start loading the fonts on a background thread.
+/// @noRd
+#[extendr]
+fn rs_warm_up_fonts() {
+    fonts::warm_up();
+}
+
 /// Outlines of a scene's glyphs, for drawing its text as paths.
+/// @noRd
 #[extendr]
 fn rs_glyph_outlines(fonts: List, glyphs: List) -> List {
     let outlines = outlines::from_r(&fonts, &glyphs)
@@ -43,6 +52,7 @@ fn rs_glyph_outlines(fonts: List, glyphs: List) -> List {
 }
 
 /// Write a font built into ggtypst to `path`, so devices can load it.
+/// @noRd
 #[extendr]
 fn rs_typst_write_font(
     store_index: i32,
@@ -65,6 +75,7 @@ fn rs_typst_write_font(
 }
 
 /// Convert LaTeX code to Typst code.
+/// @noRd
 #[extendr]
 fn rs_convert_latex_to_typst(latex_code: &str) -> Robj {
     match mitex::convert_latex_to_typst(latex_code) {
@@ -79,6 +90,7 @@ fn rs_convert_latex_to_typst(latex_code: &str) -> Robj {
 extendr_module! {
     mod ggtypst;
     fn rs_typst_render;
+    fn rs_warm_up_fonts;
     fn rs_glyph_outlines;
     fn rs_typst_write_font;
     fn rs_convert_latex_to_typst;
