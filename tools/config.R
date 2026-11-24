@@ -33,6 +33,12 @@ if (!is_not_cran) {
   ""
 )
 
+# CRAN builds must not write to the user's home directory, and vendored
+# builds need the vendor config, so they use a temporary CARGO_HOME that is
+# deleted after the build. Other builds (`devtools::load_all()` sets NOT_CRAN)
+# use the default CARGO_HOME, so downloaded crates are cached between builds.
+.cargo_tmp <- ifelse(!is_not_cran || vendor_exists, "true", "false")
+
 # when DEBUG env var is present we use `--debug` build
 .profile <- ifelse(is_debug, "", "--release")
 .clean_targets <- ifelse(is_debug, "", "$(TARGET_DIR)")
@@ -102,7 +108,8 @@ new_txt <- gsub("@CRAN_FLAGS@", .cran_flags, mv_txt) |>
   gsub("@CLEAN_TARGET@", .clean_targets, x = _) |>
   gsub("@LIBDIR@", .libdir, x = _) |>
   gsub("@TARGET@", .target, x = _) |>
-  gsub("@PANIC_EXPORTS@", .panic_exports, x = _)
+  gsub("@PANIC_EXPORTS@", .panic_exports, x = _) |>
+  gsub("@CARGO_TMP@", .cargo_tmp, x = _)
 
 message("Writing `", mv_ofp, "`.")
 con <- file(mv_ofp, open = "wb")

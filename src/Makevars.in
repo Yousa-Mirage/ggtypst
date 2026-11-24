@@ -34,7 +34,7 @@ $(STATLIB):
 		cp rust/vendor-config.toml $(CARGOTMP)/config.toml; \
 	fi
 
-	export CARGO_HOME=$(CARGOTMP) && \
+	if [ "@CARGO_TMP@" = "true" ]; then export CARGO_HOME=$(CARGOTMP); fi && \
 	export PATH="$(PATH):$(HOME)/.cargo/bin" && \
 	if [ "$$(uname -s)" = "Darwin" ] && [ -z "$${MACOSX_DEPLOYMENT_TARGET}" ]; then \
 		MACOSX_DEPLOYMENT_TARGET="$$(echo "$(CC) $(CFLAGS) $(LDFLAGS)" | sed -n 's/.*-mmacosx-version-min=\([0-9.]*\).*/\1/p')"; \
