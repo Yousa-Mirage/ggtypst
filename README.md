@@ -8,10 +8,10 @@ stars](https://img.shields.io/github/stars/Yousa-Mirage/ggtypst?style=social)](h
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![Ask
-DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/Yousa-Mirage/ggtypst)
+DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-1E88E5)](https://deepwiki.com/Yousa-Mirage/ggtypst)
 [![r-universe
 version](https://yousa-mirage.r-universe.dev/ggtypst/badges/version)](https://yousa-mirage.r-universe.dev/ggtypst)
-[![extendr](https://img.shields.io/badge/extendr-%5E0.9.0-276DC2)](https://extendr.github.io/extendr/extendr_api/)
+[![extendr](https://img.shields.io/badge/extendr-0.9.0-276DC2)](https://extendr.rs/extendr/extendr_api/)
 
 </div>
 
