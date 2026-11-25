@@ -33,9 +33,12 @@ Recommend the prebuilt binaries from R-universe first, which need no Rust toolch
 ```r
 # Windows and macOS
 install.packages("ggtypst", repos = "https://yousa-mirage.r-universe.dev")
+
+# Or from R-multiverse:
+install.packages("ggtypst", repos = "https://community.r-multiverse.org")
 ```
 
-Ubuntu 24.04 has Linux binaries too; the README shows the repository URL to use. On other platforms, or for the
+Ubuntu has Linux binaries too; the README shows the repository URL to use. On other platforms, or for the
 development version, install from source:
 
 ```r

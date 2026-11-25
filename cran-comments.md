@@ -1,14 +1,17 @@
+## Resubmission
+
+This is a resubmission. In this version I have:
+
+* Fixed the invalid URL <https://github.com/Yousa-Mirage/ggtypst/stargazers>
+  in README.md. The badge now links to the repository page instead.
+* Removed the DeepWiki badge from README.md, whose site rejects automated
+  requests.
+
 ## R CMD check results
 
 0 errors | 0 warnings | 1 note
 
 * This is a new submission.
-
-The NOTE may also list some URLs in README.md as possibly invalid, such as
-<https://deepwiki.com/Yousa-Mirage/ggtypst> (status 429) and
-<https://github.com/Yousa-Mirage/ggtypst/stargazers> (status 404). These sites
-reject automated requests; I have checked that all of these URLs open normally
-in a browser.
 
 ## Package size
 

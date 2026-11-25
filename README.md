@@ -4,11 +4,9 @@
 <div align="center">
 
 [![GitHub
-stars](https://img.shields.io/github/stars/Yousa-Mirage/ggtypst?style=social)](https://github.com/Yousa-Mirage/ggtypst/stargazers)
+stars](https://img.shields.io/github/stars/Yousa-Mirage/ggtypst?style=social)](https://github.com/Yousa-Mirage/ggtypst)
 [![License:
 MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Ask
-DeepWiki](https://img.shields.io/badge/Ask-DeepWiki-1E88E5)](https://deepwiki.com/Yousa-Mirage/ggtypst)
 [![r-universe
 version](https://yousa-mirage.r-universe.dev/ggtypst/badges/version)](https://yousa-mirage.r-universe.dev/ggtypst)
 [![extendr](https://img.shields.io/badge/extendr-0.9.0-276DC2)](https://extendr.rs/extendr/extendr_api/)
@@ -58,15 +56,19 @@ don’t need a separate local Typst or LaTeX installation to use it.
 
 ### Install from pre-compile binary
 
-Install `ggtypst` from R-universe first so you can use the prebuilt
-package and avoid compiling Rust locally. On **Windows** and **macOS**,
-you can run:
+Install `ggtypst` from R-universe/R-multiverse first so you can use the
+prebuilt package and avoid compiling Rust locally. On **Windows** and
+**macOS**, you can run:
 
 ``` r
+# From R-universe:
 install.packages("ggtypst", repos = "https://yousa-mirage.r-universe.dev")
+
+# Or from R-multiverse:
+install.packages("ggtypst", repos = "https://community.r-multiverse.org")
 ```
 
-On **Ubuntu 24.04**, you should run:
+On **Ubuntu**, you should run:
 
 ``` r
 linux_binary_repo <- function(universe) {
