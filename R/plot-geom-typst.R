@@ -4,7 +4,7 @@
 #' [ggtext::geom_richtext()] that renders a vector of raw Typst labels at data
 #' positions. Each label is compiled independently with Typst. Parameter and
 #' aesthetic names follow the conventions of [ggplot2::geom_label()].
-#' 
+#'
 #' ggtypst does not support reading files, so `#image()`, `#read()`, and other functions that load files will not work.
 #'
 #' @section Aesthetics:
