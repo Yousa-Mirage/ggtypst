@@ -67,6 +67,9 @@ A \code{ggplot2} layer.
 renders a single Typst string and inserts that grob into a \code{ggplot2} plot.
 Use it when you want one manually positioned note, callout, or mixed text-and-math label.
 }
+\details{
+ggtypst does not support reading files, so \verb{#image()}, \verb{#read()}, and other functions that load files will not work.
+}
 \examples{
 ggplot(mtcars, aes(wt, mpg)) +
   geom_point() +

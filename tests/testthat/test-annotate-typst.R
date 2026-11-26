@@ -166,6 +166,19 @@ test_that("annotate_typst converts size according to size.unit", {
   expect_equal(width_mm, width_pt, tolerance = 1e-6)
 })
 
+test_that("annotate_typst explains that it cannot read files", {
+  expect_snapshot(
+    annotate_typst(r"(#image("logo.png"))", x = 3, y = 25),
+    error = TRUE
+  )
+
+  # Other Typst errors get no such hint.
+  err <- expect_error(
+    annotate_typst("#unknown-fn()", x = 3, y = 25),
+    class = "ggtypst_typst_error"
+  )
+})
+
 test_that("annotate_typst validates face", {
   expect_snapshot(
     annotate_typst("A", x = 3, y = 25, face = "oblique"),

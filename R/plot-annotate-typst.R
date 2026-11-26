@@ -3,6 +3,8 @@
 #' `annotate_typst()` is a more powerful replacement for [ggplot2::annotate()] that
 #' renders a single Typst string and inserts that grob into a `ggplot2` plot.
 #' Use it when you want one manually positioned note, callout, or mixed text-and-math label.
+#' 
+#' ggtypst does not support reading files, so `#image()`, `#read()`, and other functions that load files will not work.
 #'
 #' @param typst_code A single Typst source string to render.
 #' @param x,y The annotation position in data coordinates.

@@ -95,6 +95,15 @@ abort_typst_errors <- function(err) {
     )
 
     bullets <- c(bullets, diag_bullets)
+
+    # Typst only says it did not find the file but ggtypst never reads files.
+    messages <- vapply(diagnostics, function(d) d$message %||% "", "")
+    if (any(startsWith(messages, "file not found"))) {
+      bullets <- c(
+        bullets,
+        i = "ggtypst cannot read files."
+      )
+    }
   }
 
   cli::cli_abort(

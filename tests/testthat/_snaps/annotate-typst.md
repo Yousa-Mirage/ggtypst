@@ -44,6 +44,16 @@
       x Problematic argument:
       * famliy = "Arial"
 
+# annotate_typst explains that it cannot read files
+
+    Code
+      annotate_typst("#image(\"logo.png\")", x = 3, y = 25)
+    Condition
+      Error in `typst_render()`:
+      ! Typst compilation failed
+      x file not found (searched at /logo.png)
+      i ggtypst cannot read files.
+
 # annotate_typst validates face
 
     Code

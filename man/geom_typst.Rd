@@ -125,6 +125,9 @@ A ggplot2 layer that can be added to a plot.
 positions. Each label is compiled independently with Typst. Parameter and
 aesthetic names follow the conventions of \code{\link[ggplot2:geom_label]{ggplot2::geom_label()}}.
 }
+\details{
+ggtypst does not support reading files, so \verb{#image()}, \verb{#read()}, and other functions that load files will not work.
+}
 \section{Aesthetics}{
 
 \code{geom_typst()} understands the following aesthetics (required aesthetics are

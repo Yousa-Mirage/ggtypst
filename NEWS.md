@@ -1,5 +1,8 @@
 # ggtypst (development version)
 
+- When Typst code tries to load a file, such as with `#image("logo.png")`, the
+  error now explains that ggtypst cannot read files.
+
 # ggtypst 0.2.0
 
 Many thanks to **Stein Are Sæther** for carefully spotting several plotting
