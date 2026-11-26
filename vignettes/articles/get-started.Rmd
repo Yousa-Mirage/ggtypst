@@ -101,12 +101,10 @@ ggplot(mtcars, aes(wt, mpg)) +
     caption = "Smooth line formula: $y ~ x$"
   ) +
   theme(
+    text = element_typst(size = 12, colour = "#102A43"),
     plot.title = element_typst(size = 16, face = "bold"),
-    axis.title.x = element_typst(size = 12, colour = "#102A43"),
-    axis.title.y = element_typst(size = 12, colour = "#102A43"),
-    axis.text = element_typst(size = 11, colour = "#102A43"),
     strip.text = element_math_typst(size = 12, face = "bold"),
-    plot.caption = element_typst(size = 9, color = "grey50", face = "italic")
+    plot.caption = element_typst(size = 9, colour = "grey50", face = "italic")
   )
 ```
 
@@ -150,12 +148,10 @@ ggplot(mtcars, aes(wt, mpg)) +
     caption = "Smooth line formula: $y ~ x$"
   ) +
   theme(
+    text = element_typst(size = 12, colour = "#102A43"),
     plot.title = element_typst(size = 16, face = "bold"),
-    axis.title.x = element_typst(size = 12, colour = "#102A43"),
-    axis.title.y = element_typst(size = 12, colour = "#102A43"),
-    axis.text = element_typst(size = 11, colour = "#102A43"),
     strip.text = element_math_typst(size = 12, face = "bold"),
-    plot.caption = element_typst(size = 9, color = "grey50", face = "italic")
+    plot.caption = element_typst(size = 9, colour = "grey50", face = "italic")
   )
 ```
 
@@ -308,6 +304,9 @@ annotate_typst(
 Yeah, actually you can write any legal Typst content in `typst_code`, including math, styled text, layouts, and
 functions. You can even write a full Typst document in `typst_code`, as long as the source string is legal Typst
 content. They will be directly rendered by Typst.
+
+The one exception is files: `ggtypst` does not read files, so `#image("logo.png")`, `#read()`, `#include`, and
+`#import` of a local file don't work.
 
 ### Native Typst math
 
