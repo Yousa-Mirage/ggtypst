@@ -39,6 +39,21 @@ fn rs_warm_up_fonts() {
     fonts::warm_up();
 }
 
+/// The fonts Typst can use, one row each.
+/// @noRd
+#[extendr]
+fn rs_typst_fonts() -> List {
+    let t = fonts::font_table();
+    list!(
+        family = t.family,
+        weight = t.weight,
+        style = t.style,
+        stretch = t.stretch,
+        variable = t.variable,
+        math = t.math
+    )
+}
+
 /// Outlines of a scene's glyphs, for drawing its text as paths.
 /// @noRd
 #[extendr]
@@ -91,6 +106,7 @@ extendr_module! {
     mod ggtypst;
     fn rs_typst_render;
     fn rs_warm_up_fonts;
+    fn rs_typst_fonts;
     fn rs_glyph_outlines;
     fn rs_typst_write_font;
     fn rs_convert_latex_to_typst;

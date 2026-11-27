@@ -50,6 +50,10 @@ reference:
       - geom_math_typst
       - geom_math_mitex
 
+  - title: Fonts
+    contents:
+      - typst_fonts
+
   - title: Options
     contents:
       - ggtypst-options

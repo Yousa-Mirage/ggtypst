@@ -15,6 +15,7 @@ export(element_typst)
 export(geom_math_mitex)
 export(geom_math_typst)
 export(geom_typst)
+export(typst_fonts)
 import(ggplot2)
 importFrom(grid,
   heightDetails,

@@ -41,7 +41,7 @@ warn_typst_warnings <- function(warnings) {
     })
   )
 
-  bullets <- c(bullets, diag_bullets)
+  bullets <- c(bullets, diag_bullets, unknown_family_hints(warnings))
 
   cli::cli_warn(
     bullets,

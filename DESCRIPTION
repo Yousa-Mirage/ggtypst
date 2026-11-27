@@ -52,6 +52,7 @@ Collate:
     'build-source.R'
     'diagnostic.R'
     'extendr-wrappers.R'
+    'fonts.R'
     'grob.R'
     'helper.R'
     'mitex.R'

@@ -8,9 +8,11 @@
 
 ## New features
 
-- The argument `fontweight` (alias `weight`) is available now. It can be
-  used to set font weights from 100 to 900, such as `fontweight = 600` or
-  `"semibold"`. Thanks to **Stein Are Sæther** for the suggestion.
+- New argument: `fontweight` (alias `weight`). It can be used to set font
+  weights from 100 to 900, such as `fontweight = 600` or `"semibold"`. Thanks
+  to **Stein Are Sæther** for the suggestion.
+- New function: `typst_fonts()`. It lists the font families Typst can use. With
+  `detail = TRUE`, it shows the weights and styles of each.
 
 ## Bug fixes
 

@@ -1,4 +1,5 @@
 use std::sync::{Arc, LazyLock, Once};
+use typst::text::{FontFlags, FontStyle};
 use typst_kit::fonts::FontStore;
 
 static FONTS: LazyLock<Arc<FontStore>> = LazyLock::new(|| {
@@ -10,6 +11,49 @@ static FONTS: LazyLock<Arc<FontStore>> = LazyLock::new(|| {
 
 pub fn get_fonts() -> Arc<FontStore> {
     FONTS.clone()
+}
+
+/// The fonts Typst can use, one row each, as columns.
+#[derive(Debug, Default)]
+pub struct FontTable {
+    /// The typographic family name, which `#set text(font: ...)` takes.
+    pub family: Vec<String>,
+    pub weight: Vec<i32>,
+    /// `"normal"`, `"italic"`, or `"oblique"`.
+    pub style: Vec<String>,
+    /// Width in percent of the normal width.
+    pub stretch: Vec<f64>,
+    pub variable: Vec<bool>,
+    /// Whether the font has a MATH table.
+    pub math: Vec<bool>,
+}
+
+/// List the fonts of the global store.
+pub fn font_table() -> FontTable {
+    let store = get_fonts();
+    let book = store.book();
+    let mut table = FontTable::default();
+    let mut index = 0;
+    while let Some(info) = book.info(index) {
+        let variant = info.variant;
+        table.family.push(info.family.clone());
+        table.weight.push(i32::from(variant.weight.to_number()));
+        table.style.push(
+            match variant.style {
+                FontStyle::Normal => "normal",
+                FontStyle::Italic => "italic",
+                FontStyle::Oblique => "oblique",
+            }
+            .to_string(),
+        );
+        table.stretch.push(variant.stretch.to_ratio().get() * 100.0);
+        table
+            .variable
+            .push(info.flags.contains(FontFlags::VARIABLE));
+        table.math.push(info.flags.contains(FontFlags::MATH));
+        index += 1;
+    }
+    table
 }
 
 /// Load the fonts on a background thread
@@ -70,6 +114,33 @@ mod tests {
         let fonts = get_fonts();
         assert!(Arc::ptr_eq(&fonts, &get_fonts()));
         assert!(fonts.book().families().next().is_some());
+    }
+
+    #[test]
+    fn font_table_lists_the_built_in_fonts() {
+        let table = font_table();
+        let n = table.family.len();
+        assert!(n > 0);
+        for column in [table.weight.len(), table.style.len(), table.math.len()] {
+            assert_eq!(column, n);
+        }
+
+        let row = |family: &str, weight: i32| {
+            (0..n).find(|&i| {
+                table.family[i] == family && table.weight[i] == weight && table.style[i] == "normal"
+            })
+        };
+        let Some(libertinus) = row("Libertinus Serif", 400) else {
+            panic!("Libertinus Serif is missing");
+        };
+        assert!(!table.math[libertinus]);
+        assert_eq!(table.stretch[libertinus], 100.0);
+        assert!(row("Libertinus Serif", 600).is_some());
+
+        let Some(math) = row("New Computer Modern Math", 400) else {
+            panic!("New Computer Modern Math is missing");
+        };
+        assert!(table.math[math]);
     }
 
     #[test]

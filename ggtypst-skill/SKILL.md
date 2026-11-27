@@ -224,8 +224,10 @@ has its own overhead.
   it. Common causes: a math formula given to a text helper without `$...$`, a missing `#` before a function in
   markup, or LaTeX syntax given to a Typst math helper.
 - **Text size looks wrong**: check `size.unit`; `geom_text()` sizes are in millimetres.
-- **A font is not used**: the family must be installed on the system and spelled as the font calls itself;
-  otherwise Typst falls back to its default font and warns.
+- **A font is not used**: the family must be installed on the system and spelled as Typst names it;
+  otherwise Typst falls back to its default font and warns. `typst_fonts()` lists the families Typst can use
+  and which can typeset math, and `typst_fonts(detail = TRUE)` each font's weight and style; its names can differ
+  from those systemfonts reports.
 - **PDF text looks different from PNG, or cannot be selected**: `pdf()` gets outlines; use `cairo_pdf()` or
   set `ggtypst.renderer`.
 - **Gradients or emoji look soft**: raise `ggtypst.raster_dpi` before creating the plot.

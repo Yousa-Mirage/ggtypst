@@ -511,7 +511,10 @@ Typst's own fonts are built into `ggtypst`: Libertinus Serif for text and New Co
 always available, so your plots look the same on every computer. You can use `family` and `math_family` to choose any
 other font installed on your system, for example to match the rest of your plot, to show Chinese or Japanese text, or
 to get math that reads better at small sizes than the default (see [Native Typst math](#native-typst-math)).
-If the family is not found, Typst warns and uses its default font.
+
+If the family is not found, Typst warns and uses its default font. `typst_fonts()` lists the font families Typst can use;
+use the names in its `family` column, which may differ from the names other software shows. `typst_fonts(detail = TRUE)`
+also lists the weights and styles of each family.
 
 For weights other than plain and bold, set `fontweight` (alias `weight`) to a number from 100 to 900 or to a name such
 as `"light"` or `"semibold"`. It works in `annotate_typst()`, `geom_typst()` (also as a mapped aesthetic), and

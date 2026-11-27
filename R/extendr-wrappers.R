@@ -14,6 +14,10 @@ rs_typst_render <- function(typst_code, raster_dpi) .Call(wrap__rs_typst_render,
 #' @noRd
 rs_warm_up_fonts <- function() .Call(wrap__rs_warm_up_fonts)
 
+#' The fonts Typst can use, one row each.
+#' @noRd
+rs_typst_fonts <- function() .Call(wrap__rs_typst_fonts)
+
 #' Outlines of a scene's glyphs, for drawing its text as paths.
 #' @noRd
 rs_glyph_outlines <- function(fonts, glyphs) .Call(wrap__rs_glyph_outlines, fonts, glyphs)
