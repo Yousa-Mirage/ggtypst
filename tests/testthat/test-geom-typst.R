@@ -153,6 +153,52 @@ test_that("geom_typst supports mapped numeric face codes", {
   expect_length(layer_grob(p)[[1]]$children, 2)
 })
 
+test_that("geom_typst takes a constant fontweight or its weight alias", {
+  expect_identical(
+    geom_typst(label = "A", fontweight = 600)$aes_params$fontweight,
+    600L
+  )
+  expect_identical(
+    geom_typst(label = "A", weight = "light")$aes_params$fontweight,
+    300L
+  )
+  expect_null(geom_typst(label = "A")$aes_params$weight)
+
+  expect_snapshot(
+    geom_typst(label = "A", fontweight = 600, weight = 700),
+    error = TRUE
+  )
+  expect_snapshot(geom_typst(label = "A", fontweight = 1000), error = TRUE)
+})
+
+test_that("geom_typst maps fontweight per row", {
+  df <- data.frame(
+    x = 1:4,
+    y = 1,
+    label = "Ab",
+    weight = c(400, 600, NA, 600),
+    face = c("plain", "plain", "plain", "bold")
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, fontweight = weight, face = face)) +
+    geom_typst(family = "Libertinus Serif")
+  fonts <- vapply(layer_grob(p)[[1]]$children, scene_fonts, character(1))
+
+  expect_false(fonts[[2]] == fonts[[1]])
+  expect_identical(fonts[[3]], fonts[[1]])
+  # The weight replaces the bold face's.
+  expect_identical(fonts[[4]], fonts[[2]])
+})
+
+test_that("geom_typst validates mapped fontweight before row rendering", {
+  df <- data.frame(x = 1:2, y = 1, label = "A", weight = c("bold", "heavy"))
+
+  p <- ggplot(df, aes(x, y, label = label, fontweight = weight)) +
+    geom_typst()
+
+  expect_snapshot(ggplotGrob(p), error = TRUE)
+})
+
 test_that("geom_typst drops rows with missing mapped size", {
   df <- data.frame(
     x = c(1, 2),
@@ -431,4 +477,28 @@ test_that("geom_typst visual inward outward just with facets and legend", {
     )
 
   vdiffr::expect_doppelganger("geom-typst-facets-legend-inward-outward", p)
+})
+
+test_that("geom_typst visual: font weights", {
+  skip_if_no_vdiffr()
+
+  df <- data.frame(
+    x = 1,
+    y = 5:1,
+    label = c(
+      "Regular 400",
+      "Semibold 600",
+      "Bold 700",
+      "Semibold italic 600",
+      r"(Bold face at 400, $x^2$)"
+    ),
+    weight = c(400, 600, 700, 600, 400),
+    face = c("plain", "plain", "plain", "italic", "bold")
+  )
+
+  p <- ggplot(df, aes(x, y, label = label, fontweight = weight, face = face)) +
+    geom_typst(size = 16) +
+    theme_void()
+
+  vdiffr::expect_doppelganger("geom-typst-font-weights", p)
 })

@@ -1,10 +1,24 @@
 #' Annotate a Plot with Typst Text
 #'
-#' `annotate_typst()` is a more powerful replacement for [ggplot2::annotate()] that
-#' renders a single Typst string and inserts that grob into a `ggplot2` plot.
-#' Use it when you want one manually positioned note, callout, or mixed text-and-math label.
+#' `annotate_typst()` is a more powerful replacement for [ggplot2::annotate()]
+#' that renders a single Typst string and inserts that grob into a `ggplot2`
+#' plot. Use it when you want one manually positioned note, callout, or mixed
+#' text-and-math label.
 #'
-#' ggtypst does not support reading files, so `#image()`, `#read()`, and other functions that load files will not work.
+#' ggtypst does not support reading files, so `#image()`, `#read()`, and other
+#' functions that load files will not work.
+#'
+#' @section Variable fonts:
+#' A variable font has one file whose weight (and often width) can vary along
+#' axes, rather than one file per weight. Typst sets these axes from the
+#' weight, so `fontweight` works with them, but R's native glyphs cannot use
+#' axes: text in a variable font is always drawn as outlines.
+#'
+#' A few old variable fonts, such as Skia on macOS, use axis values outside
+#' the standard ranges. Typst then clamps the weight to the heaviest end of
+#' the axis, so the text comes out black at any weight. Set the axes yourself
+#' in the Typst code, for example
+#' `#set text(variations: (wght: 1, wdth: 1))` for Skia's regular style.
 #'
 #' @param typst_code A single Typst source string to render.
 #' @param x,y The annotation position in data coordinates.
@@ -20,10 +34,21 @@
 #' @param color,colour Optional text color. RGB or color name are supported.
 #' @param face,fontface Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
+#' @param fontweight,weight Optional font weight: a whole number from 100
+#'   (thin) to 900 (black), or one of Typst's weight names `"thin"`,
+#'   `"extralight"`, `"light"`, `"regular"`, `"medium"`, `"semibold"`,
+#'   `"bold"`, `"extrabold"`, and `"black"`. It replaces the weight a bold
+#'   `face` sets but keeps an italic one. Typst picks the closest weight the
+#'   family has. See the section on variable fonts.
 #' @param lineheight Optional line height value. May be negative.
-#' @param family Optional text font family. The family must be available to Typst. If `NULL` or not found, the default
-#'   family will be used. If you want to show specific languages or characters (e.g., Chinese, Japanese, emoji), you may need to set this.
-#' @param math_family Optional font family for math content. The default math font is `New Computer Modern Math`. To render a math expression, you don't need to set this and even don't need to have `New Computer Modern Math` installed on your system. Typst has embedded this font by default.
+#' @param family Optional text font family. The family must be available to
+#'   Typst. If `NULL` or not found, the default family will be used. If you
+#'   want to show specific languages or characters (e.g., Chinese, Japanese,
+#'   emoji), you may need to set this.
+#' @param math_family Optional font family for math content. The default math
+#'   font is `New Computer Modern Math`. To render a math expression, you don't
+#'   need to set this and even don't need to have `New Computer Modern Math`
+#'   installed on your system. Typst has embedded this font by default.
 #' @param angle Optional text rotation angle in degrees.
 #' @return A `ggplot2` layer.
 #' @seealso [annotate_math_typst()], [annotate_math_mitex()]
@@ -55,6 +80,8 @@ annotate_typst <- function(
   alpha = NULL,
   face = NULL,
   fontface = NULL,
+  fontweight = NULL,
+  weight = NULL,
   angle = NULL,
   lineheight = NULL,
   family = NULL,
@@ -75,6 +102,7 @@ annotate_typst <- function(
 
   color <- resolve_arg_alias(color, colour, "color", "colour")
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
+  fontweight <- resolve_arg_alias(fontweight, weight, "fontweight", "weight")
 
   size <- convert_size_to_pt(size, size.unit = size.unit)
 
@@ -85,6 +113,7 @@ annotate_typst <- function(
     alpha = alpha,
     family = family,
     face = face,
+    fontweight = fontweight,
     lineheight = lineheight,
     math_family = math_family,
     angle = angle,

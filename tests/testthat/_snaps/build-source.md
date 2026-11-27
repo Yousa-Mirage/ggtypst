@@ -56,6 +56,23 @@
       ! Can't supply both `face` and `fontface`.
       i Use `face`; `fontface` is an alias.
 
+---
+
+    Code
+      build_typst_source("A", fontweight = 1000)
+    Condition
+      Error in `normalize_fontweight()`:
+      ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+
+---
+
+    Code
+      build_typst_source("A", fontweight = 600, weight = 700)
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `fontweight` and `weight`.
+      i Use `fontweight`; `weight` is an alias.
+
 # convert_latex_to_typst reports mitex conversion errors
 
     Code

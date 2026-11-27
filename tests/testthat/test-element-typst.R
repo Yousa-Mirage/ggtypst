@@ -62,6 +62,55 @@ test_that("element_typst() fontface alias works", {
   )
 })
 
+test_that("element_typst() stores fontweight as a number", {
+  expect_identical(element_typst(fontweight = 600)$weight, 600L)
+  expect_identical(element_typst(weight = "light")$weight, 300L)
+  expect_null(element_typst()$weight)
+
+  expect_snapshot(
+    element_typst(fontweight = 600, weight = 700),
+    error = TRUE
+  )
+  expect_snapshot(element_typst(fontweight = 50), error = TRUE)
+})
+
+test_that("element_typst fontweight on the root text reaches every element", {
+  th <- theme_grey() +
+    theme(text = element_typst(fontweight = 600, family = "Libertinus Serif"))
+
+  for (name in c(
+    "plot.title",
+    "axis.title.x.bottom",
+    "axis.text.y.left",
+    "legend.text",
+    "strip.text.x.top"
+  )) {
+    expect_identical(calc_element(name, th)$weight, 600L)
+  }
+  expect_identical(
+    calc_element(
+      "plot.title",
+      th + theme(plot.title = element_typst(weight = 300))
+    )$weight,
+    300L
+  )
+  expect_true(is.na(
+    calc_element(
+      "plot.title",
+      theme_grey() + theme(text = element_typst())
+    )$weight
+  ))
+
+  font_of <- function(theme) {
+    el <- calc_element("axis.title.x.bottom", theme)
+    scene_fonts(element_grob(el, label = "Ab"))
+  }
+  plain <- theme_grey() +
+    theme(text = element_typst(family = "Libertinus Serif"))
+
+  expect_false(identical(font_of(th), font_of(plain)))
+})
+
 test_that("element_typst() size.unit validates input", {
   expect_snapshot(element_typst(size.unit = "inches"), error = TRUE)
 })

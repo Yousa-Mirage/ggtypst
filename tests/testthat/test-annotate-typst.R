@@ -233,6 +233,31 @@ test_that("annotate_typst rejects duplicate alias arguments", {
     annotate_typst("A", x = 3, y = 25, face = "plain", fontface = "bold"),
     error = TRUE
   )
+  expect_snapshot(
+    annotate_typst("A", x = 3, y = 25, fontweight = 600, weight = 700),
+    error = TRUE
+  )
+})
+
+test_that("annotate_typst sets the font weight", {
+  font_of <- function(...) {
+    layer <- annotate_typst(
+      "Ab",
+      x = 3,
+      y = 25,
+      family = "Libertinus Serif",
+      ...
+    )
+    scene_fonts(layer$geom_params$grob)
+  }
+
+  semibold <- font_of(fontweight = 600)
+  expect_false(identical(semibold, font_of()))
+  expect_identical(font_of(weight = "semibold"), semibold)
+  expect_snapshot(
+    annotate_typst("A", x = 3, y = 25, fontweight = "heavy"),
+    error = TRUE
+  )
 })
 
 test_that("annotate_typst visual: multiline lineheight", {

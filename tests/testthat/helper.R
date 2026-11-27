@@ -273,3 +273,11 @@ if_cairo_works <- function() {
   }
   opened
 }
+
+# The fonts of the Typst scenes in a grob tree.
+scene_fonts <- function(grob) {
+  if (!is.null(grob$scene)) {
+    return(grob$scene$fonts$cache_key)
+  }
+  unname(unlist(lapply(grob$children, scene_fonts)))
+}

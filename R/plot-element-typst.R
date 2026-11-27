@@ -18,9 +18,16 @@ element_typst_class <- S7::new_class(
       S7::new_union(S7::class_numeric, NULL),
       default = NULL
     ),
-    size.unit = S7::new_property(S7::class_character, default = "pt"),
+    size.unit = S7::new_property(
+      S7::class_character,
+      default = "pt"
+    ),
     math_family = S7::new_property(
       S7::new_union(S7::class_character, NULL),
+      default = NULL
+    ),
+    weight = S7::new_property(
+      S7::new_union(S7::class_numeric, NULL),
       default = NULL
     )
   )
@@ -62,7 +69,12 @@ merge_element_element_typst <- function(new, old, ...) {
 
   # Support for `theme(text = element_typst())`
   # Values of element_typst's own properties that leave the text as it is.
-  typst_neutral_props <- list(scale = 1, alpha = 1, math_family = "")
+  typst_neutral_props <- list(
+    scale = 1,
+    alpha = 1,
+    math_family = "",
+    weight = NA_real_
+  )
 
   if (all(lengths(old_props) > 0)) {
     unset <- names(typst_neutral_props)[
@@ -93,6 +105,9 @@ merge_element_text_into_typst <- function(new, old, ...) {
 #'
 #' @param face,fontface Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
+#' @param fontweight,weight Optional font weight: a whole number from 100
+#'   (thin) to 900 (black), or one of Typst's weight names. See
+#'   [annotate_typst()] for how it combines with `face` and for variable fonts.
 #' @param scale A positive scaling factor applied to the rendered Typst size.
 #' @param size Optional font size.
 #' @param size.unit The unit of `size`. Defaults to points
@@ -139,6 +154,8 @@ element_typst <- function(
   alpha = NULL,
   face = NULL,
   fontface = NULL,
+  fontweight = NULL,
+  weight = NULL,
   angle = NULL,
   lineheight = NULL,
   family = NULL,
@@ -150,11 +167,13 @@ element_typst <- function(
 ) {
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
   colour <- resolve_arg_alias(colour, color, "colour", "color")
+  fontweight <- resolve_arg_alias(fontweight, weight, "fontweight", "weight")
 
   scale <- check_positive_number(scale, "scale")
   size.unit <- check_size_unit(size.unit)
   alpha <- check_alpha(alpha)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
+  fontweight <- normalize_fontweight(fontweight)
 
   element_typst_class(
     family = family,
@@ -171,6 +190,7 @@ element_typst <- function(
     math_family = math_family,
     size.unit = size.unit,
     debug = debug,
+    weight = fontweight,
     inherit.blank = inherit.blank
   )
 }
@@ -212,6 +232,7 @@ element_grob.element_typst <- function(
   colour <- colour %||% element$colour
   family <- family %||% element$family
   face <- face %||% element$face
+  fontweight <- normalize_fontweight(element$weight)
   scale <- element$scale %||% 1
   alpha <- element$alpha
   math_family <- element$math_family
@@ -261,6 +282,7 @@ element_grob.element_typst <- function(
     alpha = alpha,
     family = family,
     face = face,
+    fontweight = fontweight,
     lineheight = lineheight,
     math_family = math_family,
     angle = angle,
@@ -293,6 +315,7 @@ element_grob.element_typst <- function(
 #' @param alpha Optional alpha multiplier.
 #' @param family Font family or `NULL`.
 #' @param face Normalised face string or `NULL`.
+#' @param fontweight Font weight number or `NULL`.
 #' @param lineheight Line height value or `NULL`.
 #' @param math_family Math font family or `NULL`.
 #' @param angle Rotation angle in degrees.
@@ -313,6 +336,7 @@ typst_title_grob <- function(
   alpha,
   family,
   face,
+  fontweight,
   lineheight,
   math_family,
   angle,
@@ -357,6 +381,7 @@ typst_title_grob <- function(
       alpha = alpha,
       family = family,
       face = face,
+      fontweight = fontweight,
       lineheight = lineheight,
       math_family = math_family,
       angle = angle
@@ -425,6 +450,7 @@ typst_title_grob <- function(
 #' @param alpha Optional alpha multiplier.
 #' @param family Font family or `NULL`.
 #' @param face Normalised face string or `NULL`.
+#' @param fontweight Font weight number or `NULL`.
 #' @param lineheight Line height value or `NULL`.
 #' @param math_family Math font family or `NULL`.
 #' @param angle Rotation angle in degrees.
@@ -442,6 +468,7 @@ typst_element_grob <- function(
   alpha,
   family,
   face,
+  fontweight,
   lineheight,
   math_family,
   angle
@@ -455,6 +482,7 @@ typst_element_grob <- function(
     alpha = alpha,
     family = family,
     face = face,
+    fontweight = fontweight,
     lineheight = lineheight,
     math_family = math_family,
     angle = angle,

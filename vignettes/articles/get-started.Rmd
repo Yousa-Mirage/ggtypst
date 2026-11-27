@@ -513,6 +513,24 @@ other font installed on your system, for example to match the rest of your plot,
 to get math that reads better at small sizes than the default (see [Native Typst math](#native-typst-math)).
 If the family is not found, Typst warns and uses its default font.
 
+For weights other than plain and bold, set `fontweight` (alias `weight`) to a number from 100 to 900 or to a name such
+as `"light"` or `"semibold"`. It works in `annotate_typst()`, `geom_typst()` (also as a mapped aesthetic), and
+`element_typst()`, so one setting can cover all theme text:
+
+```{r}
+#| label: fontweight-example
+#| eval: false
+theme(text = element_typst(family = "Helvetica Neue", fontweight = "light"))
+```
+
+Typst uses the closest weight the family has. For example, Libertinus Serif has three weights: regular (400),
+semibold (600), and bold (700). So `fontweight = 300` looks like 400 and `900` like 700. A `fontweight` replaces the weight of a bold
+`face` but keeps an italic one.
+
+Variable fonts, which have one file whose weight can vary along an axis, follow `fontweight` too. Text in a variable font is always drawn as outlines.
+A few old variable fonts, such as Skia on macOS, use non-standard axis values, and Typst then draws them in their heaviest style at any weight.
+Set the axes yourself in the Typst code in that case, for example `#set text(variations: (wght: 1, wdth: 1))` for Skia's regular style.
+
 `ggtypst` draws text the way the graphics device handles fonts best:
 
 - On devices that rasterize or embed fonts, such as PNG files (`ragg` or `png()`), `cairo_pdf()`, `svglite`, and

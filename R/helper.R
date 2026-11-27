@@ -150,6 +150,105 @@ normalize_face <- function(face, arg = "face", allow_null = TRUE) {
   )
 }
 
+# Typst's font weight names and their numbers.
+typst_font_weights <- c(
+  thin = 100L,
+  extralight = 200L,
+  light = 300L,
+  regular = 400L,
+  medium = 500L,
+  semibold = 600L,
+  bold = 700L,
+  extrabold = 800L,
+  black = 900L
+)
+
+fontweight_hint <- paste(
+  "{.arg fontweight} must be a whole number from 100 to 900 or one of",
+  '"thin", "extralight", "light", "regular", "medium", "semibold",',
+  '"bold", "extrabold", or "black".'
+)
+
+#' Validate a font weight
+#'
+#' @param fontweight A whole number from 100 to 900, the same number as a
+#'   string, or one of Typst's weight names.
+#' @param arg Argument name used in error messages.
+#' @param allow_null Whether `NULL` and `NA` are accepted.
+#' @return The weight as an integer, or `NULL`.
+#' @noRd
+normalize_fontweight <- function(
+  fontweight,
+  arg = "fontweight",
+  allow_null = TRUE
+) {
+  if (
+    is.null(fontweight) ||
+      length(fontweight) == 0 ||
+      (length(fontweight) == 1 && is.na(fontweight))
+  ) {
+    if (allow_null) return(NULL)
+  } else if (length(fontweight) == 1) {
+    weight <- if (is.numeric(fontweight)) {
+      fontweight
+    } else if (is.character(fontweight)) {
+      name <- gsub("[[:space:]_.-]+", "", tolower(fontweight))
+      if (grepl("^[0-9]+$", name)) {
+        as.numeric(name)
+      } else {
+        typst_font_weights[name]
+      }
+    }
+
+    if (
+      length(weight) == 1 &&
+        !is.na(weight) &&
+        weight >= 100 &&
+        weight <= 900 &&
+        weight == round(weight)
+    ) {
+      return(as.integer(weight))
+    }
+  }
+
+  cli::cli_abort(sub("fontweight", arg, fontweight_hint, fixed = TRUE))
+}
+
+#' Normalize mapped font weight values
+#'
+#' @param fontweight Font weight values, one per row.
+#' @param fn Calling function name for error messages.
+#' @param rows Row indices of the values.
+#' @return An integer vector of weights, `NA` where none is set.
+#' @noRd
+normalize_fontweight_values <- function(fontweight, fn, rows) {
+  if (is.null(fontweight) || length(fontweight) == 0) {
+    return(fontweight)
+  }
+
+  values <- transform_unique_values(
+    as.character(fontweight),
+    !is.na(fontweight),
+    rows,
+    function(value, row) {
+      tryCatch(
+        as.character(normalize_fontweight(value, allow_null = FALSE)),
+        error = function(cnd) {
+          cli::cli_abort(
+            c(
+              "Invalid {.arg fontweight} aesthetic in {.fn {fn}}.",
+              "x" = "Problem in row {row} with value {.val {value}}.",
+              "i" = fontweight_hint
+            ),
+            call = NULL
+          )
+        }
+      )
+    }
+  )
+  as.integer(values)
+}
+
 #' Validate an alpha multiplier
 #'
 #' @param alpha Optional numeric alpha value in `[0, 1]`.
@@ -321,6 +420,21 @@ normalize_face_param <- function(params, fn = NULL, supported = NULL) {
     supported = supported
   )
 
+  params
+}
+
+#' @param params Parameter list that may contain `fontweight` and `weight`.
+#' @return `params` with the alias resolved and `fontweight` validated.
+#' @noRd
+normalize_fontweight_param <- function(params) {
+  params$fontweight <- resolve_arg_alias(
+    params$fontweight,
+    params$weight,
+    "fontweight",
+    "weight"
+  )
+  params$weight <- NULL
+  params$fontweight <- normalize_fontweight(params$fontweight)
   params
 }
 

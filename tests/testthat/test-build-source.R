@@ -106,6 +106,50 @@ test_that("build_typst_source supports colour and fontface aliases", {
   )
 })
 
+test_that("build_typst_source sets fontweight after face", {
+  expect_equal(
+    source_lines("A", face = "bold.italic", fontweight = "light"),
+    c(
+      preamble_set,
+      '#set text(weight: "bold")',
+      '#set text(style: "italic")',
+      '#show math.equation: set text(weight: "bold")',
+      "#set text(weight: 300)",
+      "#show math.equation: set text(weight: 300)",
+      leading_rule(),
+      "A"
+    )
+  )
+  expect_equal(
+    source_lines("A", weight = 600),
+    c(
+      preamble_set,
+      "#set text(weight: 600)",
+      "#show math.equation: set text(weight: 600)",
+      leading_rule(),
+      "A"
+    )
+  )
+  expect_equal(source_lines("A", fontweight = NA), source_lines("A"))
+})
+
+test_that("fontweight selects the closest weight the family has", {
+  font_of <- function(...) {
+    source <- build_typst_source("Ab", family = "Libertinus Serif", ...)
+    typst_render(source)$scene$fonts$cache_key[[1]]
+  }
+  regular <- font_of()
+  bold <- font_of(face = "bold")
+  semibold <- font_of(fontweight = 600)
+
+  expect_false(semibold %in% c(regular, bold))
+  expect_identical(font_of(fontweight = "semibold"), semibold)
+  expect_identical(font_of(fontweight = 300), regular)
+  expect_identical(font_of(fontweight = 900), bold)
+  expect_identical(font_of(face = "bold", fontweight = 600), semibold)
+  expect_identical(font_of(face = "bold", fontweight = 400), regular)
+})
+
 test_that("build_typst_source does not force italic styling onto math", {
   lines <- source_lines("$ x $", face = "italic")
 
@@ -154,6 +198,11 @@ test_that("build_typst_source validates arguments", {
   expect_snapshot(build_typst_source("A", face = "oblique"), error = TRUE)
   expect_snapshot(
     build_typst_source("A", face = "plain", fontface = "bold"),
+    error = TRUE
+  )
+  expect_snapshot(build_typst_source("A", fontweight = 1000), error = TRUE)
+  expect_snapshot(
+    build_typst_source("A", fontweight = 600, weight = 700),
     error = TRUE
   )
 })

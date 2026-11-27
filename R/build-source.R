@@ -13,6 +13,10 @@
 #' @param face Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
 #' @param fontface Alias of `face`.
+#' @param fontweight Optional font weight: a whole number from 100 to 900 or
+#'   one of Typst's weight names. It replaces the weight `face` sets and keeps
+#'   its italic.
+#' @param weight Alias of `fontweight`.
 #' @param lineheight Optional line height multiplier with grid's meaning:
 #'   baselines of consecutive lines are `1.2 * lineheight` font sizes apart.
 #'   Defaults to 1.2, `geom_text()`'s default.
@@ -33,6 +37,8 @@ build_typst_source <- function(
   family = NULL,
   face = NULL,
   fontface = NULL,
+  fontweight = NULL,
+  weight = NULL,
   lineheight = NULL,
   math_family = NULL,
   angle = NULL,
@@ -46,6 +52,7 @@ build_typst_source <- function(
 
   color <- resolve_arg_alias(color, colour, "color", "colour")
   face <- resolve_arg_alias(face, fontface, "face", "fontface")
+  fontweight <- resolve_arg_alias(fontweight, weight, "fontweight", "weight")
 
   color <- check_single_string(color, "color")
   size <- check_positive_number(size, "size")
@@ -56,6 +63,7 @@ build_typst_source <- function(
   angle <- check_number(angle, "angle")
   hjust <- check_number(hjust, "hjust")
   face <- normalize_face(face, "face")
+  fontweight <- normalize_fontweight(fontweight)
 
   text_args <- c()
 
@@ -92,6 +100,15 @@ build_typst_source <- function(
   # Face
   if (!is.null(face)) {
     text_args <- c(text_args, face_to_typst_styles(face))
+  }
+
+  # Weight. After the face, so it replaces the weight of a bold face.
+  if (!is.null(fontweight)) {
+    text_args <- c(
+      text_args,
+      sprintf("#set text(weight: %d)", fontweight),
+      sprintf("#show math.equation: set text(weight: %d)", fontweight)
+    )
   }
 
   # Math Family

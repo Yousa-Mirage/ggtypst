@@ -71,6 +71,40 @@
       Error in `normalize_face()`:
       ! `face` must be one of "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
 
+# normalize_fontweight accepts numbers and Typst weight names
+
+    Code
+      normalize_fontweight(50)
+    Condition
+      Error in `normalize_fontweight()`:
+      ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+
+---
+
+    Code
+      normalize_fontweight(450.5)
+    Condition
+      Error in `normalize_fontweight()`:
+      ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+
+---
+
+    Code
+      normalize_fontweight("heavyish")
+    Condition
+      Error in `normalize_fontweight()`:
+      ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+
+# normalize_fontweight_values validates each mapped value
+
+    Code
+      normalize_fontweight_values(c(600, 50), "geom_typst", 1:2)
+    Condition
+      Error:
+      ! Invalid `fontweight` aesthetic in `geom_typst()`.
+      x Problem in row 2 with value "50".
+      i `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+
 # as_typst_math_code supports inline mode
 
     Code

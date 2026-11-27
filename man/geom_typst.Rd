@@ -143,6 +143,7 @@ in bold):
 \item \code{colour} (alias \code{color})
 \item \code{alpha}
 \item \code{face} (alias \code{fontface})
+\item \code{fontweight} (alias \code{weight} for a constant value)
 \item \code{angle}
 \item \code{lineheight}
 \item \code{family}

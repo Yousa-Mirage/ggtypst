@@ -102,6 +102,41 @@ test_that("normalize_face normalizes supported face values", {
   expect_snapshot(normalize_face(5, "face"), error = TRUE)
 })
 
+test_that("normalize_fontweight accepts numbers and Typst weight names", {
+  expect_null(normalize_fontweight(NULL))
+  expect_null(normalize_fontweight(NA))
+  expect_identical(normalize_fontweight(600), 600L)
+  expect_identical(normalize_fontweight(100L), 100L)
+  expect_identical(normalize_fontweight("900"), 900L)
+  expect_identical(normalize_fontweight("semibold"), 600L)
+  expect_identical(normalize_fontweight("Extra-Bold"), 800L)
+  expect_identical(normalize_fontweight("extra light"), 200L)
+
+  expect_snapshot(normalize_fontweight(50), error = TRUE)
+  expect_snapshot(normalize_fontweight(450.5), error = TRUE)
+  expect_snapshot(normalize_fontweight("heavyish"), error = TRUE)
+
+  expect_error(normalize_fontweight(1000))
+  expect_error(normalize_fontweight(c(400, 700)))
+  expect_error(normalize_fontweight(TRUE))
+  expect_error(normalize_fontweight(NA, allow_null = FALSE))
+})
+
+test_that("normalize_fontweight_values validates each mapped value", {
+  expect_identical(
+    normalize_fontweight_values(c(600, NA, 300), "geom_typst", 1:3),
+    c(600L, NA, 300L)
+  )
+  expect_identical(
+    normalize_fontweight_values(c("light", "bold", NA), "geom_typst", 1:3),
+    c(300L, 700L, NA)
+  )
+  expect_snapshot(
+    normalize_fontweight_values(c(600, 50), "geom_typst", 1:2),
+    error = TRUE
+  )
+})
+
 test_that("face_to_typst_styles maps text and math styles correctly", {
   expect_equal(
     face_to_typst_styles("plain"),

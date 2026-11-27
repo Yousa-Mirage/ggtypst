@@ -16,6 +16,23 @@
       ! Can't supply both `face` and `fontface`.
       i Use `face`; `fontface` is an alias.
 
+# element_typst() stores fontweight as a number
+
+    Code
+      element_typst(fontweight = 600, weight = 700)
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `fontweight` and `weight`.
+      i Use `fontweight`; `weight` is an alias.
+
+---
+
+    Code
+      element_typst(fontweight = 50)
+    Condition
+      Error in `normalize_fontweight()`:
+      ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+
 # element_typst() size.unit validates input
 
     Code

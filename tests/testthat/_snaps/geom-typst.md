@@ -53,6 +53,36 @@
       x Problem in row 2 with value "oblique".
       i Supported values are "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).
 
+# geom_typst takes a constant fontweight or its weight alias
+
+    Code
+      geom_typst(label = "A", fontweight = 600, weight = 700)
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `fontweight` and `weight`.
+      i Use `fontweight`; `weight` is an alias.
+
+---
+
+    Code
+      geom_typst(label = "A", fontweight = 1000)
+    Condition
+      Error in `normalize_fontweight()`:
+      ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+
+# geom_typst validates mapped fontweight before row rendering
+
+    Code
+      ggplotGrob(p)
+    Condition
+      Error in `geom_typst()`:
+      ! Problem while setting up geom.
+      i Error occurred in the 1st layer.
+      Caused by error:
+      ! Invalid `fontweight` aesthetic in `geom_typst()`.
+      x Problem in row 2 with value "heavy".
+      i `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+
 # geom_typst reports row and label context for render failures
 
     Code

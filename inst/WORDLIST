@@ -3,6 +3,8 @@ Libertinus
 MiTeX
 RStudio
 STIX
+Skia
+Skia's
 Typst
 Typst's
 Yousa
@@ -24,6 +26,7 @@ pre
 prebuilt
 ragg
 rasterize
+semibold
 svglite
 syntaxes
 tilings

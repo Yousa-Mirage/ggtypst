@@ -19,6 +19,8 @@ annotate_typst(
   alpha = NULL,
   face = NULL,
   fontface = NULL,
+  fontweight = NULL,
+  weight = NULL,
   angle = NULL,
   lineheight = NULL,
   family = NULL,
@@ -50,26 +52,54 @@ grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 \item{face, fontface}{Optional text face: \code{"plain"}, \code{"bold"}, \code{"italic"}, or
 \code{"bold.italic"}.}
 
+\item{fontweight, weight}{Optional font weight: a whole number from 100
+(thin) to 900 (black), or one of Typst's weight names \code{"thin"},
+\code{"extralight"}, \code{"light"}, \code{"regular"}, \code{"medium"}, \code{"semibold"},
+\code{"bold"}, \code{"extrabold"}, and \code{"black"}. It replaces the weight a bold
+\code{face} sets but keeps an italic one. Typst picks the closest weight the
+family has. See the section on variable fonts.}
+
 \item{angle}{Optional text rotation angle in degrees.}
 
 \item{lineheight}{Optional line height value. May be negative.}
 
-\item{family}{Optional text font family. The family must be available to Typst. If \code{NULL} or not found, the default
-family will be used. If you want to show specific languages or characters (e.g., Chinese, Japanese, emoji), you may need to set this.}
+\item{family}{Optional text font family. The family must be available to
+Typst. If \code{NULL} or not found, the default family will be used. If you
+want to show specific languages or characters (e.g., Chinese, Japanese,
+emoji), you may need to set this.}
 
-\item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
+\item{math_family}{Optional font family for math content. The default math
+font is \verb{New Computer Modern Math}. To render a math expression, you don't
+need to set this and even don't need to have \verb{New Computer Modern Math}
+installed on your system. Typst has embedded this font by default.}
 }
 \value{
 A \code{ggplot2} layer.
 }
 \description{
-\code{annotate_typst()} is a more powerful replacement for \code{\link[ggplot2:annotate]{ggplot2::annotate()}} that
-renders a single Typst string and inserts that grob into a \code{ggplot2} plot.
-Use it when you want one manually positioned note, callout, or mixed text-and-math label.
+\code{annotate_typst()} is a more powerful replacement for \code{\link[ggplot2:annotate]{ggplot2::annotate()}}
+that renders a single Typst string and inserts that grob into a \code{ggplot2}
+plot. Use it when you want one manually positioned note, callout, or mixed
+text-and-math label.
 }
 \details{
-ggtypst does not support reading files, so \verb{#image()}, \verb{#read()}, and other functions that load files will not work.
+ggtypst does not support reading files, so \verb{#image()}, \verb{#read()}, and other
+functions that load files will not work.
 }
+\section{Variable fonts}{
+
+A variable font has one file whose weight (and often width) can vary along
+axes, rather than one file per weight. Typst sets these axes from the
+weight, so \code{fontweight} works with them, but R's native glyphs cannot use
+axes: text in a variable font is always drawn as outlines.
+
+A few old variable fonts, such as Skia on macOS, use axis values outside
+the standard ranges. Typst then clamps the weight to the heaviest end of
+the axis, so the text comes out black at any weight. Set the axes yourself
+in the Typst code, for example
+\verb{#set text(variations: (wght: 1, wdth: 1))} for Skia's regular style.
+}
+
 \examples{
 ggplot(mtcars, aes(wt, mpg)) +
   geom_point() +

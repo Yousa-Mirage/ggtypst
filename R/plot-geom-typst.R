@@ -21,6 +21,7 @@
 #' - `colour` (alias `color`)
 #' - `alpha`
 #' - `face` (alias `fontface`)
+#' - `fontweight` (alias `weight` for a constant value)
 #' - `angle`
 #' - `lineheight`
 #' - `family`
@@ -79,6 +80,7 @@ geom_typst <- function(
   params <- list(...)
   params <- normalize_colour_param(params)
   params <- normalize_face_param(params)
+  params <- normalize_fontweight_param(params)
   position <- resolve_typst_position(
     position,
     nudge_x = nudge_x,
@@ -151,6 +153,7 @@ GeomTypst <- ggplot2::ggproto(
     size = 11,
     angle = 0,
     face = "plain",
+    fontweight = NA,
     hjust = 0.5,
     lineheight = NA,
     vjust = 0.5,
@@ -165,6 +168,11 @@ GeomTypst <- ggplot2::ggproto(
       rows = seq_len(nrow(data)),
       fn = "geom_typst",
       detail = r"(Supported values are "plain", "bold", "italic", or "bold.italic" (or numeric codes 1-4).)"
+    )
+    data$fontweight <- normalize_fontweight_values(
+      data$fontweight,
+      fn = "geom_typst",
+      rows = seq_len(nrow(data))
     )
     data
   },
@@ -227,6 +235,7 @@ GeomTypst <- ggplot2::ggproto(
       alpha = data$alpha,
       colour = data$colour,
       face = data$face,
+      fontweight = data$fontweight,
       family = data$family,
       lineheight = data$lineheight,
       math_family = data$math_family,
@@ -257,6 +266,7 @@ GeomTypst <- ggplot2::ggproto(
 #' @param alpha Optional alpha multiplier.
 #' @param colour Optional text colour.
 #' @param face Optional text face.
+#' @param fontweight Optional font weight.
 #' @param family Optional text font family.
 #' @param lineheight Optional line height value. May be negative.
 #' @param math_family Optional math font family.
@@ -275,6 +285,7 @@ geom_typst_row_grob <- function(
   alpha,
   colour,
   face,
+  fontweight,
   family,
   lineheight,
   math_family,
@@ -295,6 +306,7 @@ geom_typst_row_grob <- function(
         alpha = normalize_optional_number(alpha),
         color = normalize_optional_string(colour),
         face = face,
+        fontweight = fontweight,
         family = normalize_optional_string(family, empty_is_null = TRUE),
         lineheight = normalize_optional_number(lineheight),
         math_family = normalize_optional_string(

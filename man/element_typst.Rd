@@ -15,6 +15,8 @@ element_typst(
   alpha = NULL,
   face = NULL,
   fontface = NULL,
+  fontweight = NULL,
+  weight = NULL,
   angle = NULL,
   lineheight = NULL,
   family = NULL,
@@ -41,6 +43,10 @@ grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
 \item{face, fontface}{Optional text face: \code{"plain"}, \code{"bold"}, \code{"italic"}, or
 \code{"bold.italic"}.}
+
+\item{fontweight, weight}{Optional font weight: a whole number from 100
+(thin) to 900 (black), or one of Typst's weight names. See
+\code{\link[=annotate_typst]{annotate_typst()}} for how it combines with \code{face} and for variable fonts.}
 
 \item{angle}{Optional text rotation angle in degrees.}
 

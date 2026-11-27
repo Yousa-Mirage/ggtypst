@@ -80,3 +80,20 @@
       ! Can't supply both `face` and `fontface`.
       i Use `face`; `fontface` is an alias.
 
+---
+
+    Code
+      annotate_typst("A", x = 3, y = 25, fontweight = 600, weight = 700)
+    Condition
+      Error in `resolve_arg_alias()`:
+      ! Can't supply both `fontweight` and `weight`.
+      i Use `fontweight`; `weight` is an alias.
+
+# annotate_typst sets the font weight
+
+    Code
+      annotate_typst("A", x = 3, y = 25, fontweight = "heavy")
+    Condition
+      Error in `normalize_fontweight()`:
+      ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
+

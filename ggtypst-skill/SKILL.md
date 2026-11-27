@@ -105,7 +105,7 @@ ggplot(mtcars, aes(wt, mpg)) +
 ```
 
 The geoms understand the aesthetics `colour`, `size`, `alpha`, `angle`, `hjust`, `vjust`, `lineheight`, `face`,
-`family`, `math_family`, and `scale`; each can be mapped or set.
+`fontweight`, `family`, `math_family`, and `scale`; each can be mapped or set.
 
 ### `element_*()`
 
@@ -174,6 +174,10 @@ operators).
 - `colour` and `color` are aliases, as are `face` and `fontface`; giving both of a pair is an error.
 - text helpers accept `face` `"plain"`, `"bold"`, `"italic"`, or `"bold.italic"` (or 1 to 4); math helpers accept
   only `"plain"` and `"bold"`.
+- `fontweight` (alias `weight`) in `annotate_typst()`, `geom_typst()`, and `element_typst()` takes a weight from
+  100 to 900 or a Typst name such as `"light"` or `"semibold"`. It replaces a bold `face`'s weight. Typst uses the
+  closest weight the family has and never synthesizes one. For an old variable font with non-standard axes (such as
+  Skia), set them in the Typst code instead: `#set text(variations: (wght: 1))`.
 - `hjust` and `vjust` justify the label box as in `ggplot2`: `vjust = 0` puts the last baseline on the anchor,
   `vjust = 1` the cap height of the first line. The lines of a multi-line label are aligned left, centre, or
   right by `hjust`, unless the Typst code sets its own alignment.

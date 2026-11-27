@@ -3,9 +3,12 @@
 - BREAKING CHANGE: - Update the integrated Typst from 0.15.0 to 0.15.1. This
   may result in some new deprecated syntaxes. See
   [the Typst changelog](https://typst.app/docs/changelog/0.15.1/) for changes.
+- The argument `fontweight` (alias `weight`) is available now. It can be
+  used to set font weights from 100 to 900, such as `fontweight = 600` or
+  `"semibold"`. Thanks to **Stein Are Sæther** for the suggestion.
 - When Typst code tries to load a file, such as with `#image("logo.png")`, the
   error now explains that ggtypst cannot read files.
-- patchwork now collects identical Typst axis titles and axes, with
+- `patchwork` now collects identical Typst axis titles and axes, with
   `plot_layout(axis_titles = "collect")` or `axes = "collect"` . Thanks to
   **Stein Are Sæther** for the report and the diagnosis.
 
