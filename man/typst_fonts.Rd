@@ -10,6 +10,8 @@ typst_fonts(family = NULL, ..., detail = FALSE)
 \item{family}{Optional regular expression. If given, only families matching
 it (ignoring case) are listed.}
 
+\item{...}{Must be empty, so \code{detail} must be named.}
+
 \item{detail}{If \code{FALSE} (the default), list each family once. If \code{TRUE},
 list each font of a family, with its weight, style, and width.}
 }

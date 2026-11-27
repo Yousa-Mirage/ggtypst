@@ -45,7 +45,8 @@ Suggests:
     svglite,
     systemfonts,
     testthat (>= 3.0.0),
-    vdiffr
+    vdiffr,
+    withr
 Config/testthat/edition: 3
 Config/testthat/parallel: true
 Collate: 

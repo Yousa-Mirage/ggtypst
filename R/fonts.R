@@ -14,6 +14,7 @@
 #'
 #' @param family Optional regular expression. If given, only families matching
 #'   it (ignoring case) are listed.
+#' @param ... Must be empty, so `detail` must be named.
 #' @param detail If `FALSE` (the default), list each family once. If `TRUE`,
 #'   list each font of a family, with its weight, style, and width.
 #' @return A data frame sorted by family name. By default it has one row per
