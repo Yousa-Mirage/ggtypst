@@ -5,6 +5,9 @@
   [the Typst changelog](https://typst.app/docs/changelog/0.15.1/) for changes.
 - When Typst code tries to load a file, such as with `#image("logo.png")`, the
   error now explains that ggtypst cannot read files.
+- patchwork now collects identical Typst axis titles and axes, with
+  `plot_layout(axis_titles = "collect")` or `axes = "collect"` . Thanks to
+  **Stein Are Sæther** for the report and the diagnosis.
 
 # ggtypst 0.2.0
 

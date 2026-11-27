@@ -4,12 +4,13 @@ test_that("typst_render returns the page size and scene", {
   expect_type(res, "list")
   expect_named(
     res,
-    c("width_pt", "height_pt", "descent_pt", "scene", "warnings")
+    c("width_pt", "height_pt", "descent_pt", "scene", "warnings", "key")
   )
   expect_type(res$width_pt, "double")
   expect_type(res$height_pt, "double")
   expect_type(res$scene, "list")
   expect_type(res$warnings, "list")
+  expect_type(res$key, "character")
 })
 
 test_that("typst_render reports EmptyPage for empty-like Typst input", {

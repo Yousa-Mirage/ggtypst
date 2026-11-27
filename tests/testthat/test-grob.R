@@ -143,3 +143,144 @@ test_that("justification is relative to the Typst layout box, not the padded can
   expect_pt_equal(bottom_left$left - top_right$left, rendered$width_pt)
   expect_pt_equal(top_right$top - bottom_left$top, rendered$height_pt)
 })
+
+# A grob without the names grid gives it and its viewports, as patchwork
+# compares grobs to collect identical axis titles.
+strip_vp_names <- function(vp) {
+  if (inherits(vp, "viewport")) {
+    vp$name <- ""
+  } else if (inherits(vp, "vpTree")) {
+    vp$parent <- strip_vp_names(vp$parent)
+    vp$children <- strip_vp_names(vp$children)
+  } else if (inherits(vp, c("vpList", "vpStack"))) {
+    vp[] <- lapply(vp, strip_vp_names)
+  }
+  vp
+}
+
+strip_grob_names <- function(x) {
+  if (inherits(x, "gList")) {
+    return(structure(lapply(unname(x), strip_grob_names), class = class(x)))
+  }
+  if (inherits(x, "grob")) {
+    x$name <- ""
+    x$vp <- strip_vp_names(x$vp)
+    if (inherits(x, "gTree")) {
+      x$children <- strip_grob_names(x$children)
+      x$childrenOrder <- rep_len("", length(x$childrenOrder))
+    }
+  }
+  x
+}
+
+clear_scene_children_cache <- function() {
+  rm(
+    list = ls(scene_children_cache, all.names = TRUE),
+    envir = scene_children_cache
+  )
+}
+
+test_that("grobs of the same label are identical apart from their names", {
+  title <- function() {
+    element_grob(element_typst(size = 11), label = "Fuel Efficiency (mpg)")
+  }
+  expect_identical(
+    rlang::hash(strip_grob_names(title())),
+    rlang::hash(strip_grob_names(title()))
+  )
+
+  label <- function() {
+    positioned_typst_grob(typst_render(build_typst_source("*Fuel*")))
+  }
+  expect_identical(
+    rlang::hash(strip_grob_names(label())),
+    rlang::hash(strip_grob_names(label()))
+  )
+})
+
+test_that("the scene key follows the source and the raster resolution", {
+  key <- function(code) {
+    typst_render(build_typst_source(code))$key
+  }
+
+  expect_identical(key("A"), key("A"))
+  expect_false(identical(key("A"), key("B")))
+
+  expect_false(
+    identical(
+      withr::with_options(
+        list(ggtypst.raster_dpi = 300),
+        key("A")
+      ),
+      withr::with_options(
+        list(ggtypst.raster_dpi = 600),
+        key("A")
+      )
+    )
+  )
+})
+
+test_that("identical labels build their drawn children once", {
+  clear_scene_children_cache()
+  withr::defer(clear_scene_children_cache())
+
+  built <- new.env()
+  built$n <- 0L
+  build <- scene_children
+  local_mocked_bindings(scene_children = function(x, mode) {
+    built$n <- built$n + 1L
+    build(x, mode)
+  })
+
+  label <- function() {
+    scene_typst_grob(
+      typst_render(build_typst_source("*Shared*")),
+      hjust = 0.5,
+      vjust = 0.5
+    )
+  }
+  for (grob in list(label(), label(), label())) {
+    grid::makeContent(grob)
+  }
+  expect_identical(built$n, 1L)
+
+  # Another scale is another entry.
+  grob <- label()
+  grob$scale <- 2
+  grid::makeContent(grob)
+  expect_identical(built$n, 2L)
+})
+
+test_that("the cache of drawn children is limited in size", {
+  clear_scene_children_cache()
+  withr::defer(clear_scene_children_cache())
+  for (i in seq_len(scene_children_cache_size)) {
+    cache_scene_children(paste("key", i), list())
+  }
+  expect_length(scene_children_cache, scene_children_cache_size)
+
+  cache_scene_children("one more", list())
+  expect_identical(ls(scene_children_cache), "one more")
+})
+
+test_that("patchwork collects identical Typst axis titles", {
+  skip_if_not_installed("patchwork")
+
+  plot <- function(title) {
+    ggplot(mtcars, aes(wt, mpg)) +
+      geom_point() +
+      labs(title = title, x = "Weight", y = "Fuel") +
+      theme(text = element_typst())
+  }
+  composite <- patchwork::wrap_plots(plot("A"), plot("B")) +
+    patchwork::plot_layout(axis_titles = "collect")
+
+  g <- patchwork::patchworkGrob(composite)
+  drawn <- !vapply(g$grobs, inherits, NA, "zeroGrob")
+  titles <- g$layout$name[drawn & grepl("^(xlab|ylab)-", g$layout$name)]
+
+  expect_identical(
+    sort(sub("-.*", "", titles)),
+    c("xlab", "ylab")
+  )
+})

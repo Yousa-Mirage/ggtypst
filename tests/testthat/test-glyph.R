@@ -133,8 +133,13 @@ test_that("embedded fonts are written from a stale store index", {
   )
 })
 
-# Count how often scene grobs are built, while still building them.
+# Count how often scene grobs are built, while still building them. Starts
+# from an empty cache of drawn children, which other tests share.
 count_builds <- function(env = parent.frame()) {
+  rm(
+    list = ls(scene_children_cache, all.names = TRUE),
+    envir = scene_children_cache
+  )
   count <- new.env()
   count$builds <- 0
   build <- scene_grobs

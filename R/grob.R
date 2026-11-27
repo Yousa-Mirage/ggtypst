@@ -94,12 +94,11 @@ scene_typst_grob <- function(
 
   grid::gTree(
     scene = rendered$scene,
+    # Identifies the scene for the cache of drawn children.
+    scene_key = rendered$key %||% rlang::hash(rendered$scene),
     scale = scale,
     width_pt = width,
     height_pt = height,
-    # Children built for each renderer, reused when the grob is drawn again
-    # (window resizes, display list replays, drawing on several devices).
-    cache = new.env(parent = emptyenv()),
     vp = vp,
     cl = "typst_scene_grob"
   )
@@ -110,12 +109,33 @@ scene_typst_grob <- function(
 #' @export
 makeContent.typst_scene_grob <- function(x) {
   mode <- typst_render_mode(x$scene)
-  entry <- x$cache[[mode]]
+
+  key <- paste(x$scene_key %||% rlang::hash(x$scene), x$scale, mode)
+  entry <- scene_children_cache[[key]]
   if (!scene_children_valid(entry, x$scale)) {
     entry <- scene_children(x, mode)
-    assign(mode, entry, envir = x$cache)
+    cache_scene_children(key, entry)
   }
   grid::setChildren(x, entry$children)
+}
+
+# Children built for a scene, scale, and renderer, shared by every grob of the
+# same label and reused when it is drawn again (window resizes, display list
+# replays, saving the same plot again, drawing on several devices).
+scene_children_cache <- new.env(parent = emptyenv())
+
+# Children of this many scenes at most are kept. Past that, the cache starts
+# again empty, so a long session does not keep every label it has drawn.
+scene_children_cache_size <- 5000L
+
+cache_scene_children <- function(key, entry) {
+  if (length(scene_children_cache) >= scene_children_cache_size) {
+    rm(
+      list = ls(scene_children_cache, all.names = TRUE),
+      envir = scene_children_cache
+    )
+  }
+  assign(key, entry, envir = scene_children_cache)
 }
 
 # The children drawing scene grob `x` in `mode`, with what decides whether they

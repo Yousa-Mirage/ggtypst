@@ -11,10 +11,13 @@
 #'   - `scene`: what the page draws, ready for grid (see `scene_grobs()`).
 #'     Gradients, tilings, images, and colour glyphs are images in it, drawn
 #'     at `getOption("ggtypst.raster_dpi")`;
-#'   - `warnings`: Typst warnings.
+#'   - `warnings`: Typst warnings;
+#'   - `key`: a string identifying the scene (see
+#'     `makeContent.typst_scene_grob()`).
 #' @noRd
 typst_render <- function(text) {
-  result <- rs_typst_render(text, raster_dpi())
+  dpi <- raster_dpi()
+  result <- rs_typst_render(text, dpi)
 
   if (inherits(result, "typst_error")) {
     abort_typst_errors(result)
@@ -23,6 +26,8 @@ typst_render <- function(text) {
     warn_typst_warnings(result$warnings)
   }
 
+  # The source and the raster resolution determine the scene.
+  result$key <- rlang::hash(list(text, dpi))
   result
 }
 

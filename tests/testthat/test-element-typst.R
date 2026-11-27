@@ -588,3 +588,35 @@ test_that("element_typst visual: root text element", {
 
   vdiffr::expect_doppelganger("element-typst-root-text", p)
 })
+
+test_that("element_typst visual: patchwork collects axes and axis titles", {
+  skip_if_no_vdiffr()
+  skip_if_not_installed("patchwork")
+
+  panel <- function(transmission, title) {
+    ggplot(
+      subset(mtcars, am == transmission),
+      aes(wt, mpg, colour = factor(cyl))
+    ) +
+      geom_point(size = 1.6) +
+      xlim(1.5, 5.5) +
+      ylim(10, 35) +
+      labs(
+        title = title,
+        x = "Weight $w$ (1000 lbs)",
+        y = "*Fuel economy* (mpg)",
+        colour = "*Cylinders*"
+      )
+  }
+
+  p <- patchwork::wrap_plots(panel(0, "Automatic"), panel(1, "Manual")) +
+    patchwork::plot_layout(
+      axes = "collect",
+      axis_titles = "collect",
+      guides = "collect"
+    ) &
+    theme_minimal(base_size = 11) &
+    theme(text = element_typst())
+
+  vdiffr::expect_doppelganger("element-typst-patchwork-collect", p)
+})
