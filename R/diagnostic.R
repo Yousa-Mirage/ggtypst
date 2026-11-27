@@ -18,9 +18,10 @@ escape_cli <- function(x) {
 #' preserving the original diagnostics on the condition object.
 #'
 #' @param warnings A list of Typst diagnostic objects.
+#' @param call The call named in the warning.
 #' @return Called for its side effect of signaling a warning.
 #' @noRd
-warn_typst_warnings <- function(warnings) {
+warn_typst_warnings <- function(warnings, call = rlang::caller_env()) {
   bullets <- c("Typst emitted warnings during rendering.")
 
   diag_bullets <- unlist(
@@ -47,7 +48,7 @@ warn_typst_warnings <- function(warnings) {
     bullets,
     class = c("ggtypst_typst_warning", "typst_warning"),
     typst_warnings = warnings,
-    call = rlang::caller_env()
+    call = call
   )
 }
 
@@ -57,9 +58,10 @@ warn_typst_warnings <- function(warnings) {
 #' formatted diagnostics and hints.
 #'
 #' @param err A Typst error object returned from the Rust backend.
+#' @param call The call named in error messages.
 #' @return Called for its side effect of signaling an error.
 #' @noRd
-abort_typst_errors <- function(err) {
+abort_typst_errors <- function(err, call = rlang::caller_env()) {
   kind <- err$kind
 
   if (kind == "EmptyPage") {
@@ -67,7 +69,7 @@ abort_typst_errors <- function(err) {
       "Typst output has nothing to draw. Check your input.",
       class = c("ggtypst_typst_error", "typst_error"),
       typst_error = err,
-      call = rlang::caller_env()
+      call = call
     )
   }
 
@@ -110,6 +112,6 @@ abort_typst_errors <- function(err) {
     bullets,
     class = c("ggtypst_typst_error", "typst_error"),
     typst_error = err,
-    call = rlang::caller_env()
+    call = call
   )
 }

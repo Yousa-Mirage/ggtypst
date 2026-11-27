@@ -16,6 +16,8 @@
 
 ## Bug fixes
 
+- Error and warning messages now name the function you called, such as
+  `annotate_typst()` or `element_typst()`, rather than an internal helper.
 - When Typst code tries to load a file, such as with `#image("logo.png")`, the
   error now explains that ggtypst cannot read files.
 - `patchwork` now collects identical Typst axis titles and axes, with

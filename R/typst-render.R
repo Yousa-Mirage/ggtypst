@@ -14,16 +14,18 @@
 #'   - `warnings`: Typst warnings;
 #'   - `key`: a string identifying the scene (see
 #'     `makeContent.typst_scene_grob()`).
+#' @param call The call named in error and warning messages.
+
 #' @noRd
-typst_render <- function(text) {
-  dpi <- raster_dpi()
+typst_render <- function(text, call = rlang::caller_env()) {
+  dpi <- raster_dpi(call = call)
   result <- rs_typst_render(text, dpi)
 
   if (inherits(result, "typst_error")) {
-    abort_typst_errors(result)
+    abort_typst_errors(result, call = call)
   }
   if (is.list(result$warnings) && length(result$warnings) > 0) {
-    warn_typst_warnings(result$warnings)
+    warn_typst_warnings(result$warnings, call = call)
   }
 
   # The source and the raster resolution determine the scene.
@@ -33,13 +35,16 @@ typst_render <- function(text) {
 
 # Resolution of the images a scene draws content grid cannot (see
 # `ggtypst-options`).
-raster_dpi <- function() {
+raster_dpi <- function(call = rlang::caller_env()) {
   dpi <- getOption("ggtypst.raster_dpi", 600)
   if (!is.numeric(dpi) || length(dpi) != 1L || !is.finite(dpi) || dpi <= 0) {
-    cli::cli_abort(c(
-      "Option {.code ggtypst.raster_dpi} must be a positive number.",
-      "x" = "It is {.val {dpi}}."
-    ))
+    cli::cli_abort(
+      c(
+        "Option {.code ggtypst.raster_dpi} must be a positive number.",
+        "x" = "It is {.val {dpi}}."
+      ),
+      call = call
+    )
   }
   as.numeric(dpi)
 }

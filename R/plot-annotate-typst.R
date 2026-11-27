@@ -89,22 +89,90 @@ annotate_typst <- function(
 ) {
   rlang::check_dots_empty()
 
+  annotation_typst_layer(
+    typst_code,
+    x = x,
+    y = y,
+    hjust = hjust,
+    vjust = vjust,
+    scale = scale,
+    size = size,
+    size.unit = size.unit,
+    color = color,
+    colour = colour,
+    alpha = alpha,
+    face = face,
+    fontface = fontface,
+    fontweight = fontweight,
+    weight = weight,
+    angle = angle,
+    lineheight = lineheight,
+    family = family,
+    math_family = math_family,
+    call = rlang::current_env()
+  )
+}
+
+#' Render one Typst annotation layer
+#'
+#' The work of [annotate_typst()], which [annotate_math_typst()] and
+#' [annotate_math_mitex()] share.
+#'
+#' @inheritParams annotate_typst
+#' @param call The call named in error and warning messages: that of the
+#'   exported function the user called.
+#' @return An [ggplot2::annotation_custom()] layer.
+#' @noRd
+annotation_typst_layer <- function(
+  typst_code,
+  x,
+  y,
+  hjust = 0.5,
+  vjust = 0.5,
+  scale = 1,
+  size = NULL,
+  size.unit = "pt",
+  color = NULL,
+  colour = NULL,
+  alpha = NULL,
+  face = NULL,
+  fontface = NULL,
+  fontweight = NULL,
+  weight = NULL,
+  angle = NULL,
+  lineheight = NULL,
+  family = NULL,
+  math_family = NULL,
+  call = rlang::caller_env()
+) {
   typst_code <- check_single_string(
     typst_code,
     "typst_code",
-    allow_null = FALSE
+    allow_null = FALSE,
+    call = call
   )
-  x <- check_number(x, "x", allow_null = FALSE)
-  y <- check_number(y, "y", allow_null = FALSE)
-  hjust <- check_number(hjust, "hjust", allow_null = FALSE)
-  vjust <- check_number(vjust, "vjust", allow_null = FALSE)
-  scale <- check_positive_number(scale, "scale", allow_null = FALSE)
+  x <- check_number(x, "x", allow_null = FALSE, call = call)
+  y <- check_number(y, "y", allow_null = FALSE, call = call)
+  hjust <- check_number(hjust, "hjust", allow_null = FALSE, call = call)
+  vjust <- check_number(vjust, "vjust", allow_null = FALSE, call = call)
+  scale <- check_positive_number(
+    scale,
+    "scale",
+    allow_null = FALSE,
+    call = call
+  )
 
-  color <- resolve_arg_alias(color, colour, "color", "colour")
-  face <- resolve_arg_alias(face, fontface, "face", "fontface")
-  fontweight <- resolve_arg_alias(fontweight, weight, "fontweight", "weight")
+  color <- resolve_arg_alias(color, colour, "color", "colour", call = call)
+  face <- resolve_arg_alias(face, fontface, "face", "fontface", call = call)
+  fontweight <- resolve_arg_alias(
+    fontweight,
+    weight,
+    "fontweight",
+    "weight",
+    call = call
+  )
 
-  size <- convert_size_to_pt(size, size.unit = size.unit)
+  size <- convert_size_to_pt(size, size.unit = size.unit, call = call)
 
   full_source <- build_typst_source(
     typst_code,
@@ -117,9 +185,10 @@ annotate_typst <- function(
     lineheight = lineheight,
     math_family = math_family,
     angle = angle,
-    hjust = hjust
+    hjust = hjust,
+    call = call
   )
-  rendered <- typst_render(full_source)
+  rendered <- typst_render(full_source, call = call)
 
   grob <- positioned_typst_grob(
     rendered,

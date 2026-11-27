@@ -26,6 +26,7 @@
 #'   multi-line content to the left (`hjust < 0.25`), centre, or right
 #'   (`hjust > 0.75`), the closest Typst can get to grid's per-line `hjust`.
 #'   Alignment set inside `typst_code` still takes precedence.
+#' @param call The call named in error messages.
 #' @return A single UTF-8 Typst source string.
 #' @noRd
 build_typst_source <- function(
@@ -42,28 +43,36 @@ build_typst_source <- function(
   lineheight = NULL,
   math_family = NULL,
   angle = NULL,
-  hjust = NULL
+  hjust = NULL,
+  call = rlang::caller_env()
 ) {
   typst_code <- check_single_string(
     typst_code,
     "typst_code",
-    allow_null = FALSE
+    allow_null = FALSE,
+    call = call
   )
 
-  color <- resolve_arg_alias(color, colour, "color", "colour")
-  face <- resolve_arg_alias(face, fontface, "face", "fontface")
-  fontweight <- resolve_arg_alias(fontweight, weight, "fontweight", "weight")
+  color <- resolve_arg_alias(color, colour, "color", "colour", call = call)
+  face <- resolve_arg_alias(face, fontface, "face", "fontface", call = call)
+  fontweight <- resolve_arg_alias(
+    fontweight,
+    weight,
+    "fontweight",
+    "weight",
+    call = call
+  )
 
-  color <- check_single_string(color, "color")
-  size <- check_positive_number(size, "size")
-  alpha <- check_alpha(alpha)
-  family <- check_single_string(family, "family")
-  lineheight <- check_number(lineheight, "lineheight")
-  math_family <- check_single_string(math_family, "math_family")
-  angle <- check_number(angle, "angle")
-  hjust <- check_number(hjust, "hjust")
-  face <- normalize_face(face, "face")
-  fontweight <- normalize_fontweight(fontweight)
+  color <- check_single_string(color, "color", call = call)
+  size <- check_positive_number(size, "size", call = call)
+  alpha <- check_alpha(alpha, call = call)
+  family <- check_single_string(family, "family", call = call)
+  lineheight <- check_number(lineheight, "lineheight", call = call)
+  math_family <- check_single_string(math_family, "math_family", call = call)
+  angle <- check_number(angle, "angle", call = call)
+  hjust <- check_number(hjust, "hjust", call = call)
+  face <- normalize_face(face, "face", call = call)
+  fontweight <- normalize_fontweight(fontweight, call = call)
 
   text_args <- c()
 
@@ -82,7 +91,7 @@ build_typst_source <- function(
   # Color & Alpha
   if (!is.null(color) || !is.null(alpha)) {
     base_color <- if (is.null(color)) "black" else color
-    fill_hex <- color_to_hex(base_color, alpha)
+    fill_hex <- color_to_hex(base_color, alpha, call = call)
     text_args <- c(text_args, sprintf('#set text(fill: rgb("%s"))', fill_hex))
   }
 

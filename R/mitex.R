@@ -7,15 +7,20 @@
 #'   delimiters are optional and will be normalized.
 #' @param inline Whether to render as inline math. Default `FALSE` renders as
 #'   display-style math.
+#' @param call The call named in error messages.
 #' @return A single Typst source string.
 #' @keywords internal
-convert_latex_to_typst <- function(latex_math_code, inline = FALSE) {
-  latex_math_code <- as_latex_math_code(latex_math_code)
-  inline <- check_bool(inline, "inline", allow_null = FALSE)
+convert_latex_to_typst <- function(
+  latex_math_code,
+  inline = FALSE,
+  call = rlang::caller_env()
+) {
+  latex_math_code <- as_latex_math_code(latex_math_code, call = call)
+  inline <- check_bool(inline, "inline", allow_null = FALSE, call = call)
   converted <- rs_convert_latex_to_typst(latex_math_code)
 
   if (inherits(converted, "typst_error")) {
-    abort_typst_errors(converted)
+    abort_typst_errors(converted, call = call)
   }
 
   converted <- check_single_string(converted, "converted", allow_null = FALSE)

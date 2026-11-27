@@ -3,7 +3,7 @@
     Code
       geom_math_mitex(label = "\\frac{1}{2}", colour = "red", color = "blue")
     Condition
-      Error in `resolve_arg_alias()`:
+      Error in `geom_math_mitex()`:
       ! Can't supply both `colour` and `color`.
       i Use `colour`; `color` is an alias.
 
@@ -40,7 +40,7 @@
       ! Failed to convert a LaTeX math label in `geom_math_mitex()`.
       x Problem in row 2.
       i Label: "\\end{}"
-      Caused by error in `convert_latex_to_typst()`:
+      Caused by error:
       ! MiTeX conversion failed: error: error unexpected: ""
 
 # geom_math_mitex reports static label conversion errors
@@ -51,6 +51,6 @@
       Error in `geom_math_mitex()`:
       ! Failed to convert the static `label` parameter in `geom_math_mitex()`.
       i Label: "\\end{}"
-      Caused by error in `convert_latex_to_typst()`:
+      Caused by error:
       ! MiTeX conversion failed: error: error unexpected: ""
 

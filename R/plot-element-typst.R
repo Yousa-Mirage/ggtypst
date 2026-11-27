@@ -232,7 +232,9 @@ element_grob.element_typst <- function(
   colour <- colour %||% element$colour
   family <- family %||% element$family
   face <- face %||% element$face
-  fontweight <- normalize_fontweight(element$weight)
+  # Errors here come up while ggplot2 draws the plot.
+  call <- rlang::call2("element_grob")
+  fontweight <- normalize_fontweight(element$weight, call = call)
   scale <- element$scale %||% 1
   alpha <- element$alpha
   math_family <- element$math_family
@@ -264,9 +266,9 @@ element_grob.element_typst <- function(
   }
 
   # Normalize other args
-  face <- normalize_face(face, "face")
-  size_pt <- convert_size_to_pt(size, size.unit = size.unit)
-  lineheight <- check_number(lineheight, "lineheight")
+  face <- normalize_face(face, "face", call = call)
+  size_pt <- convert_size_to_pt(size, size.unit = size.unit, call = call)
+  lineheight <- check_number(lineheight, "lineheight", call = call)
   family <- normalize_optional_string(family, empty_is_null = TRUE)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
 
@@ -289,7 +291,8 @@ element_grob.element_typst <- function(
     margin = margin,
     margin_x = margin_x,
     margin_y = margin_y,
-    debug = debug
+    debug = debug,
+    call = call
   )
 }
 
@@ -322,6 +325,7 @@ element_grob.element_typst <- function(
 #' @param margin Margin object.
 #' @param margin_x,margin_y Whether margins apply in each direction.
 #' @param debug Whether to draw debugging rectangles.
+#' @param call The call named in error messages.
 #' @return A `gTree` with class `"titleGrob"`.
 #' @noRd
 typst_title_grob <- function(
@@ -343,7 +347,8 @@ typst_title_grob <- function(
   margin,
   margin_x,
   margin_y,
-  debug
+  debug,
+  call = rlang::caller_env()
 ) {
   n <- length(label)
   just <- rotate_just(angle, hjust, vjust)
@@ -384,7 +389,8 @@ typst_title_grob <- function(
       fontweight = fontweight,
       lineheight = lineheight,
       math_family = math_family,
-      angle = angle
+      angle = angle,
+      call = call
     )
 
     grobs[[i]] <- result$grob
@@ -454,6 +460,7 @@ typst_title_grob <- function(
 #' @param lineheight Line height value or `NULL`.
 #' @param math_family Math font family or `NULL`.
 #' @param angle Rotation angle in degrees.
+#' @param call The call named in error messages.
 #' @return A list with `$grob`, `$width_pt`, `$height_pt`, and `$descent_pt`.
 #' @noRd
 typst_element_grob <- function(
@@ -471,7 +478,8 @@ typst_element_grob <- function(
   fontweight,
   lineheight,
   math_family,
-  angle
+  angle,
+  call = rlang::caller_env()
 ) {
   angle <- if (angle %% 360 != 0) angle else NULL
 
@@ -486,10 +494,11 @@ typst_element_grob <- function(
     lineheight = lineheight,
     math_family = math_family,
     angle = angle,
-    hjust = hjust
+    hjust = hjust,
+    call = call
   )
 
-  rendered <- typst_render(source)
+  rendered <- typst_render(source, call = call)
 
   width_pt <- rendered$width_pt * scale
   height_pt <- rendered$height_pt * scale

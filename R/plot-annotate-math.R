@@ -58,7 +58,7 @@ annotate_math_typst <- function(
   )
   typst_math_code <- as_typst_math_code(typst_math_code, inline = inline)
 
-  annotate_typst(
+  annotation_typst_layer(
     typst_math_code,
     x = x,
     y = y,
@@ -73,7 +73,8 @@ annotate_math_typst <- function(
     face = params$face,
     lineheight = lineheight,
     math_family = math_family,
-    angle = angle
+    angle = angle,
+    call = rlang::current_env()
   )
 }
 
@@ -139,7 +140,7 @@ annotate_math_mitex <- function(
     supported = c("plain", "bold")
   )
   typst_math_code <- tryCatch(
-    convert_latex_to_typst(latex_math_code, inline = inline),
+    convert_latex_to_typst(latex_math_code, inline = inline, call = NULL),
     error = function(cnd) {
       preview <- trimws(latex_math_code)
       if (nchar(preview) > 80) {
@@ -156,7 +157,7 @@ annotate_math_mitex <- function(
     }
   )
 
-  annotate_typst(
+  annotation_typst_layer(
     typst_math_code,
     x = x,
     y = y,
@@ -171,6 +172,7 @@ annotate_math_mitex <- function(
     face = params$face,
     lineheight = lineheight,
     math_family = math_family,
-    angle = angle
+    angle = angle,
+    call = rlang::current_env()
   )
 }

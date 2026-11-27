@@ -3,7 +3,7 @@
     Code
       element_math_typst(size.unit = "inches")
     Condition
-      Error in `check_size_unit()`:
+      Error in `element_math_typst()`:
       ! `size.unit` must be one of "pt" or "mm".
 
 ---
@@ -19,7 +19,7 @@
     Code
       element_math_typst(face = "plain", fontface = "bold")
     Condition
-      Error in `resolve_arg_alias()`:
+      Error in `element_math_typst()`:
       ! Can't supply both `face` and `fontface`.
       i Use `face`; `fontface` is an alias.
 
@@ -28,7 +28,7 @@
     Code
       element_math_typst(colour = "red", color = "blue")
     Condition
-      Error in `resolve_arg_alias()`:
+      Error in `element_math_typst()`:
       ! Can't supply both `colour` and `color`.
       i Use `colour`; `color` is an alias.
 

@@ -6,7 +6,7 @@
       Error in `annotate_math_mitex()`:
       ! Failed to convert LaTeX math in `annotate_math_mitex()`.
       i Input: "\\end{}"
-      Caused by error in `convert_latex_to_typst()`:
+      Caused by error:
       ! MiTeX conversion failed: error: error unexpected: ""
 
 # annotate_math_mitex validates math-only face

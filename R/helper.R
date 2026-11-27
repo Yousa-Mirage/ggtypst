@@ -3,14 +3,23 @@
 #' @param x Value to validate.
 #' @param arg Argument name used in error messages.
 #' @param allow_null Whether `NULL` is accepted.
+#' @param call The call named in error messages.
 #' @return `x` unchanged when valid.
 #' @noRd
-check_single_string <- function(x, arg, allow_null = TRUE) {
+check_single_string <- function(
+  x,
+  arg,
+  allow_null = TRUE,
+  call = rlang::caller_env()
+) {
   if (allow_null && is.null(x)) {
     return(NULL)
   }
   if (!is.character(x) || length(x) != 1 || is.na(x)) {
-    cli::cli_abort("{.arg {arg}} must be a single non-missing string.")
+    cli::cli_abort(
+      "{.arg {arg}} must be a single non-missing string.",
+      call = call
+    )
   }
   x
 }
@@ -20,14 +29,23 @@ check_single_string <- function(x, arg, allow_null = TRUE) {
 #' @param x Value to validate.
 #' @param arg Argument name used in error messages.
 #' @param allow_null Whether `NULL` is accepted.
+#' @param call The call named in error messages.
 #' @return `x` unchanged when valid.
 #' @noRd
-check_positive_number <- function(x, arg, allow_null = TRUE) {
+check_positive_number <- function(
+  x,
+  arg,
+  allow_null = TRUE,
+  call = rlang::caller_env()
+) {
   if (allow_null && is.null(x)) {
     return(NULL)
   }
   if (!is.numeric(x) || length(x) != 1 || is.na(x) || !is.finite(x) || x <= 0) {
-    cli::cli_abort("{.arg {arg}} must be a single positive finite number.")
+    cli::cli_abort(
+      "{.arg {arg}} must be a single positive finite number.",
+      call = call
+    )
   }
   x
 }
@@ -37,14 +55,20 @@ check_positive_number <- function(x, arg, allow_null = TRUE) {
 #' @param x Value to validate.
 #' @param arg Argument name used in error messages.
 #' @param allow_null Whether `NULL` is accepted.
+#' @param call The call named in error messages.
 #' @return `x` unchanged when valid.
 #' @noRd
-check_number <- function(x, arg, allow_null = TRUE) {
+check_number <- function(
+  x,
+  arg,
+  allow_null = TRUE,
+  call = rlang::caller_env()
+) {
   if (allow_null && is.null(x)) {
     return(NULL)
   }
   if (!is.numeric(x) || length(x) != 1 || is.na(x) || !is.finite(x)) {
-    cli::cli_abort("{.arg {arg}} must be a single finite number.")
+    cli::cli_abort("{.arg {arg}} must be a single finite number.", call = call)
   }
   x
 }
@@ -54,14 +78,20 @@ check_number <- function(x, arg, allow_null = TRUE) {
 #' @param x Value to validate.
 #' @param arg Argument name used in error messages.
 #' @param allow_null Whether `NULL` is accepted.
+#' @param call The call named in error messages.
 #' @return `x` unchanged when valid.
 #' @noRd
-check_bool <- function(x, arg, allow_null = TRUE) {
+check_bool <- function(
+  x,
+  arg,
+  allow_null = TRUE,
+  call = rlang::caller_env()
+) {
   if (allow_null && is.null(x)) {
     return(NULL)
   }
   if (!is.logical(x) || length(x) != 1 || is.na(x)) {
-    cli::cli_abort("{.arg {arg}} must be TRUE or FALSE.")
+    cli::cli_abort("{.arg {arg}} must be TRUE or FALSE.", call = call)
   }
   x
 }
@@ -70,16 +100,24 @@ check_bool <- function(x, arg, allow_null = TRUE) {
 #'
 #' @param size.unit Size unit name.
 #' @param arg Argument name used in error messages.
+#' @param call The call named in error messages.
 #' @return The validated size unit.
 #' @noRd
-check_size_unit <- function(size.unit, arg = "size.unit") {
+check_size_unit <- function(
+  size.unit,
+  arg = "size.unit",
+  call = rlang::caller_env()
+) {
   if (
     !is.character(size.unit) ||
       length(size.unit) != 1 ||
       is.na(size.unit) ||
       !(size.unit %in% c("pt", "mm"))
   ) {
-    cli::cli_abort("{.arg {arg}} must be one of \"pt\" or \"mm\".")
+    cli::cli_abort(
+      "{.arg {arg}} must be one of \"pt\" or \"mm\".",
+      call = call
+    )
   }
 
   size.unit
@@ -91,14 +129,24 @@ check_size_unit <- function(size.unit, arg = "size.unit") {
 #' @param alias_value Alias argument value.
 #' @param arg Canonical argument name.
 #' @param alias Alias argument name.
+#' @param call The call named in error messages.
 #' @return The resolved value.
 #' @noRd
-resolve_arg_alias <- function(value, alias_value, arg, alias_arg) {
+resolve_arg_alias <- function(
+  value,
+  alias_value,
+  arg,
+  alias_arg,
+  call = rlang::caller_env()
+) {
   if (!is.null(value) && !is.null(alias_value)) {
-    cli::cli_abort(c(
-      "Can't supply both {.arg {arg}} and {.arg {alias_arg}}.",
-      "i" = "Use {.arg {arg}}; {.arg {alias_arg}} is an alias."
-    ))
+    cli::cli_abort(
+      c(
+        "Can't supply both {.arg {arg}} and {.arg {alias_arg}}.",
+        "i" = "Use {.arg {arg}}; {.arg {alias_arg}} is an alias."
+      ),
+      call = call
+    )
   }
 
   if (is.null(value)) {
@@ -113,9 +161,15 @@ resolve_arg_alias <- function(value, alias_value, arg, alias_arg) {
 #' @param face Face name or ggplot-style numeric code.
 #' @param arg Argument name used in error messages.
 #' @param allow_null Whether `NULL` is accepted.
+#' @param call The call named in error messages.
 #' @return The normalized face name.
 #' @noRd
-normalize_face <- function(face, arg = "face", allow_null = TRUE) {
+normalize_face <- function(
+  face,
+  arg = "face",
+  allow_null = TRUE,
+  call = rlang::caller_env()
+) {
   if (
     is.null(face) || length(face) == 0 || (length(face) == 1 && is.na(face))
   ) {
@@ -146,7 +200,8 @@ normalize_face <- function(face, arg = "face", allow_null = TRUE) {
   }
 
   cli::cli_abort(
-    "{.arg {arg}} must be one of \"plain\", \"bold\", \"italic\", or \"bold.italic\" (or numeric codes 1-4)."
+    "{.arg {arg}} must be one of \"plain\", \"bold\", \"italic\", or \"bold.italic\" (or numeric codes 1-4).",
+    call = call
   )
 }
 
@@ -175,12 +230,14 @@ fontweight_hint <- paste(
 #'   string, or one of Typst's weight names.
 #' @param arg Argument name used in error messages.
 #' @param allow_null Whether `NULL` and `NA` are accepted.
+#' @param call The call named in error messages.
 #' @return The weight as an integer, or `NULL`.
 #' @noRd
 normalize_fontweight <- function(
   fontweight,
   arg = "fontweight",
-  allow_null = TRUE
+  allow_null = TRUE,
+  call = rlang::caller_env()
 ) {
   if (
     is.null(fontweight) ||
@@ -211,7 +268,10 @@ normalize_fontweight <- function(
     }
   }
 
-  cli::cli_abort(sub("fontweight", arg, fontweight_hint, fixed = TRUE))
+  cli::cli_abort(
+    sub("fontweight", arg, fontweight_hint, fixed = TRUE),
+    call = call
+  )
 }
 
 #' Normalize mapped font weight values
@@ -252,9 +312,10 @@ normalize_fontweight_values <- function(fontweight, fn, rows) {
 #' Validate an alpha multiplier
 #'
 #' @param alpha Optional numeric alpha value in `[0, 1]`.
+#' @param call The call named in error messages.
 #' @return `alpha` unchanged when valid.
 #' @noRd
-check_alpha <- function(alpha) {
+check_alpha <- function(alpha, call = rlang::caller_env()) {
   if (is.null(alpha)) {
     return(NULL)
   }
@@ -267,7 +328,10 @@ check_alpha <- function(alpha) {
       alpha < 0 ||
       alpha > 1
   ) {
-    cli::cli_abort("{.arg alpha} must be NULL or a single number in [0, 1].")
+    cli::cli_abort(
+      "{.arg alpha} must be NULL or a single number in [0, 1].",
+      call = call
+    )
   }
 
   alpha
@@ -277,10 +341,20 @@ check_alpha <- function(alpha) {
 #'
 #' @param color A color understood by [grDevices::col2rgb()].
 #' @param alpha Optional alpha multiplier in `[0, 1]`.
+#' @param call The call named in error messages.
 #' @return A single `#RRGGBBAA` string.
 #' @noRd
-color_to_hex <- function(color, alpha = NULL) {
-  rgba <- grDevices::col2rgb(color, alpha = TRUE)[, 1]
+color_to_hex <- function(color, alpha = NULL, call = rlang::caller_env()) {
+  rgba <- tryCatch(
+    grDevices::col2rgb(color, alpha = TRUE)[, 1],
+    error = function(cnd) {
+      cli::cli_abort(
+        "{.arg color} must be a colour name or a hex code such as {.val #66CCFF}.",
+        parent = cnd,
+        call = call
+      )
+    }
+  )
 
   if (!is.null(alpha)) {
     rgba[4] <- round(rgba[4] * alpha)
@@ -305,11 +379,17 @@ format_typst_number <- function(x) {
 #' @param size Size value to convert.
 #' @param size.unit Unit of `size`, either `"pt"` or `"mm"`.
 #' @param arg Argument name used in error messages.
+#' @param call The call named in error messages.
 #' @return A size in Typst points or `NULL`.
 #' @noRd
-convert_size_to_pt <- function(size, size.unit = "pt", arg = "size") {
-  size.unit <- check_size_unit(size.unit, arg = "size.unit")
-  size <- check_positive_number(size, arg = arg)
+convert_size_to_pt <- function(
+  size,
+  size.unit = "pt",
+  arg = "size",
+  call = rlang::caller_env()
+) {
+  size.unit <- check_size_unit(size.unit, arg = "size.unit", call = call)
+  size <- check_positive_number(size, arg = arg, call = call)
 
   if (is.null(size)) {
     NULL
@@ -399,14 +479,21 @@ transform_unique_values <- function(values, valid, rows, transform_fn) {
 #' @param params Parameter list that may contain `face` and `fontface`.
 #' @param fn Calling function name for error messages.
 #' @param supported Optional set of allowed normalized face values.
+#' @param call The call named in error messages.
 #' @return `params` with aliases resolved and `face` normalized.
 #' @noRd
-normalize_face_param <- function(params, fn = NULL, supported = NULL) {
+normalize_face_param <- function(
+  params,
+  fn = NULL,
+  supported = NULL,
+  call = rlang::caller_env()
+) {
   params$face <- resolve_arg_alias(
     params$face,
     params$fontface,
     "face",
-    "fontface"
+    "fontface",
+    call = call
   )
   params$fontface <- NULL
 
@@ -417,36 +504,41 @@ normalize_face_param <- function(params, fn = NULL, supported = NULL) {
   params$face <- normalize_face_values(
     params$face,
     fn = fn,
-    supported = supported
+    supported = supported,
+    call = call
   )
 
   params
 }
 
 #' @param params Parameter list that may contain `fontweight` and `weight`.
+#' @param call The call named in error messages.
 #' @return `params` with the alias resolved and `fontweight` validated.
 #' @noRd
-normalize_fontweight_param <- function(params) {
+normalize_fontweight_param <- function(params, call = rlang::caller_env()) {
   params$fontweight <- resolve_arg_alias(
     params$fontweight,
     params$weight,
     "fontweight",
-    "weight"
+    "weight",
+    call = call
   )
   params$weight <- NULL
-  params$fontweight <- normalize_fontweight(params$fontweight)
+  params$fontweight <- normalize_fontweight(params$fontweight, call = call)
   params
 }
 
 #' @param params Parameter list that may contain `colour` and `color`.
+#' @param call The call named in error messages.
 #' @return `params` with color aliases resolved to `colour`.
 #' @noRd
-normalize_colour_param <- function(params) {
+normalize_colour_param <- function(params, call = rlang::caller_env()) {
   params$colour <- resolve_arg_alias(
     params$colour,
     params$color,
     "colour",
-    "color"
+    "color",
+    call = call
   )
   params$color <- NULL
   params
@@ -459,6 +551,7 @@ normalize_colour_param <- function(params) {
 #' @param detail Extra detail for mapped-aesthetic errors.
 #' @param supported Optional set of allowed normalized face values.
 #' @param rows Optional row indices for mapped aesthetics.
+#' @param call The call named in error messages about a static value.
 #' @return Normalized face value(s).
 #' @noRd
 normalize_face_values <- function(
@@ -466,7 +559,8 @@ normalize_face_values <- function(
   fn = NULL,
   detail = NULL,
   supported = NULL,
-  rows = NULL
+  rows = NULL,
+  call = if (is.null(fn)) rlang::caller_env() else rlang::call2(fn)
 ) {
   if (is.null(face) || length(face) == 0) {
     return(face)
@@ -474,11 +568,11 @@ normalize_face_values <- function(
 
   # Scalar path: validate a single static parameter value
   if (is.null(rows)) {
-    face <- normalize_face(face, "face")
+    face <- normalize_face(face, "face", call = call)
     if (!is.null(supported) && !(face %in% supported)) {
       cli::cli_abort(
         "{.arg face} for {.fn {fn}} must be either \"plain\" or \"bold\".",
-        call = rlang::call2(fn)
+        call = call
       )
     }
     return(face)
@@ -560,10 +654,11 @@ normalize_math_label_values <- function(
       }
 
       tryCatch(
+        # The error below names the function, so its parent names none.
         switch(
           kind,
-          typst = as_typst_math_code(value, inline = inline),
-          mitex = convert_latex_to_typst(value, inline = inline)
+          typst = as_typst_math_code(value, inline = inline, call = NULL),
+          mitex = convert_latex_to_typst(value, inline = inline, call = NULL)
         ),
         error = function(cnd) {
           if (is.null(row)) {
@@ -681,15 +776,23 @@ unwrap_math_dollar_delimiters <- function(typst_code) {
 #'
 #' @param core A math code string with outer delimiters already removed.
 #' @param arg Argument name used in error messages.
+#' @param call The call named in error messages.
 #' @return `core` unchanged when valid.
 #' @noRd
-validate_no_unescaped_dollar <- function(core, arg = "math_code") {
+validate_no_unescaped_dollar <- function(
+  core,
+  arg = "math_code",
+  call = rlang::caller_env()
+) {
   if (grepl("(?<!\\\\)\\$", core, perl = TRUE)) {
-    cli::cli_abort(c(
-      "Invalid math input: Unexpected unescaped `$` found inside the code.",
-      "x" = "Offending argument: {.arg {arg}}.",
-      "i" = "If you want to use a literal dollar sign, escape it as `\\$`."
-    ))
+    cli::cli_abort(
+      c(
+        "Invalid math input: Unexpected unescaped `$` found inside the code.",
+        "x" = "Offending argument: {.arg {arg}}.",
+        "i" = "If you want to use a literal dollar sign, escape it as `\\$`."
+      ),
+      call = call
+    )
   }
 
   core
@@ -698,33 +801,41 @@ validate_no_unescaped_dollar <- function(core, arg = "math_code") {
 #' Normalize LaTeX math input
 #'
 #' @param latex_code A single LaTeX math string.
+#' @param call The call named in error messages.
 #' @return The normalized inner LaTeX math code.
 #' @noRd
-as_latex_math_code <- function(latex_code) {
+as_latex_math_code <- function(latex_code, call = rlang::caller_env()) {
   latex_code <- check_single_string(
     latex_code,
     "latex_math_code",
-    allow_null = FALSE
+    allow_null = FALSE,
+    call = call
   )
   core <- unwrap_math_dollar_delimiters(latex_code)
-  validate_no_unescaped_dollar(core, arg = "latex_math_code")
+  validate_no_unescaped_dollar(core, arg = "latex_math_code", call = call)
 }
 
 #' Normalize Typst math input and apply delimiters
 #'
 #' @param typst_code A single Typst math string.
 #' @param inline Whether to wrap as inline math.
+#' @param call The call named in error messages.
 #' @return Typst math code wrapped with normalized outer dollar delimiters.
 #' @noRd
-as_typst_math_code <- function(typst_code, inline = FALSE) {
+as_typst_math_code <- function(
+  typst_code,
+  inline = FALSE,
+  call = rlang::caller_env()
+) {
   typst_code <- check_single_string(
     typst_code,
     "typst_math_code",
-    allow_null = FALSE
+    allow_null = FALSE,
+    call = call
   )
-  inline <- check_bool(inline, "inline", allow_null = FALSE)
+  inline <- check_bool(inline, "inline", allow_null = FALSE, call = call)
   core <- unwrap_math_dollar_delimiters(typst_code)
-  validate_no_unescaped_dollar(core, arg = "typst_math_code")
+  validate_no_unescaped_dollar(core, arg = "typst_math_code", call = call)
 
   if (inline) {
     sprintf("$%s$", core)

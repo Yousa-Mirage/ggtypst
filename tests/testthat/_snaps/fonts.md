@@ -3,7 +3,7 @@
     Code
       typst_fonts(detail = NA)
     Condition
-      Error in `check_bool()`:
+      Error in `typst_fonts()`:
       ! `detail` must be TRUE or FALSE.
 
 ---
@@ -22,7 +22,7 @@
     Code
       typst_fonts(1)
     Condition
-      Error in `check_single_string()`:
+      Error in `typst_fonts()`:
       ! `family` must be a single non-missing string.
 
 # unknown family warnings suggest the name Typst uses

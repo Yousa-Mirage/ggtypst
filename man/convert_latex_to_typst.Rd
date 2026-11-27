@@ -4,7 +4,11 @@
 \alias{convert_latex_to_typst}
 \title{Convert LaTeX Math to Typst Math Source}
 \usage{
-convert_latex_to_typst(latex_math_code, inline = FALSE)
+convert_latex_to_typst(
+  latex_math_code,
+  inline = FALSE,
+  call = rlang::caller_env()
+)
 }
 \arguments{
 \item{latex_math_code}{A single LaTeX math string. Outer \verb{$...$} or \verb{$$...$$}
@@ -12,6 +16,8 @@ delimiters are optional and will be normalized.}
 
 \item{inline}{Whether to render as inline math. Default \code{FALSE} renders as
 display-style math.}
+
+\item{call}{The call named in error messages.}
 }
 \value{
 A single Typst source string.

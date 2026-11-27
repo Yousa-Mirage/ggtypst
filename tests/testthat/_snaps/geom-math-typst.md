@@ -3,7 +3,7 @@
     Code
       geom_math_typst(label = "x^2", colour = "red", color = "blue")
     Condition
-      Error in `resolve_arg_alias()`:
+      Error in `geom_math_typst()`:
       ! Can't supply both `colour` and `color`.
       i Use `colour`; `color` is an alias.
 
@@ -40,7 +40,7 @@
       ! Failed to normalize a Typst math label in `geom_math_typst()`.
       x Problem in row 2.
       i Label: "$x$ + $y$"
-      Caused by error in `validate_no_unescaped_dollar()`:
+      Caused by error:
       ! Invalid math input: Unexpected unescaped `$` found inside the code.
       x Offending argument: `typst_math_code`.
       i If you want to use a literal dollar sign, escape it as `\$`.
