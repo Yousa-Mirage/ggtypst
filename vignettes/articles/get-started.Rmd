@@ -256,19 +256,28 @@ Use the three function families according to where the rendered content comes fr
 
 ## R raw strings
 
-Typst and LaTeX source strings may contain lots of `"` and `\`. In ordinary R strings, these characters need to be
-escaped like `"\\frac{a}{b}"`. Introduced in R 4.0.0, R raw strings let you write these special characters directly
-without escaping.
+Most Typst code is fine in an ordinary R string: `"*bold text*"` or `"$sum_(i=1)^n x_i$"` need no escaping, and many
+examples in this article are written that way.
 
-ℹ️ ***You should ALWAYS use the raw string `r"( ... )"` in your Typst and LaTeX source:***
+Two characters are special in ordinary R strings, though: `\` and `"` must be escaped as `\\` and `\"`. They are common
+in LaTeX math (`\frac`, `\alpha`) and in Typst code that passes text in quotes (`#text(font: "Arial")`, or `"text"`
+inside math). Introduced in R 4.0.0, R raw strings `r"( ... )"` take everything literally, so you can copy such code
+unchanged:
 
 ```{r}
 #| label: raw-strings
 #| eval: false
-r"(*bold text*)"
-r"($"a text in math" sum_(i=1)^n x_i$)"
+# The same LaTeX formula as an ordinary string and as a raw string
+"\\frac{a}{b}"
 r"(\frac{a}{b})"
+
+# Quotes inside Typst code
+"$\"a text in math\" sum_(i=1)^n x_i$"
+r"($"a text in math" sum_(i=1)^n x_i$)"
 ```
+
+ℹ️ Use raw strings whenever the code contains `\` or `"`, which is almost always the case with LaTeX math. For
+longer or copied code, they also save you from checking every character.
 
 ## Text, Typst math, and MiTeX math
 
@@ -333,6 +342,23 @@ just more convenient wrappers.
 One more important benefit of Typst is that you don't need to have a math font installed on your system to render math
 expressions. Typst has embedded the `New Computer Modern Math` font in binary, so you can render math anywhere and
 anytime.
+
+`New Computer Modern Math` is designed for print and has thin strokes, so formulas may look light at small sizes. If
+they do, you can use a sturdier math font installed on your system with `math_family`, such as STIX Two Math:
+
+```{r}
+#| label: math-family-example
+#| eval: false
+annotate_math_typst(
+  r"(sum_(i=1)^n x_i)",
+  x = 1,
+  y = 1,
+  math_family = "STIX Two Math"
+)
+
+# Or for all theme text at once
+theme(text = element_typst(math_family = "STIX Two Math"))
+```
 
 ### MiTeX-backed LaTeX math
 
@@ -483,7 +509,8 @@ backslash (`\@`) if you want them as they are.
 
 Typst's own fonts are built into `ggtypst`: Libertinus Serif for text and New Computer Modern Math for math. They are
 always available, so your plots look the same on every computer. You can use `family` and `math_family` to choose any
-other font installed on your system, for example to match the rest of your plot or to show Chinese or Japanese text.
+other font installed on your system, for example to match the rest of your plot, to show Chinese or Japanese text, or
+to get math that reads better at small sizes than the default (see [Native Typst math](#native-typst-math)).
 If the family is not found, Typst warns and uses its default font.
 
 `ggtypst` draws text the way the graphics device handles fonts best:

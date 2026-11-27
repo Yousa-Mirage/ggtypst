@@ -1,5 +1,8 @@
 # ggtypst (development version)
 
+- BREAKING CHANGE: - Update the integrated Typst from 0.15.0 to 0.15.1. This
+  may result in some new deprecated syntaxes. See
+  [the Typst changelog](https://typst.app/docs/changelog/0.15.1/) for changes.
 - When Typst code tries to load a file, such as with `#image("logo.png")`, the
   error now explains that ggtypst cannot read files.
 
@@ -10,6 +13,9 @@ issues and suggesting fixes. Most of the changes below stem from his report.
 
 ## Breaking changes
 
+- Update the integrated Typst from 0.14.2 to 0.15.0. This may result in some
+  new deprecated syntaxes. See
+  [the Typst changelog](https://typst.app/docs/changelog/0.15.0/) for changes.
 - ggtypst now requires R 4.3 or later, the first version that can draw native
   glyphs.
 - In `annotate_typst()`, `annotate_math_typst()`, and `annotate_math_mitex()`,
