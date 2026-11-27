@@ -21,6 +21,8 @@
 #'   baselines of consecutive lines are `1.2 * lineheight` font sizes apart.
 #'   Defaults to 1.2, `geom_text()`'s default.
 #' @param math_family Optional font family for math mode. Defaults to `New Computer Modern Math`.
+#' @param preamble Optional character vector of Typst rules, placed after the
+#'   settings above so they can override them. Empty strings are dropped.
 #' @param angle Text angle in degrees. Positive values rotate counter-clockwise.
 #' @param hjust Optional horizontal justification. Aligns the lines of
 #'   multi-line content to the left (`hjust < 0.25`), centre, or right
@@ -42,6 +44,7 @@ build_typst_source <- function(
   weight = NULL,
   lineheight = NULL,
   math_family = NULL,
+  preamble = NULL,
   angle = NULL,
   hjust = NULL,
   call = rlang::caller_env()
@@ -73,6 +76,7 @@ build_typst_source <- function(
   hjust <- check_number(hjust, "hjust", call = call)
   face <- normalize_face(face, "face", call = call)
   fontweight <- normalize_fontweight(fontweight, call = call)
+  preamble <- check_preamble(preamble, call = call)
 
   text_args <- c()
 
@@ -127,6 +131,10 @@ build_typst_source <- function(
       sprintf('#show math.equation: set text(font: "%s")', math_family)
     )
   }
+
+  # The user's own rules, after ours so they win. And before the line height
+  # rule so its measurement sees the fonts they set.
+  text_args <- c(text_args, preamble[nzchar(preamble)])
 
   # Line height. grid puts baselines `1.2 * lineheight` font sizes apart. With
   # the cap-height/baseline line edges set below, Typst puts them the cap

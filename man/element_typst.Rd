@@ -21,6 +21,7 @@ element_typst(
   lineheight = NULL,
   family = NULL,
   math_family = NULL,
+  preamble = NULL,
   margin = NULL,
   debug = NULL,
   inherit.blank = FALSE
@@ -52,10 +53,18 @@ grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
 \item{lineheight}{Optional line height value. May be negative.}
 
-\item{family}{Optional text font family. The family must be available to Typst. If \code{NULL} or not found, the default
-family will be used. If you want to show specific languages or characters (e.g., Chinese, Japanese, emoji), you may need to set this.}
+\item{family}{Optional text font family. The family must be available to
+Typst. If \code{NULL} or not found, the default family will be used. If you
+want to show specific languages or characters (e.g., Chinese, Japanese,
+emoji), you may need to set this.}
 
-\item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
+\item{math_family}{Optional font family for math content. The default math
+font is \verb{New Computer Modern Math}. To render a math expression, you don't
+need to set this and even don't need to have \verb{New Computer Modern Math}
+installed on your system. Typst has embedded this font by default.}
+
+\item{preamble}{Optional Typst rules applied to every label of the element:
+a character vector, one or more rules per string.}
 
 \item{margin}{Optional text margins created with \code{\link[ggplot2:margin]{ggplot2::margin()}}.}
 
@@ -74,6 +83,23 @@ renders each theme element through Typst. Use it for plot titles, subtitles,
 axis titles, axis text, facet strips, legend text, and other theme slots that
 accept text elements.
 }
+\section{Preamble}{
+
+\code{preamble} takes Typst rules, such as \verb{#set} and \verb{#show} rules, that style
+every label of the element without changing the labels themselves. They come
+after the rules ggtypst writes for the other arguments, so they can override
+them, and before the label, which can still override them.
+
+Like other properties, \code{preamble} is inherited from the parent element when
+it is not set, and replaces the parent's when it is: a \code{preamble} on the root
+\code{text} element applies to all theme text, unless an element sets its own. To
+add rules to the inherited ones, repeat them, for example by keeping shared
+rules in a variable. \code{preamble = ""} drops the inherited rules.
+
+Rules that change the page or the text's top and bottom edges change the box
+ggtypst lays out, so labels may be misplaced.
+}
+
 \examples{
 ggplot(mtcars, aes(wt, mpg)) +
   geom_point() +
@@ -85,6 +111,19 @@ ggplot(mtcars, aes(wt, mpg)) +
   theme(
     plot.title = element_typst(size = 18, color = "red"),
     axis.title.x = element_typst(size = 14, color = "#40a2b4")
+  )
+
+# Typst rules for all theme text: a heavier math font and wider letter spacing
+ggplot(mtcars, aes(wt, mpg)) +
+  geom_point() +
+  labs(title = r"(Fuel economy, $eta = "mpg" / w$)") +
+  theme(
+    text = element_typst(
+      preamble = c(
+        r"(#show math.equation: set text(font: "New Computer Modern Math", weight: 450))",
+        "#set text(tracking: 0.3pt)"
+      )
+    )
   )
 
 }

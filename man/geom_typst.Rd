@@ -14,6 +14,7 @@ geom_typst(
   nudge_x = 0,
   nudge_y = 0,
   size.unit = "pt",
+  preamble = NULL,
   na.rm = FALSE,
   show.legend = NA,
   inherit.aes = TRUE
@@ -99,6 +100,12 @@ instead of \code{position} to shift labels after the default identity position.}
 
 \item{size.unit}{The unit of \code{size}. Defaults to points
 (\code{"pt"}). Use \code{"mm"} for ggplot2-style text sizes.}
+
+\item{preamble}{Optional Typst rules, such as \verb{#set} and \verb{#show} rules,
+applied to every label of the layer: a character vector, one or more rules
+per string. They come after the rules for the aesthetics, so they can
+override them, and before the label. See \code{\link[=element_typst]{element_typst()}} for rules that
+misplace labels.}
 
 \item{na.rm}{If \code{FALSE}, the default, missing values are removed with
 a warning. If \code{TRUE}, missing values are silently removed.}

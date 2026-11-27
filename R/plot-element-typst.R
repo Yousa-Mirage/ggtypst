@@ -29,6 +29,10 @@ element_typst_class <- S7::new_class(
     weight = S7::new_property(
       S7::new_union(S7::class_numeric, NULL),
       default = NULL
+    ),
+    preamble = S7::new_property(
+      S7::new_union(S7::class_character, NULL),
+      default = NULL
     )
   )
 )
@@ -73,6 +77,7 @@ merge_element_element_typst <- function(new, old, ...) {
     scale = 1,
     alpha = 1,
     math_family = "",
+    preamble = "",
     weight = NA_real_
   )
 
@@ -103,6 +108,21 @@ merge_element_text_into_typst <- function(new, old, ...) {
 #' axis titles, axis text, facet strips, legend text, and other theme slots that
 #' accept text elements.
 #'
+#' @section Preamble:
+#' `preamble` takes Typst rules, such as `#set` and `#show` rules, that style
+#' every label of the element without changing the labels themselves. They come
+#' after the rules ggtypst writes for the other arguments, so they can override
+#' them, and before the label, which can still override them.
+#'
+#' Like other properties, `preamble` is inherited from the parent element when
+#' it is not set, and replaces the parent's when it is: a `preamble` on the root
+#' `text` element applies to all theme text, unless an element sets its own. To
+#' add rules to the inherited ones, repeat them, for example by keeping shared
+#' rules in a variable. `preamble = ""` drops the inherited rules.
+#'
+#' Rules that change the page or the text's top and bottom edges change the box
+#' ggtypst lays out, so labels may be misplaced.
+#'
 #' @param face,fontface Optional text face: `"plain"`, `"bold"`, `"italic"`, or
 #'   `"bold.italic"`.
 #' @param fontweight,weight Optional font weight: a whole number from 100
@@ -118,9 +138,16 @@ merge_element_text_into_typst <- function(new, old, ...) {
 #'   grob (`0` = bottom, `0.5` = center, `1` = top).
 #' @param angle Optional text rotation angle in degrees.
 #' @param lineheight Optional line height value. May be negative.
-#' @param family Optional text font family. The family must be available to Typst. If `NULL` or not found, the default
-#'   family will be used. If you want to show specific languages or characters (e.g., Chinese, Japanese, emoji), you may need to set this.
-#' @param math_family Optional font family for math content. The default math font is `New Computer Modern Math`. To render a math expression, you don't need to set this and even don't need to have `New Computer Modern Math` installed on your system. Typst has embedded this font by default.
+#' @param family Optional text font family. The family must be available to
+#'   Typst. If `NULL` or not found, the default family will be used. If you
+#'   want to show specific languages or characters (e.g., Chinese, Japanese,
+#'   emoji), you may need to set this.
+#' @param math_family Optional font family for math content. The default math
+#'   font is `New Computer Modern Math`. To render a math expression, you don't
+#'   need to set this and even don't need to have `New Computer Modern Math`
+#'   installed on your system. Typst has embedded this font by default.
+#' @param preamble Optional Typst rules applied to every label of the element:
+#'   a character vector, one or more rules per string.
 #' @param margin Optional text margins created with [ggplot2::margin()].
 #' @param debug If `TRUE`, draw a coloured rectangle behind each label for
 #'   debugging layout.
@@ -142,6 +169,19 @@ merge_element_text_into_typst <- function(new, old, ...) {
 #'     axis.title.x = element_typst(size = 14, color = "#40a2b4")
 #'   )
 #'
+#' # Typst rules for all theme text: a heavier math font and wider letter spacing
+#' ggplot(mtcars, aes(wt, mpg)) +
+#'   geom_point() +
+#'   labs(title = r"(Fuel economy, $eta = "mpg" / w$)") +
+#'   theme(
+#'     text = element_typst(
+#'       preamble = c(
+#'         r"(#show math.equation: set text(font: "New Computer Modern Math", weight: 450))",
+#'         "#set text(tracking: 0.3pt)"
+#'       )
+#'     )
+#'   )
+#'
 #' @export
 element_typst <- function(
   hjust = NULL,
@@ -160,7 +200,7 @@ element_typst <- function(
   lineheight = NULL,
   family = NULL,
   math_family = NULL,
-
+  preamble = NULL,
   margin = NULL,
   debug = NULL,
   inherit.blank = FALSE
@@ -174,6 +214,7 @@ element_typst <- function(
   alpha <- check_alpha(alpha)
   math_family <- normalize_optional_string(math_family, empty_is_null = TRUE)
   fontweight <- normalize_fontweight(fontweight)
+  preamble <- check_preamble(preamble)
 
   element_typst_class(
     family = family,
@@ -191,6 +232,7 @@ element_typst <- function(
     size.unit = size.unit,
     debug = debug,
     weight = fontweight,
+    preamble = preamble,
     inherit.blank = inherit.blank
   )
 }
@@ -238,6 +280,7 @@ element_grob.element_typst <- function(
   scale <- element$scale %||% 1
   alpha <- element$alpha
   math_family <- element$math_family
+  preamble <- check_preamble(element$preamble, call = call)
   size.unit <- element$size.unit %||% "pt"
   debug <- isTRUE(element$debug)
 
@@ -287,6 +330,7 @@ element_grob.element_typst <- function(
     fontweight = fontweight,
     lineheight = lineheight,
     math_family = math_family,
+    preamble = preamble,
     angle = angle,
     margin = margin,
     margin_x = margin_x,
@@ -321,6 +365,7 @@ element_grob.element_typst <- function(
 #' @param fontweight Font weight number or `NULL`.
 #' @param lineheight Line height value or `NULL`.
 #' @param math_family Math font family or `NULL`.
+#' @param preamble Typst rules or `NULL`.
 #' @param angle Rotation angle in degrees.
 #' @param margin Margin object.
 #' @param margin_x,margin_y Whether margins apply in each direction.
@@ -343,6 +388,7 @@ typst_title_grob <- function(
   fontweight,
   lineheight,
   math_family,
+  preamble,
   angle,
   margin,
   margin_x,
@@ -389,6 +435,7 @@ typst_title_grob <- function(
       fontweight = fontweight,
       lineheight = lineheight,
       math_family = math_family,
+      preamble = preamble,
       angle = angle,
       call = call
     )
@@ -459,6 +506,7 @@ typst_title_grob <- function(
 #' @param fontweight Font weight number or `NULL`.
 #' @param lineheight Line height value or `NULL`.
 #' @param math_family Math font family or `NULL`.
+#' @param preamble Typst rules or `NULL`.
 #' @param angle Rotation angle in degrees.
 #' @param call The call named in error messages.
 #' @return A list with `$grob`, `$width_pt`, `$height_pt`, and `$descent_pt`.
@@ -478,6 +526,7 @@ typst_element_grob <- function(
   fontweight,
   lineheight,
   math_family,
+  preamble,
   angle,
   call = rlang::caller_env()
 ) {
@@ -493,6 +542,7 @@ typst_element_grob <- function(
     fontweight = fontweight,
     lineheight = lineheight,
     math_family = math_family,
+    preamble = preamble,
     angle = angle,
     hjust = hjust,
     call = call

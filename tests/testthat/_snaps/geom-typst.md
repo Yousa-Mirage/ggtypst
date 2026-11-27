@@ -70,6 +70,14 @@
       Error in `geom_typst()`:
       ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
 
+# geom_typst applies every preamble rule to every row
+
+    Code
+      geom_typst(label = "A", preamble = 1)
+    Condition
+      Error in `geom_typst()`:
+      ! `preamble` must be a character vector without missing values.
+
 # geom_typst validates mapped fontweight before row rendering
 
     Code

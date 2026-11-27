@@ -505,6 +505,29 @@ Labels that come from the data, such as the legend keys, axis labels of a discre
 Typst markup too. Characters such as `*`, `_`, `$`, `#`, and `@` in them take their Typst meaning; escape them with a
 backslash (`\@`) if you want them as they are.
 
+### Typst rules for a whole element or layer
+
+The arguments cover the common text settings. For anything else Typst can do, you can give `preamble` Typst rules, such
+as `#set` and `#show` rules, in `element_typst()` or `geom_typst()`. They apply to every label of the element or layer,
+and come after the settings from the other arguments, so they can override them:
+
+```{r}
+#| label: preamble-example
+#| eval: false
+theme(
+  text = element_typst(
+    preamble = c(
+      # A heavier math font, and slightly wider letter spacing
+      r"(#show math.equation: set text(font: "New Computer Modern Math", weight: 450))",
+      "#set text(tracking: 0.3pt)"
+    )
+  )
+)
+```
+
+Like other element properties, an element inherits `preamble` from its parent unless it sets its own, which replaces
+the parent's rather than adding to it. `preamble = ""` drops the inherited rules.
+
 ## Fonts and output devices
 
 Typst's own fonts are built into `ggtypst`: Libertinus Serif for text and New Computer Modern Math for math. They are

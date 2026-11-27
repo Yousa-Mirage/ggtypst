@@ -74,6 +74,83 @@ test_that("element_typst() stores fontweight as a number", {
   expect_snapshot(element_typst(fontweight = 50), error = TRUE)
 })
 
+test_that("element_typst() stores and validates preamble", {
+  rules <- c("#set text(tracking: 1pt)", "#set text(fill: red)")
+  expect_identical(
+    element_typst(preamble = rules)$preamble,
+    rules
+  )
+  expect_null(element_typst()$preamble)
+  expect_snapshot(
+    element_typst(preamble = 1),
+    error = TRUE
+  )
+})
+
+test_that("element_typst preamble is inherited or replaced, never combined", {
+  th <- theme_grey() +
+    theme(
+      text = element_typst(preamble = "A"),
+      plot.title = element_typst(preamble = "B"),
+      axis.title.y = element_typst(preamble = ""),
+      axis.text = element_typst(size = 9),
+      axis.title.x = element_math_typst()
+    )
+
+  preamble_of <- function(name, theme = th) {
+    calc_element(name, theme)$preamble
+  }
+
+  for (name in c(
+    "axis.title.x.bottom",
+    "axis.text.x.bottom",
+    "legend.text",
+    "strip.text.x.top"
+  )) {
+    expect_identical(preamble_of(name), "A")
+  }
+
+  expect_identical(preamble_of("plot.title"), "B")
+  expect_identical(preamble_of("axis.title.y.left"), "")
+  expect_identical(
+    preamble_of(
+      "axis.title.x.bottom",
+      theme_grey() +
+        theme(text = element_typst(preamble = "A")) +
+        theme(text = element_typst(size = 12))
+    ),
+    "A"
+  )
+  expect_identical(
+    preamble_of(
+      "plot.title",
+      theme_grey() + theme(text = element_typst())
+    ),
+    ""
+  )
+})
+
+test_that("element_typst preamble styles the rendered labels", {
+  font_of <- function(theme) {
+    el <- calc_element("axis.title.x.bottom", theme)
+    scene_fonts(element_grob(el, label = "Ab"))
+  }
+
+  base <- theme_grey() +
+    theme(text = element_typst(family = "Libertinus Serif"))
+  semibold <- base +
+    theme(text = element_typst(preamble = "#set text(weight: 600)"))
+  cleared <- semibold + theme(axis.title.x = element_typst(preamble = ""))
+
+  expect_false(
+    identical(font_of(semibold), font_of(base))
+  )
+  expect_identical(
+    font_of(cleared),
+    font_of(base)
+  )
+})
+
 test_that("element_typst fontweight on the root text reaches every element", {
   th <- theme_grey() +
     theme(text = element_typst(fontweight = 600, family = "Libertinus Serif"))
@@ -636,6 +713,29 @@ test_that("element_typst visual: root text element", {
     theme(text = element_typst())
 
   vdiffr::expect_doppelganger("element-typst-root-text", p)
+})
+
+test_that("element_typst visual: preamble on the root text", {
+  skip_if_no_vdiffr()
+
+  p <- ggplot(mtcars, aes(wt, mpg)) +
+    geom_point(size = 1.6) +
+    labs(
+      title = r"(*Fuel economy*, $eta = "mpg" / w$)",
+      x = r"(Weight $w$)"
+    ) +
+    theme_minimal(base_size = 11) +
+    theme(
+      text = element_typst(
+        preamble = c(
+          r"(#set text(tracking: 1pt))",
+          r"(#show math.equation: set text(fill: rgb("#D20F39")))"
+        )
+      ),
+      axis.title.y = element_typst(preamble = "")
+    )
+
+  vdiffr::expect_doppelganger("element-typst-preamble", p)
 })
 
 test_that("element_typst visual: patchwork collects axes and axis titles", {

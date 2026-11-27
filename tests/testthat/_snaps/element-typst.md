@@ -33,6 +33,14 @@
       Error in `element_typst()`:
       ! `fontweight` must be a whole number from 100 to 900 or one of "thin", "extralight", "light", "regular", "medium", "semibold", "bold", "extrabold", or "black".
 
+# element_typst() stores and validates preamble
+
+    Code
+      element_typst(preamble = 1)
+    Condition
+      Error in `element_typst()`:
+      ! `preamble` must be a character vector without missing values.
+
 # element_typst() size.unit validates input
 
     Code

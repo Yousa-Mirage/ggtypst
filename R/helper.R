@@ -309,6 +309,26 @@ normalize_fontweight_values <- function(fontweight, fn, rows) {
   as.integer(values)
 }
 
+#' Validate Typst preamble rules
+#'
+#' @param preamble `NULL` or a character vector of Typst code, one or more
+#'   rules per string.
+#' @param call The call named in error messages.
+#' @return `preamble` unchanged when valid.
+#' @noRd
+check_preamble <- function(preamble, call = rlang::caller_env()) {
+  if (is.null(preamble)) {
+    return(NULL)
+  }
+  if (!is.character(preamble) || anyNA(preamble)) {
+    cli::cli_abort(
+      "{.arg preamble} must be a character vector without missing values.",
+      call = call
+    )
+  }
+  preamble
+}
+
 #' Validate an alpha multiplier
 #'
 #' @param alpha Optional numeric alpha value in `[0, 1]`.

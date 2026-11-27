@@ -45,7 +45,10 @@ grob (\code{0} = bottom, \code{0.5} = center, \code{1} = top).}
 
 \item{lineheight}{Optional line height value. May be negative.}
 
-\item{math_family}{Optional font family for math content. The default math font is \verb{New Computer Modern Math}. To render a math expression, you don't need to set this and even don't need to have \verb{New Computer Modern Math} installed on your system. Typst has embedded this font by default.}
+\item{math_family}{Optional font family for math content. The default math
+font is \verb{New Computer Modern Math}. To render a math expression, you don't
+need to set this and even don't need to have \verb{New Computer Modern Math}
+installed on your system. Typst has embedded this font by default.}
 
 \item{inline}{Whether to render inline math. Default \code{FALSE} renders
 display-style math.}

@@ -11,6 +11,11 @@
 - New argument: `fontweight` (alias `weight`). It can be used to set font
   weights from 100 to 900, such as `fontweight = 600` or `"semibold"`. Thanks
   to **Stein Are Sæther** for the suggestion.
+- New argument: `preamble` in `element_typst()` and `geom_typst()`. It takes
+  any Typst rules, such as `#set text(tracking: 0.3pt)`, applied to every label
+  of the element or layer, for styling the other arguments don't cover. An
+  element inherits its parent's `preamble` unless it sets its own. Thanks to
+  **Stein Are Sæther** for the suggestion.
 - New function: `typst_fonts()`. It lists the font families Typst can use. With
   `detail = TRUE`, it shows the weights and styles of each.
 

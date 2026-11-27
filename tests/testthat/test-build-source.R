@@ -186,6 +186,45 @@ test_that("build_typst_source maps hjust to the nearest Typst alignment", {
   )
 })
 
+test_that("build_typst_source puts the preamble after its own settings", {
+  lines <- source_lines(
+    "A",
+    face = "bold",
+    math_family = "STIX Two Math",
+    preamble = c(
+      "#set text(tracking: 1pt)",
+      "",
+      "#show math.equation: set text(weight: 400)"
+    )
+  )
+
+  expect_equal(
+    lines,
+    c(
+      preamble_set,
+      '#set text(weight: "bold")',
+      '#show math.equation: set text(weight: "bold")',
+      '#show math.equation: set text(font: "STIX Two Math")',
+      "#set text(tracking: 1pt)",
+      "#show math.equation: set text(weight: 400)",
+      leading_rule(),
+      "A"
+    )
+  )
+  expect_equal(
+    source_lines("A", preamble = ""),
+    source_lines("A")
+  )
+  expect_snapshot(
+    build_typst_source("A", preamble = 1),
+    error = TRUE
+  )
+  expect_snapshot(
+    build_typst_source("A", preamble = NA_character_),
+    error = TRUE
+  )
+})
+
 test_that("build_typst_source validates arguments", {
   expect_snapshot(build_typst_source(NULL), error = TRUE)
   expect_snapshot(build_typst_source("A", size = 0), error = TRUE)

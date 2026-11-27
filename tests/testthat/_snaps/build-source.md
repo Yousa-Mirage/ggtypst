@@ -1,3 +1,19 @@
+# build_typst_source puts the preamble after its own settings
+
+    Code
+      build_typst_source("A", preamble = 1)
+    Condition
+      Error:
+      ! `preamble` must be a character vector without missing values.
+
+---
+
+    Code
+      build_typst_source("A", preamble = NA_character_)
+    Condition
+      Error:
+      ! `preamble` must be a character vector without missing values.
+
 # build_typst_source validates arguments
 
     Code

@@ -37,6 +37,11 @@
 #'   instead of `position` to shift labels after the default identity position.
 #' @param size.unit The unit of `size`. Defaults to points
 #'   (`"pt"`). Use `"mm"` for ggplot2-style text sizes.
+#' @param preamble Optional Typst rules, such as `#set` and `#show` rules,
+#'   applied to every label of the layer: a character vector, one or more rules
+#'   per string. They come after the rules for the aesthetics, so they can
+#'   override them, and before the label. See [element_typst()] for rules that
+#'   misplace labels.
 #' @return A ggplot2 layer that can be added to a plot.
 #' @seealso [geom_math_typst()], [geom_math_mitex()], [ggplot2::geom_label()]
 #' @examples
@@ -72,11 +77,13 @@ geom_typst <- function(
   nudge_x = 0,
   nudge_y = 0,
   size.unit = "pt",
+  preamble = NULL,
   na.rm = FALSE,
   show.legend = NA,
   inherit.aes = TRUE
 ) {
   size.unit <- check_size_unit(size.unit, "size.unit")
+  preamble <- check_preamble(preamble)
   params <- list(...)
   params <- normalize_colour_param(params)
   params <- normalize_face_param(params)
@@ -101,6 +108,7 @@ geom_typst <- function(
     params = c(
       list(
         size.unit = size.unit,
+        preamble = preamble,
         na.rm = na.rm
       ),
       params
@@ -182,7 +190,8 @@ GeomTypst <- ggplot2::ggproto(
     panel_params,
     coord,
     na.rm = FALSE,
-    size.unit = "pt"
+    size.unit = "pt",
+    preamble = NULL
   ) {
     if (nrow(data) == 0) {
       return(ggplot2::zeroGrob())
@@ -241,7 +250,8 @@ GeomTypst <- ggplot2::ggproto(
       math_family = data$math_family,
       angle = data$angle,
       hjust = data$hjust,
-      vjust = data$vjust
+      vjust = data$vjust,
+      MoreArgs = list(preamble = preamble)
     )
 
     grid::gTree(
@@ -270,6 +280,7 @@ GeomTypst <- ggplot2::ggproto(
 #' @param family Optional text font family.
 #' @param lineheight Optional line height value. May be negative.
 #' @param math_family Optional math font family.
+#' @param preamble Optional Typst rules.
 #' @param angle Optional rotation angle in degrees.
 #' @param hjust,vjust Horizontal and vertical justification values.
 #' @return A positioned grob for the rendered label.
@@ -289,6 +300,7 @@ geom_typst_row_grob <- function(
   family,
   lineheight,
   math_family,
+  preamble,
   angle,
   hjust,
   vjust
@@ -313,6 +325,7 @@ geom_typst_row_grob <- function(
           math_family,
           empty_is_null = TRUE
         ),
+        preamble = preamble,
         angle = normalize_optional_number(angle),
         hjust = hjust
       )

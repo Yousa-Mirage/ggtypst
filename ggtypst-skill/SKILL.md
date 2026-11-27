@@ -174,6 +174,9 @@ operators).
 - `colour` and `color` are aliases, as are `face` and `fontface`; giving both of a pair is an error.
 - text helpers accept `face` `"plain"`, `"bold"`, `"italic"`, or `"bold.italic"` (or 1 to 4); math helpers accept
   only `"plain"` and `"bold"`.
+- `preamble` in `element_typst()` and `geom_typst()` takes Typst rules (`#set`, `#show`) applied to every label,
+  after the other arguments' settings, for styling no argument covers (letter spacing, math font weight, OpenType
+  features). An element inherits its parent's `preamble` unless it sets its own, which replaces it; `""` clears it.
 - `fontweight` (alias `weight`) in `annotate_typst()`, `geom_typst()`, and `element_typst()` takes a weight from
   100 to 900 or a Typst name such as `"light"` or `"semibold"`. It replaces a bold `face`'s weight. Typst uses the
   closest weight the family has and never synthesizes one. For an old variable font with non-standard axes (such as

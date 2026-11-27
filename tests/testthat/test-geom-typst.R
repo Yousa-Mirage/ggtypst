@@ -190,6 +190,33 @@ test_that("geom_typst maps fontweight per row", {
   expect_identical(fonts[[4]], fonts[[2]])
 })
 
+test_that("geom_typst applies every preamble rule to every row", {
+  df <- data.frame(x = 1:2, y = 1, label = c("Ab", "Cd"))
+  font_of <- function(...) {
+    p <- ggplot(df, aes(x, y, label = label)) + geom_typst(...)
+    vapply(
+      layer_grob(p)[[1]]$children,
+      scene_fonts,
+      character(1)
+    )
+  }
+
+  regular <- font_of(family = "Libertinus Serif")
+  semibold <- font_of(
+    preamble = c(
+      '#set text(font: "Libertinus Serif")',
+      "#set text(weight: 600)"
+    )
+  )
+
+  expect_identical(semibold[[1]], semibold[[2]])
+  expect_false(semibold[[1]] == regular[[1]])
+  expect_snapshot(
+    geom_typst(label = "A", preamble = 1),
+    error = TRUE
+  )
+})
+
 test_that("geom_typst validates mapped fontweight before row rendering", {
   df <- data.frame(x = 1:2, y = 1, label = "A", weight = c("bold", "heavy"))
 
